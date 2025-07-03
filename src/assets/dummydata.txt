@@ -1,0 +1,18 @@
+// Sidebar Dummy assets
+
+
+const Menus = [
+    { title: "Dashboard", icon: <MdSpaceDashboard /> },
+    { title: "Inbox", icon: <BiChat />, gap: true, subMenu: ["Requested Messages", "Unread Messages", "All Messages"], key: "inbox" },
+    { title: "Calendar", icon: <TiCalendar /> },
+    { title: "Tables", icon: <FiTable /> },
+    { title: "Analytics", icon: <GoGraph /> },
+    { title: "Support", icon: <MdOutlineHeadsetMic /> },
+    { title: "Setting", icon: <FaGears />, subMenu: ["General", "Security", "Notifications"], key: "settings" },
+];
+
+
+Logo Img:- https://cdn.pixabay.com/photo/2017/02/18/19/20/logo-2078018_640.png
+
+
+Profile Image:- https://cdn.pixabay.com/photo/2016/11/21/11/17/model-1844729_640.jpg

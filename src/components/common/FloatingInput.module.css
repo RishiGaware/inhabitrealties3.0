@@ -1,0 +1,94 @@
+.inputWrapper {
+  position: relative;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.input {
+  width: 100%;
+  padding: 1rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  background-color: white;
+  font-family: inherit;
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+  line-height: 1.5;
+}
+
+.input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.floatingLabel {
+  position: absolute;
+  left: 0.75rem;
+  top: 1rem;
+  font-size: 0.875rem;
+  color: #64748b;
+  pointer-events: none;
+  transition: all 0.2s;
+  transform-origin: left top;
+  background-color: white;
+  padding: 0 0.25rem;
+}
+
+.input:focus ~ .floatingLabel,
+.input:not(:placeholder-shown) ~ .floatingLabel {
+  transform: translateY(-1.4rem) scale(0.85);
+  color: #3b82f6;
+}
+
+.textarea:focus ~ .floatingLabel,
+.textarea:not(:placeholder-shown) ~ .floatingLabel {
+  transform: translateY(-1.4rem) scale(0.85);
+  color: #3b82f6;
+}
+
+.inputError {
+  border-color: #ef4444;
+}
+
+.inputError ~ .floatingLabel {
+  color: #ef4444;
+}
+
+.errorText {
+  position: absolute;
+  left: 0;
+  bottom: -1.25rem;
+  font-size: 0.75rem;
+  color: #ef4444;
+}
+
+.eyeIcon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: #64748b;
+}
+
+.input:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}
+
+.textarea:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+} 
