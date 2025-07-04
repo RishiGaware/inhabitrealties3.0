@@ -68,3 +68,23 @@ export const PROPERTY_ENDPOINTS = {
   DELETE_ALL_IMAGES: (id) => `/property/image/delete/all/${id}`,
   GET_IMAGE_BY_ID: (id) => `/property/image/${id}`,
 };
+
+export const DOCUMENT_TYPE_ENDPOINTS = {
+  GET_ALL: '/documenttypes/',
+  GET_BY_ID: (id) => `/documenttypes/${id}`,
+  CREATE: '/documenttypes/create',
+  EDIT: (id) => `/documenttypes/edit/${id}`,
+  DELETE: (id) => `/documenttypes/delete/${id}`,
+  GET_NOT_PUBLISHED: '/documenttypes/notpublished',
+  GET_WITH_PARAMS: '/documenttypes/withparams',
+};
+
+export const DOCUMENT_ENDPOINTS = {
+  GET_ALL: '/documents/',
+  GET_BY_ID: (id) => `/documents/${id}`,
+  CREATE: '/documents/create',
+  EDIT: (id) => `/documents/edit/${id}`,
+  DELETE: (id) => `/documents/delete/${id}`,
+  GET_BY_USER: (userId) => `/documents/user/${userId}`,
+  GET_BY_DOCUMENT_TYPE: (documentTypeId) => `/documents/type/${documentTypeId}`,
+};

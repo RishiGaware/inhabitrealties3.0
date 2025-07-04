@@ -11,6 +11,8 @@ import Contact from '../pages/common/Contact';
 import Dashboard from '../pages/common/dashboard/Dashboard';
 import UserManagement from '../pages/admin/userManagement/UserManagement';
 import RoleManagement from '../pages/admin/roleManagement/RoleManagement';
+import DocumentTypeManagement from '../pages/admin/documentTypeManagement/DocumentTypeManagement';
+import DocumentManagement from '../pages/admin/documentManagement/DocumentManagement';
 import Reports from '../pages/admin/Reports';
 import LeadManagement from '../pages/lead/LeadManagement';
 import AddLead from '../pages/lead/AddLead';
@@ -18,6 +20,7 @@ import ViewLeads from '../pages/lead/ViewLeads';
 import LeadQualification from '../pages/lead/LeadQualification';
 import CustomerProfiles from '../pages/customers/CustomerProfiles';
 import CustomerDocuments from '../pages/customers/Documents';
+import CustomerDocumentTypeManagement from '../pages/customers/DocumentTypeManagement';
 import SiteVisits from '../pages/customers/SiteVisits';
 import Inventory from '../pages/bookings/Inventory';
 import BookedUnits from '../pages/bookings/BookedUnits';
@@ -65,6 +68,8 @@ export const ROUTES = [
   // Admin
   { name: 'adminUserManagement', path: '/admin/user-management', component: UserManagement, permissions: 'public' },
   { name: 'adminRoleManagement', path: '/admin/role-management', component: RoleManagement, permissions: 'public' },
+  { name: 'adminDocumentTypeManagement', path: '/admin/document-type-management', component: DocumentTypeManagement, permissions: 'public' },
+  { name: 'adminDocumentManagement', path: '/admin/document-management', component: DocumentManagement, permissions: 'public' },
   { name: 'adminReports', path: '/admin/reports', component: Reports, permissions: 'public' },
 
   // Property
@@ -80,6 +85,7 @@ export const ROUTES = [
   // Customers
   { name: 'customerProfiles', path: '/customers/profiles', component: CustomerProfiles, permissions: 'public' },
   { name: 'customerDocuments', path: '/customers/documents', component: CustomerDocuments, permissions: 'public' },
+  { name: 'customerDocumentTypes', path: '/customers/document-types', component: CustomerDocumentTypeManagement, permissions: 'public' },
   { name: 'customerSiteVisits', path: '/customers/site-visits', component: SiteVisits, permissions: 'public' },
 
   // Sales

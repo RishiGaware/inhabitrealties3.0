@@ -19,7 +19,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       title: "Admin",
       icon: <FaUsers />, 
       gap: true,
-      subMenu: ["User Management", "Role Management", "Reports"],
+      subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Reports"],
       key: "admin"
     },
     {
@@ -37,7 +37,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     {
       title: "Customer Management",
       icon: <BiUser />,
-      subMenu: ["Customer Profiles", "Documents", "Site Visits"],
+      subMenu: ["Customer Profiles", "Documents", "Document Types", "Site Visits"],
       key: "customers"
     },
     
@@ -119,6 +119,8 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'admin': {
       'user-management': '/admin/user-management',
       'role-management': '/admin/role-management',
+      'document-type-management': '/admin/document-type-management',
+      'document-management': '/admin/document-management',
       'reports': '/admin/reports'
     },
     'property': {
@@ -134,6 +136,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'customers': {
       'customer-profiles': '/customers/profiles',
       'documents': '/customers/documents',
+      'document-types': '/customers/document-types',
       'site-visits': '/customers/site-visits'
     },
     'sales': {

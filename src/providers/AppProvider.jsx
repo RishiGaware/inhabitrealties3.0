@@ -9,6 +9,8 @@ import { FollowUpStatusProvider } from '../context/FollowUpStatusContext';
 import { LeadsProvider } from '../context/LeadsContext';
 import { ReferenceSourceProvider } from '../context/ReferenceSourceContext';
 import { UserProfilePictureProvider } from '../context/UserProfilePictureContext';
+import { DocumentTypeProvider } from '../context/DocumentTypeContext';
+import { DocumentProvider } from '../context/DocumentContext';
 
 const AppProvider = ({ children }) => {
   return (
@@ -22,7 +24,11 @@ const AppProvider = ({ children }) => {
                   <LeadsProvider>
                     <ReferenceSourceProvider>
                       <UserProfilePictureProvider>
-                        {children}
+                        <DocumentTypeProvider>
+                          <DocumentProvider>
+                            {children}
+                          </DocumentProvider>
+                        </DocumentTypeProvider>
                       </UserProfilePictureProvider>
                     </ReferenceSourceProvider>
                   </LeadsProvider>

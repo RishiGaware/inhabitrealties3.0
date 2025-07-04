@@ -21,12 +21,15 @@ import Contact from './pages/common/Contact'
 import Dashboard from './pages/common/dashboard/Dashboard';
 import UserManagement from './pages/admin/userManagement/UserManagement';
 import RoleManagement from './pages/admin/roleManagement/RoleManagement';
+import DocumentTypeManagement from './pages/admin/documentTypeManagement/DocumentTypeManagement';
+import DocumentManagement from './pages/admin/documentManagement/DocumentManagement';
 import Reports from './pages/admin/Reports';
 import Leads from './pages/lead/Leads';
 import LeadStatus from './pages/lead/LeadStatus';
 import LeadFollowUp from './pages/lead/LeadFollowUp';
 import CustomerProfiles from './pages/customers/CustomerProfiles';
 import CustomerDocuments from './pages/customers/Documents';
+import CustomerDocumentTypeManagement from './pages/customers/DocumentTypeManagement';
 import SiteVisits from './pages/customers/SiteVisits';
 import Inventory from './pages/bookings/Inventory';
 import BookedUnits from './pages/bookings/BookedUnits';
@@ -128,6 +131,8 @@ const App = () => {
             {/* Admin Routes */}
             <Route path='/admin/user-management' element={<DashboardLayout><UserManagement /></DashboardLayout>} />
             <Route path='/admin/role-management' element={<DashboardLayout><RoleManagement /></DashboardLayout>} />
+            <Route path='/admin/document-type-management' element={<DashboardLayout><DocumentTypeManagement /></DashboardLayout>} />
+            <Route path='/admin/document-management' element={<DashboardLayout><DocumentManagement /></DashboardLayout>} />
             <Route path='/admin/reports' element={<DashboardLayout><Reports /></DashboardLayout>} />
             
             {/* Property Routes */}
@@ -143,6 +148,7 @@ const App = () => {
             {/* Customer Management Routes */}
             <Route path='/customers/profiles' element={<DashboardLayout><CustomerProfiles /></DashboardLayout>} />
             <Route path='/customers/documents' element={<DashboardLayout><CustomerDocuments /></DashboardLayout>} />
+            <Route path='/customers/document-types' element={<DashboardLayout><CustomerDocumentTypeManagement /></DashboardLayout>} />
             <Route path='/customers/site-visits' element={<DashboardLayout><SiteVisits /></DashboardLayout>} />
             
             {/* Sales Management Routes */}

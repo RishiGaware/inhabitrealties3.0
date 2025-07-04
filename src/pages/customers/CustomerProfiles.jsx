@@ -427,7 +427,7 @@ const CustomerProfiles = () => {
       {loading && <Loader size="xl" />}
       <Flex justify="space-between" align="center" mb={6}>
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
-          User Management
+          Customer Management
         </Heading>
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
