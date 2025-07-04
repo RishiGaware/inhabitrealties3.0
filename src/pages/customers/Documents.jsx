@@ -24,6 +24,11 @@ import {
   ModalHeader,
   ModalBody,
   ModalCloseButton,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
   SimpleGrid,
   Card,
   CardBody,
@@ -36,8 +41,7 @@ import {
   FormLabel,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon, ViewIcon, DownloadIcon, CalendarIcon } from '@chakra-ui/icons';
-import { FaEye, FaDownload, FaTrash, FaUpload, FaFilter, FaFile, FaFilePdf, FaFileImage, FaFileWord, FaFileExcel, FaArrowLeft } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { FaEye, FaDownload, FaTrash, FaUpload, FaFile, FaFilePdf, FaFileImage, FaFileWord, FaFileExcel } from 'react-icons/fa';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import FormModal from '../../components/common/FormModal';
 import FloatingInput from '../../components/common/FloatingInput';
@@ -51,7 +55,6 @@ import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 
 const Documents = () => {
-  const navigate = useNavigate();
   const toast = useToast();
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [formData, setFormData] = useState({});
@@ -61,7 +64,9 @@ const Documents = () => {
   const [pageSize, setPageSize] = useState(12); // Changed to 12 for cards (3x4 grid)
   const [searchTerm, setSearchTerm] = useState('');
   const [documentTypeFilter, setDocumentTypeFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
@@ -76,12 +81,16 @@ const Documents = () => {
   const [documentToDelete, setDocumentToDelete] = useState(null);
   const [documentToView, setDocumentToView] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
-  const [uploadedFile, setUploadedFile] = useState(null);
+  const [activeTab, setActiveTab] = useState('all');
 
   // Color mode values
   const cardBg = useColorModeValue('white', 'gray.800');
   const cardBorder = useColorModeValue('gray.200', 'gray.700');
   const textColor = useColorModeValue('gray.600', 'gray.300');
+  const iconBg = useColorModeValue('gray.100', 'gray.700');
+  const iconColor = useColorModeValue('gray.600', 'gray.300');
+  const previewBorder = useColorModeValue('gray.200', 'gray.600');
+  const dividerColor = useColorModeValue('gray.200', 'gray.600');
 
   // Get contexts
   const documentContext = useDocumentContext();
@@ -122,17 +131,35 @@ const Documents = () => {
   // Memoize filtered documents
   const filteredDocuments = useMemo(() => {
     let filtered = documents;
+    
+    // Filter by tab
+    if (activeTab === 'active') {
+      filtered = filtered.filter(doc => doc.published === true);
+    } else if (activeTab === 'inactive') {
+      filtered = filtered.filter(doc => doc.published === false);
+    }
+    
+    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(doc =>
         doc.fileName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        getDocumentTypeLabel(doc.documentTypeId)?.toLowerCase().includes(searchTerm.toLowerCase())
+        getDocumentTypeLabel(doc.documentTypeId)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getUserLabel(doc.userId)?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+    
+    // Filter by document type
     if (documentTypeFilter) {
       filtered = filtered.filter(doc => doc.documentTypeId === documentTypeFilter);
     }
+    
+    // Filter by status
+    if (statusFilter) {
+      filtered = filtered.filter(doc => doc.published === (statusFilter === 'active'));
+    }
+    
     return filtered;
-  }, [documents, searchTerm, documentTypeFilter, documentTypeOptions]);
+  }, [documents, searchTerm, documentTypeFilter, statusFilter, documentTypeOptions, userOptions, activeTab]);
 
   useEffect(() => {
     getAllDocuments();
@@ -163,7 +190,13 @@ const Documents = () => {
     setCurrentPage(1);
   };
 
-
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({ ...formData, [name]: value });
+    if (errors[name]) {
+      setErrors({ ...errors, [name]: '' });
+    }
+  };
 
   const handleDocumentTypeChange = (value) => {
     setFormData({ ...formData, documentTypeId: value });
@@ -216,13 +249,13 @@ const Documents = () => {
   const handleEdit = (document) => {
     setSelectedDocument(document);
     const data = {
-      fileName: document.fileName || '',
+      userId: document.userId || '',
       documentTypeId: document.documentTypeId || '',
-      description: document.description || '',
     };
     setFormData(data);
     setOriginalFormData(data);
     setErrors({});
+    setUploadedFile(null);
     onOpen();
   };
 
@@ -279,30 +312,27 @@ const Documents = () => {
     setIsApiCallInProgress(true);
 
     try {
+      const formDataToSend = new FormData();
+      formDataToSend.append('userId', formData.userId);
+      formDataToSend.append('documentTypeId', formData.documentTypeId);
+      
+      if (uploadedFile) {
+        formDataToSend.append('document', uploadedFile);
+      }
+
       if (selectedDocument) {
-        const editData = {
-          fileName: formData.fileName,
-          documentTypeId: formData.documentTypeId,
-          description: formData.description,
-        };
-        
-        console.log('Editing document:', selectedDocument._id, 'with data:', editData);
-        await updateDocument(selectedDocument._id, editData);
+        console.log('Editing document:', selectedDocument._id, 'with data:', formData);
+        await updateDocument(selectedDocument._id, formDataToSend);
       } else {
-        const addData = {
-          fileName: formData.fileName,
-          documentTypeId: formData.documentTypeId,
-          description: formData.description,
-        };
-        
-        console.log('Adding new document with data:', addData);
-        await addDocument(addData);
+        console.log('Adding new document with data:', formData);
+        await addDocument(formDataToSend);
       }
       
       setIsSubmitting(false);
       setIsApiCallInProgress(false);
       setSelectedDocument(null);
       setFormData({});
+      setUploadedFile(null);
       onClose();
     } catch (error) {
       console.error('Form submission error:', error);
@@ -314,9 +344,9 @@ const Documents = () => {
   const isFormChanged = () => {
     if (!selectedDocument || !originalFormData) return true;
     return (
-      formData.fileName !== originalFormData.fileName ||
+      formData.userId !== originalFormData.userId ||
       formData.documentTypeId !== originalFormData.documentTypeId ||
-      formData.description !== originalFormData.description
+      uploadedFile !== null
     );
   };
 
@@ -357,58 +387,106 @@ const Documents = () => {
         bg={cardBg}
         border="1px"
         borderColor={cardBorder}
-        borderRadius="lg"
-        boxShadow="sm"
-        _hover={{ boxShadow: 'md', transform: 'translateY(-2px)' }}
-        transition="all 0.2s"
+        borderRadius="xl"
+        boxShadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
+        _hover={{ 
+          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+          transform: 'translateY(-4px)',
+          borderColor: 'brand.200'
+        }}
+        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
         overflow="hidden"
+        position="relative"
+        _before={{
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          bg: document.published ? 'green.400' : 'red.400',
+          opacity: 0.8
+        }}
       >
-        <CardHeader pb={2}>
+        <CardHeader pb={3} pt={4}>
           <Flex align="center" justify="space-between">
-            <HStack spacing={3}>
+            <HStack spacing={3} flex={1}>
               <Box
-                p={2}
-          borderRadius="md"
-                bg={`${iconColor}20`}
+                p={3}
+                borderRadius="xl"
+                bg={`${iconColor}15`}
                 color={iconColor}
+                border="1px"
+                borderColor={`${iconColor}30`}
+                _groupHover={{
+                  bg: `${iconColor}25`,
+                  transform: 'scale(1.05)'
+                }}
+                transition="all 0.2s"
               >
-                <FileIconComponent size={20} />
+                <FileIconComponent size={24} />
               </Box>
-              <Box>
-                <Text fontWeight="bold" fontSize="sm" noOfLines={1}>
+              <Box flex={1} minW={0}>
+                <Text 
+                  fontWeight="bold" 
+                  fontSize="sm" 
+                  noOfLines={1}
+                  color={useColorModeValue('gray.800', 'white')}
+                >
                   {document.fileName}
                 </Text>
-                <Text fontSize="xs" color={textColor}>
+                <Text 
+                  fontSize="xs" 
+                  color={textColor}
+                  mt={1}
+                >
                   {getDocumentTypeLabel(document.documentTypeId)}
                 </Text>
               </Box>
             </HStack>
             <Badge
               colorScheme={document.published ? 'green' : 'red'}
-          fontSize="xs"
+              fontSize="xs"
               borderRadius="full"
+              px={3}
+              py={1}
+              fontWeight="semibold"
+              textTransform="uppercase"
+              letterSpacing="wide"
             >
               {document.published ? 'Active' : 'Inactive'}
             </Badge>
           </Flex>
         </CardHeader>
 
-        <CardBody pt={0} pb={2}>
-          <VStack spacing={2} align="stretch">
-            {document.description && (
-                          <Text fontSize="xs" color={textColor} noOfLines={1}>
+        <CardBody pt={0} pb={3}>
+          <VStack spacing={3} align="stretch">
+            <Text fontSize="xs" color={textColor} noOfLines={1}>
               <strong>User:</strong> {getUserLabel(document.userId)}
             </Text>
-          )}
-          
-          <HStack spacing={4} fontSize="xs" color={textColor}>
-              <HStack spacing={1}>
-                <FaFile size={12} />
-                <Text>{formatFileSize(document.size)}</Text>
+            
+            <HStack spacing={4} fontSize="xs" color={textColor} justify="space-between">
+              <HStack spacing={2}>
+                <Box
+                  p={1.5}
+                  borderRadius="md"
+                  bg={iconBg}
+                  color={iconColor}
+                >
+                  <FaFile size={10} />
+                </Box>
+                <Text fontWeight="medium">{formatFileSize(document.size)}</Text>
               </HStack>
-              <HStack spacing={1}>
-                <CalendarIcon size={12} />
-                <Text>
+              <HStack spacing={2}>
+                <Box
+                  p={1.5}
+                  borderRadius="md"
+                  bg={iconBg}
+                  color={iconColor}
+                >
+                  <CalendarIcon size={10} />
+                </Box>
+                <Text fontWeight="medium">
                   {document.createdAt ? new Date(document.createdAt).toLocaleDateString() : 'N/A'}
                 </Text>
               </HStack>
@@ -416,11 +494,17 @@ const Documents = () => {
 
             {document.displayUrl && (
               <Box
-                borderRadius="md"
+                borderRadius="lg"
                 overflow="hidden"
                 bg="gray.100"
-                h="120px"
+                h="140px"
                 position="relative"
+                border="1px"
+                borderColor={previewBorder}
+                _hover={{
+                  transform: 'scale(1.02)',
+                  transition: 'transform 0.2s'
+                }}
               >
                 <Image
                   src={document.displayUrl}
@@ -430,36 +514,62 @@ const Documents = () => {
                   objectFit="cover"
                   fallbackSrc="https://via.placeholder.com/300x200?text=No+Preview"
                 />
-        </Box>
+                <Box
+                  position="absolute"
+                  top={2}
+                  right={2}
+                  bg="black"
+                  color="white"
+                  px={2}
+                  py={1}
+                  borderRadius="md"
+                  fontSize="xs"
+                  opacity={0.8}
+                >
+                  Preview
+                </Box>
+              </Box>
             )}
           </VStack>
         </CardBody>
 
-        <Divider />
+        <Divider borderColor={dividerColor} />
 
-        <CardFooter pt={2}>
-          <HStack spacing={2} w="full" justify="center">
-            <Tooltip label="View Details">
-      <IconButton
-        icon={<FaEye />}
-        size="sm"
-        variant="ghost"
-        colorScheme="brand"
+        <CardFooter pt={3} pb={4}>
+          <HStack spacing={3} w="full" justify="center">
+            <Tooltip label="View Details" placement="top">
+              <IconButton
+                icon={<FaEye />}
+                size="sm"
+                variant="ghost"
+                colorScheme="blue"
                 onClick={() => handleView(document)}
                 aria-label="View document"
-      />
-            </Tooltip>
-            <Tooltip label="Download">
-      <IconButton
-        icon={<FaDownload />}
-        size="sm"
-        variant="ghost"
-        colorScheme="brand"
-                onClick={() => handleDownload(document)}
-                aria-label="Download document"
+                _hover={{
+                  bg: 'blue.50',
+                  color: 'blue.600',
+                  transform: 'scale(1.1)'
+                }}
+                transition="all 0.2s"
               />
             </Tooltip>
-            <Tooltip label="Edit">
+            <Tooltip label="Download" placement="top">
+              <IconButton
+                icon={<FaDownload />}
+                size="sm"
+                variant="ghost"
+                colorScheme="green"
+                onClick={() => handleDownload(document)}
+                aria-label="Download document"
+                _hover={{
+                  bg: 'green.50',
+                  color: 'green.600',
+                  transform: 'scale(1.1)'
+                }}
+                transition="all 0.2s"
+              />
+            </Tooltip>
+            <Tooltip label="Edit" placement="top">
               <IconButton
                 icon={<EditIcon />}
                 size="sm"
@@ -467,22 +577,34 @@ const Documents = () => {
                 colorScheme="brand"
                 onClick={() => handleEdit(document)}
                 aria-label="Edit document"
+                _hover={{
+                  bg: 'brand.50',
+                  color: 'brand.600',
+                  transform: 'scale(1.1)'
+                }}
+                transition="all 0.2s"
               />
             </Tooltip>
-            <Tooltip label="Delete">
-      <IconButton
-        icon={<FaTrash />}
-        size="sm"
-        variant="ghost"
-        colorScheme="red"
+            <Tooltip label="Delete" placement="top">
+              <IconButton
+                icon={<FaTrash />}
+                size="sm"
+                variant="ghost"
+                colorScheme="red"
                 onClick={() => handleDelete(document)}
                 aria-label="Delete document"
-      />
+                _hover={{
+                  bg: 'red.50',
+                  color: 'red.600',
+                  transform: 'scale(1.1)'
+                }}
+                transition="all 0.2s"
+              />
             </Tooltip>
           </HStack>
         </CardFooter>
       </Card>
-  );
+    );
   };
 
   return (
@@ -491,27 +613,14 @@ const Documents = () => {
         <Loader size="xl" />
       )}
       <Flex justify="space-between" align="center" mb={6}>
-        <Flex align="center">
-          <Button
-            leftIcon={<FaArrowLeft />}
-            variant="ghost"
-            colorScheme="gray"
-            onClick={() => navigate('/customers/profiles')}
-            mr={4}
-          >
-            Back
-          </Button>
-          <Heading as="h1" variant="pageTitle">
-            Customer Documents
-          </Heading>
-        </Flex>
+        <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
+          Documents
+        </Heading>
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
 
       <Box mb={6}>
-        <Text color="gray.600" fontSize="sm" mb={4}>
-            Manage customer documents and verification status
-          </Text>
+        
         
         <HStack spacing={4} mb={4}>
           <Box maxW="400px">
@@ -538,6 +647,17 @@ const Documents = () => {
                   {option.label}
                 </option>
               ))}
+            </Select>
+          </Box>
+
+          <Box minW="150px">
+            <Select
+              placeholder="Filter by status"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </Select>
           </Box>
         </HStack>
@@ -584,12 +704,12 @@ const Documents = () => {
           onClose();
           setSelectedDocument(null);
           setFormData({
-            fileName: '',
+            userId: '',
             documentTypeId: '',
-            description: '',
           });
           setOriginalFormData(null);
           setErrors({});
+          setUploadedFile(null);
         }}
         title={selectedDocument ? 'Edit Document' : 'Add New Document'}
         onSave={handleFormSubmit}
@@ -664,6 +784,11 @@ const Documents = () => {
                 </Box>
                 
                 <Box>
+                  <Text fontWeight="bold">User:</Text>
+                  <Text>{getUserLabel(documentToView.userId)}</Text>
+                </Box>
+                
+                <Box>
                   <Text fontWeight="bold">Document Type:</Text>
                   <Text>{getDocumentTypeLabel(documentToView.documentTypeId)}</Text>
                 </Box>
@@ -678,18 +803,18 @@ const Documents = () => {
                   <Text>{documentToView.mimeType || 'N/A'}</Text>
                 </Box>
                 
-                {documentToView.description && (
-                  <Box>
-                    <Text fontWeight="bold">Description:</Text>
-                    <Text>{documentToView.description}</Text>
-                  </Box>
-                )}
-                
                 <Box>
                   <Text fontWeight="bold">Uploaded On:</Text>
                   <Text>{documentToView.createdAt ? new Date(documentToView.createdAt).toLocaleString() : 'N/A'}</Text>
-        </Box>
-        
+                </Box>
+
+                <Box>
+                  <Text fontWeight="bold">Status:</Text>
+                  <Badge colorScheme={documentToView.published ? 'green' : 'red'}>
+                    {documentToView.published ? 'Active' : 'Inactive'}
+                  </Badge>
+                </Box>
+                
                 {documentToView.displayUrl && (
                   <Box>
                     <Text fontWeight="bold">Preview:</Text>

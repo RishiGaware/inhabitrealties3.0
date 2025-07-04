@@ -18,6 +18,7 @@ const DeleteConfirmationModal = ({
   title = 'Confirm Deletion',
   message = 'Are you sure you want to delete this item? This action cannot be undone.',
   isLoading,
+  loadingText = 'Deleting...'
 }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose} isCentered>
@@ -36,6 +37,7 @@ const DeleteConfirmationModal = ({
             colorScheme="red"
             onClick={onConfirm}
             isLoading={isLoading}
+            loadingText={loadingText}
           >
             Delete
           </Button>
