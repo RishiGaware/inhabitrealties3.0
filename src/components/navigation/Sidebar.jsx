@@ -37,7 +37,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     {
       title: "Customer Management",
       icon: <BiUser />,
-      subMenu: ["Customer Profiles", "Documents", "Document Types", "Site Visits"],
+      subMenu: ["Customer Profiles", "Documents", "Site Visits"],
       key: "customers"
     },
     

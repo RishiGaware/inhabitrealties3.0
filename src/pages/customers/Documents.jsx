@@ -41,7 +41,7 @@ import {
   FormLabel,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon, ViewIcon, DownloadIcon, CalendarIcon } from '@chakra-ui/icons';
-import { FaEye, FaDownload, FaTrash, FaUpload, FaFile, FaFilePdf, FaFileImage, FaFileWord, FaFileExcel } from 'react-icons/fa';
+import { FaEye, FaDownload, FaTrash, FaUpload, FaFilter, FaFile, FaFilePdf, FaFileImage, FaFileWord, FaFileExcel } from 'react-icons/fa';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import FormModal from '../../components/common/FormModal';
 import FloatingInput from '../../components/common/FloatingInput';
@@ -63,8 +63,8 @@ const Documents = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12); // Changed to 12 for cards (3x4 grid)
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
   const [documentTypeFilter, setDocumentTypeFilter] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -81,16 +81,29 @@ const Documents = () => {
   const [documentToDelete, setDocumentToDelete] = useState(null);
   const [documentToView, setDocumentToView] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
-  const [activeTab, setActiveTab] = useState('all');
 
   // Color mode values
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const cardBorder = useColorModeValue('gray.200', 'gray.700');
+  const cardGradientBg = useColorModeValue('linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 'gray.800');
+  const cardBorderColor = useColorModeValue('gray.200', 'gray.700');
+  const fileNameColor = useColorModeValue('gray.800', 'white');
+  const docTypeColor = useColorModeValue('purple.600', 'purple.200');
   const textColor = useColorModeValue('gray.600', 'gray.300');
-  const iconBg = useColorModeValue('gray.100', 'gray.700');
-  const iconColor = useColorModeValue('gray.600', 'gray.300');
-  const previewBorder = useColorModeValue('gray.200', 'gray.600');
   const dividerColor = useColorModeValue('gray.200', 'gray.600');
+  const modalHeaderBg = useColorModeValue('#f8fafc', 'gray.800');
+  const modalHeaderColor = useColorModeValue('purple.700', 'purple.200');
+  const modalBodyBg = useColorModeValue('white', 'gray.900');
+  const modalIconBg = useColorModeValue('purple.50', 'purple.900');
+  const modalIconColor = useColorModeValue('purple.600', 'purple.200');
+  const modalIconBorder = useColorModeValue('purple.200', 'purple.700');
+  const modalLabelColor = useColorModeValue('gray.600', 'gray.300');
+  const modalValueColor = useColorModeValue('gray.800', 'white');
+  const fileCardBg = useColorModeValue('gray.50', 'gray.800');
+  const fileCardBorder = useColorModeValue('gray.200', 'gray.700');
+  const fileIconBg = useColorModeValue('purple.50', 'purple.900');
+  const fileIconColor = useColorModeValue('purple.600', 'purple.200');
+  const fileIconBorder = useColorModeValue('purple.200', 'purple.700');
+  const fileNameTextColor = useColorModeValue('gray.800', 'white');
+  const fileMetaTextColor = useColorModeValue('gray.600', 'gray.300');
 
   // Get contexts
   const documentContext = useDocumentContext();
@@ -131,15 +144,6 @@ const Documents = () => {
   // Memoize filtered documents
   const filteredDocuments = useMemo(() => {
     let filtered = documents;
-    
-    // Filter by tab
-    if (activeTab === 'active') {
-      filtered = filtered.filter(doc => doc.published === true);
-    } else if (activeTab === 'inactive') {
-      filtered = filtered.filter(doc => doc.published === false);
-    }
-    
-    // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(doc =>
         doc.fileName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -147,19 +151,11 @@ const Documents = () => {
         getUserLabel(doc.userId)?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
-    // Filter by document type
     if (documentTypeFilter) {
       filtered = filtered.filter(doc => doc.documentTypeId === documentTypeFilter);
     }
-    
-    // Filter by status
-    if (statusFilter) {
-      filtered = filtered.filter(doc => doc.published === (statusFilter === 'active'));
-    }
-    
     return filtered;
-  }, [documents, searchTerm, documentTypeFilter, statusFilter, documentTypeOptions, userOptions, activeTab]);
+  }, [documents, searchTerm, documentTypeFilter]);
 
   useEffect(() => {
     getAllDocuments();
@@ -190,25 +186,10 @@ const Documents = () => {
     setCurrentPage(1);
   };
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
-  };
-
   const handleDocumentTypeChange = (value) => {
     setFormData({ ...formData, documentTypeId: value });
     if (errors.documentTypeId) {
       setErrors({ ...errors, documentTypeId: '' });
-    }
-  };
-
-  const handleUserChange = (value) => {
-    setFormData({ ...formData, userId: value });
-    if (errors.userId) {
-      setErrors({ ...errors, userId: '' });
     }
   };
 
@@ -221,9 +202,6 @@ const Documents = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.userId) {
-      newErrors.userId = 'User is required';
-    }
     if (!formData.documentTypeId) {
       newErrors.documentTypeId = 'Document type is required';
     }
@@ -380,229 +358,192 @@ const Documents = () => {
   const renderDocumentCard = (document) => {
     const FileIconComponent = getFileIcon(document.mimeType);
     const iconColor = getFileIconColor(document.mimeType);
+    const iconBgColor =
+      iconColor === 'red.500'
+        ? 'red.50'
+        : iconColor === 'green.500' || iconColor === 'green.600'
+        ? 'green.50'
+        : iconColor === 'blue.500'
+        ? 'blue.50'
+        : 'gray.100';
 
     return (
       <Card
         key={document._id}
-        bg={cardBg}
+        bg={cardGradientBg}
         border="1px"
-        borderColor={cardBorder}
-        borderRadius="xl"
-        boxShadow="0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)"
-        _hover={{ 
-          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-          transform: 'translateY(-4px)',
-          borderColor: 'brand.200'
+        borderColor={cardBorderColor}
+        borderRadius="2xl"
+        boxShadow="0 2px 8px 0 rgba(60,72,88,0.08)"
+        _hover={{
+          boxShadow: '0 8px 24px 0 rgba(60,72,88,0.16)',
+          borderColor: 'purple.400',
+          transform: 'translateY(-4px) scale(1.03)',
+          transition: 'all 0.2s',
         }}
-        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+        transition="all 0.2s"
         overflow="hidden"
         position="relative"
-        _before={{
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          height: '3px',
-          bg: document.published ? 'green.400' : 'red.400',
-          opacity: 0.8
-        }}
+        maxW={{ base: '100%', sm: '220px', md: '240px', lg: '260px' }}
+        minH={{ base: '140px', sm: '160px', md: '180px' }}
+        p={4}
+        display="flex"
+        flexDirection="column"
+        justifyContent="space-between"
       >
-        <CardHeader pb={3} pt={4}>
-          <Flex align="center" justify="space-between">
-            <HStack spacing={3} flex={1}>
-              <Box
-                p={3}
-                borderRadius="xl"
-                bg={`${iconColor}15`}
-                color={iconColor}
-                border="1px"
-                borderColor={`${iconColor}30`}
-                _groupHover={{
-                  bg: `${iconColor}25`,
-                  transform: 'scale(1.05)'
-                }}
-                transition="all 0.2s"
-              >
-                <FileIconComponent size={24} />
-              </Box>
-              <Box flex={1} minW={0}>
-                <Text 
-                  fontWeight="bold" 
-                  fontSize="sm" 
-                  noOfLines={1}
-                  color={useColorModeValue('gray.800', 'white')}
-                >
-                  {document.fileName}
-                </Text>
-                <Text 
-                  fontSize="xs" 
-                  color={textColor}
-                  mt={1}
-                >
-                  {getDocumentTypeLabel(document.documentTypeId)}
-                </Text>
-              </Box>
+        <Flex align="flex-start" justify="space-between" mb={2}>
+          <Box
+            p={2}
+            borderRadius="full"
+            bg={iconBgColor}
+            color={iconColor}
+            border="1.5px solid"
+            borderColor={iconColor}
+            minW="40px"
+            minH="40px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            boxShadow="0 1px 4px 0 rgba(60,72,88,0.10)"
+            mr={2}
+          >
+            <FileIconComponent size={20} />
+          </Box>
+          <Badge
+            colorScheme={document.published ? 'green' : 'red'}
+            fontSize="2xs"
+            borderRadius="full"
+            px={2}
+            py={0.5}
+            fontWeight="bold"
+            textTransform="uppercase"
+            letterSpacing="wide"
+            boxShadow="0 1px 4px 0 rgba(60,72,88,0.10)"
+            alignSelf="flex-start"
+          >
+            {document.published ? 'Active' : 'Inactive'}
+          </Badge>
+        </Flex>
+        <Box flex={1} minW={0} mb={1}>
+          <Text
+            fontWeight="bold"
+            fontSize={{ base: 'sm', md: 'md' }}
+            noOfLines={1}
+            color={fileNameColor}
+            mb={0.5}
+            letterSpacing="tight"
+          >
+            {document.fileName}
+          </Text>
+          <Text
+            fontSize="2xs"
+            color={docTypeColor}
+            textTransform="uppercase"
+            letterSpacing="widest"
+            fontWeight="semibold"
+            noOfLines={1}
+            mb={0.5}
+            lineHeight={1.1}
+          >
+            {getDocumentTypeLabel(document.documentTypeId)}
+          </Text>
+          <Text fontSize="2xs" color={textColor} noOfLines={1} mb={0.5} lineHeight={1.1} fontWeight="normal">
+            <strong>User:</strong> {getUserLabel(document.userId)}
+          </Text>
+          <HStack spacing={2} fontSize="2xs" color={textColor} mt={1}>
+            <HStack spacing={1}>
+              <FaFile size={10} />
+              <Text fontWeight="medium" noOfLines={1} fontSize="2xs" color={textColor} opacity={0.8}>
+                {formatFileSize(document.size)}
+              </Text>
             </HStack>
-            <Badge
-              colorScheme={document.published ? 'green' : 'red'}
-              fontSize="xs"
-              borderRadius="full"
-              px={3}
-              py={1}
-              fontWeight="semibold"
-              textTransform="uppercase"
-              letterSpacing="wide"
-            >
-              {document.published ? 'Active' : 'Inactive'}
-            </Badge>
-          </Flex>
-        </CardHeader>
-
-        <CardBody pt={0} pb={3}>
-          <VStack spacing={3} align="stretch">
-            <Text fontSize="xs" color={textColor} noOfLines={1}>
-              <strong>User:</strong> {getUserLabel(document.userId)}
-            </Text>
-            
-            <HStack spacing={4} fontSize="xs" color={textColor} justify="space-between">
-              <HStack spacing={2}>
-                <Box
-                  p={1.5}
-                  borderRadius="md"
-                  bg={iconBg}
-                  color={iconColor}
-                >
-                  <FaFile size={10} />
-                </Box>
-                <Text fontWeight="medium">{formatFileSize(document.size)}</Text>
-              </HStack>
-              <HStack spacing={2}>
-                <Box
-                  p={1.5}
-                  borderRadius="md"
-                  bg={iconBg}
-                  color={iconColor}
-                >
-                  <CalendarIcon size={10} />
-                </Box>
-                <Text fontWeight="medium">
-                  {document.createdAt ? new Date(document.createdAt).toLocaleDateString() : 'N/A'}
-                </Text>
-              </HStack>
+            <HStack spacing={1}>
+              <CalendarIcon boxSize={3} />
+              <Text fontWeight="medium" noOfLines={1} fontSize="2xs" color={textColor} opacity={0.8}>
+                {document.createdAt ? new Date(document.createdAt).toLocaleDateString() : 'N/A'}
+              </Text>
             </HStack>
-
-            {document.displayUrl && (
-              <Box
-                borderRadius="lg"
-                overflow="hidden"
-                bg="gray.100"
-                h="140px"
-                position="relative"
-                border="1px"
-                borderColor={previewBorder}
-                _hover={{
-                  transform: 'scale(1.02)',
-                  transition: 'transform 0.2s'
-                }}
-              >
-                <Image
-                  src={document.displayUrl}
-                  alt={document.fileName}
-                  w="full"
-                  h="full"
-                  objectFit="cover"
-                  fallbackSrc="https://via.placeholder.com/300x200?text=No+Preview"
-                />
-                <Box
-                  position="absolute"
-                  top={2}
-                  right={2}
-                  bg="black"
-                  color="white"
-                  px={2}
-                  py={1}
-                  borderRadius="md"
-                  fontSize="xs"
-                  opacity={0.8}
-                >
-                  Preview
-                </Box>
-              </Box>
-            )}
-          </VStack>
-        </CardBody>
-
-        <Divider borderColor={dividerColor} />
-
-        <CardFooter pt={3} pb={4}>
-          <HStack spacing={3} w="full" justify="center">
-            <Tooltip label="View Details" placement="top">
-              <IconButton
-                icon={<FaEye />}
-                size="sm"
-                variant="ghost"
-                colorScheme="blue"
-                onClick={() => handleView(document)}
-                aria-label="View document"
-                _hover={{
-                  bg: 'blue.50',
-                  color: 'blue.600',
-                  transform: 'scale(1.1)'
-                }}
-                transition="all 0.2s"
-              />
-            </Tooltip>
-            <Tooltip label="Download" placement="top">
-              <IconButton
-                icon={<FaDownload />}
-                size="sm"
-                variant="ghost"
-                colorScheme="green"
-                onClick={() => handleDownload(document)}
-                aria-label="Download document"
-                _hover={{
-                  bg: 'green.50',
-                  color: 'green.600',
-                  transform: 'scale(1.1)'
-                }}
-                transition="all 0.2s"
-              />
-            </Tooltip>
-            <Tooltip label="Edit" placement="top">
-              <IconButton
-                icon={<EditIcon />}
-                size="sm"
-                variant="ghost"
-                colorScheme="brand"
-                onClick={() => handleEdit(document)}
-                aria-label="Edit document"
-                _hover={{
-                  bg: 'brand.50',
-                  color: 'brand.600',
-                  transform: 'scale(1.1)'
-                }}
-                transition="all 0.2s"
-              />
-            </Tooltip>
-            <Tooltip label="Delete" placement="top">
-              <IconButton
-                icon={<FaTrash />}
-                size="sm"
-                variant="ghost"
-                colorScheme="red"
-                onClick={() => handleDelete(document)}
-                aria-label="Delete document"
-                _hover={{
-                  bg: 'red.50',
-                  color: 'red.600',
-                  transform: 'scale(1.1)'
-                }}
-                transition="all 0.2s"
-              />
-            </Tooltip>
           </HStack>
-        </CardFooter>
+        </Box>
+        <Divider borderColor={dividerColor} my={2} />
+        <HStack spacing={2} w="full" justify="center">
+          <Tooltip label="View Details" placement="top">
+            <IconButton
+              icon={<FaEye />}
+              size="sm"
+              variant="ghost"
+              colorScheme="blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleView(document);
+              }}
+              aria-label="View document"
+              _hover={{
+                bg: 'blue.50',
+                color: 'blue.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+          <Tooltip label="Download" placement="top">
+            <IconButton
+              icon={<FaDownload />}
+              size="sm"
+              variant="ghost"
+              colorScheme="green"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload(document);
+              }}
+              aria-label="Download document"
+              _hover={{
+                bg: 'green.50',
+                color: 'green.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+          <Tooltip label="Edit" placement="top">
+            <IconButton
+              icon={<EditIcon />}
+              size="sm"
+              variant="ghost"
+              colorScheme="brand"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(document);
+              }}
+              aria-label="Edit document"
+              _hover={{
+                bg: 'brand.50',
+                color: 'brand.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+          <Tooltip label="Delete" placement="top">
+            <IconButton
+              icon={<FaTrash />}
+              size="sm"
+              variant="ghost"
+              colorScheme="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(document);
+              }}
+              aria-label="Delete document"
+              _hover={{
+                bg: 'red.50',
+                color: 'red.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+        </HStack>
       </Card>
     );
   };
@@ -614,16 +555,14 @@ const Documents = () => {
       )}
       <Flex justify="space-between" align="center" mb={6}>
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
-          Documents
+          Document Management
         </Heading>
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
 
       <Box mb={6}>
-        
-        
-        <HStack spacing={4} mb={4}>
-          <Box maxW="400px">
+        <Flex direction={{ base: 'column', sm: 'row' }} gap={3} align={{ base: 'stretch', sm: 'center' }}>
+          <Box maxW="400px" flex={1}>
             <InputGroup>
               <InputLeftElement pointerEvents="none">
                 <SearchIcon color="gray.300" />
@@ -632,35 +571,47 @@ const Documents = () => {
                 placeholder="Search documents..."
                 value={searchTerm}
                 onChange={handleSearch}
+                size="md"
               />
             </InputGroup>
           </Box>
-          
-          <Box minW="200px">
-            <Select
-              placeholder="Filter by document type"
-              value={documentTypeFilter}
-              onChange={(e) => setDocumentTypeFilter(e.target.value)}
+          <IconButton
+            icon={<FaFilter />}
+            aria-label="Show filters"
+            variant={showFilters ? 'solid' : 'outline'}
+            colorScheme="purple"
+            size="sm"
+            onClick={() => setShowFilters(v => !v)}
+            ml={{ base: 0, sm: 2 }}
+            alignSelf={{ base: 'flex-start', sm: 'center' }}
+          />
+          {documentTypeFilter && (
+            <Button
+              size="sm"
+              colorScheme="gray"
+              variant="outline"
+              onClick={() => { setDocumentTypeFilter(''); }}
+              ml={{ base: 0, sm: 2 }}
+              alignSelf={{ base: 'flex-start', sm: 'center' }}
             >
-              {documentTypeOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-          </Box>
-
-          <Box minW="150px">
-            <Select
-              placeholder="Filter by status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </Select>
-          </Box>
-        </HStack>
+              Clear Filter
+            </Button>
+          )}
+        </Flex>
+        {showFilters && (
+          <Flex mt={3} gap={3} direction={{ base: 'column', sm: 'row' }}>
+            <Box minW={{ base: '120px', sm: '180px' }} flexShrink={0}>
+              <SearchableSelect
+                options={documentTypeOptions}
+                value={documentTypeFilter}
+                onChange={setDocumentTypeFilter}
+                placeholder="Filter by type"
+                size="sm"
+                isClearable
+              />
+            </Box>
+          </Flex>
+        )}
       </Box>
       
       {/* Document Cards Grid */}
@@ -676,7 +627,7 @@ const Documents = () => {
             </Text>
           </Box>
         ) : (
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6}>
+          <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={{ base: 3, sm: 4, md: 5, lg: 6 }}>
             {filteredDocuments
               .slice((currentPage - 1) * pageSize, currentPage * pageSize)
               .map(renderDocumentCard)}
@@ -719,19 +670,6 @@ const Documents = () => {
         isDisabled={selectedDocument ? !isFormChanged() : false}
       >
         <VStack spacing={4}>
-          <FormControl isInvalid={!!errors.userId}>
-            <SearchableSelect
-              options={userOptions}
-              value={formData.userId || ''}
-              onChange={handleUserChange}
-              placeholder="Select user"
-              searchPlaceholder="Search users..."
-              label="User"
-              error={errors.userId}
-              isRequired={true}
-            />
-          </FormControl>
-          
           <FormControl isInvalid={!!errors.documentTypeId}>
             <SearchableSelect
               options={documentTypeOptions}
@@ -744,7 +682,6 @@ const Documents = () => {
               isRequired={true}
             />
           </FormControl>
-          
           <FormControl isInvalid={!!errors.file}>
             <FormLabel>Document File</FormLabel>
             <DocumentUpload
@@ -756,6 +693,51 @@ const Documents = () => {
               <Text color="red.500" fontSize="sm" mt={1}>
                 {errors.file}
               </Text>
+            )}
+            {(uploadedFile || (selectedDocument && selectedDocument.fileName)) && (
+              <Box
+                mt={3}
+                p={3}
+                borderRadius="lg"
+                bg={fileCardBg}
+                border="1px solid"
+                borderColor={fileCardBorder}
+                display="flex"
+                alignItems="center"
+                gap={3}
+              >
+                <Box
+                  p={2}
+                  borderRadius="full"
+                  bg={fileIconBg}
+                  color={fileIconColor}
+                  border="1.5px solid"
+                  borderColor={fileIconBorder}
+                  minW="40px"
+                  minH="40px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <FaFile size={20} />
+                </Box>
+                <Box flex={1} minW={0}>
+                  <Text fontWeight="bold" fontSize="sm" color={fileNameTextColor} noOfLines={1}>
+                    {uploadedFile ? uploadedFile.name : selectedDocument.fileName}
+                  </Text>
+                  <Text fontSize="xs" color={fileMetaTextColor}>
+                    {uploadedFile
+                      ? `${(uploadedFile.size / 1024).toFixed(2)} KB`
+                      : selectedDocument.size
+                      ? `${(selectedDocument.size / 1024).toFixed(2)} KB`
+                      : ''}
+                    {' '}
+                    {uploadedFile
+                      ? uploadedFile.type || 'N/A'
+                      : selectedDocument.mimeType || 'N/A'}
+                  </Text>
+                </Box>
+              </Box>
             )}
           </FormControl>
         </VStack>
@@ -770,68 +752,89 @@ const Documents = () => {
       />
 
       {/* Document View Modal */}
-      <Modal isOpen={isViewOpen} onClose={onViewClose} size="xl">
+      <Modal isOpen={isViewOpen} onClose={onViewClose} size="xl" isCentered>
         <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Document Details</ModalHeader>
+        <ModalContent
+          borderRadius="2xl"
+          boxShadow="0 8px 32px 0 rgba(60,72,88,0.18)"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          maxW="480px"
+          m="auto"
+        >
+          <ModalHeader fontWeight="bold" fontSize="2xl" color={modalHeaderColor} bg={modalHeaderBg} borderTopRadius="2xl">Document Details</ModalHeader>
           <ModalCloseButton />
-          <ModalBody pb={6}>
+          <ModalBody pb={6} bg={modalBodyBg} borderBottomRadius="2xl" display="flex" alignItems="center" justifyContent="center" minH="400px">
             {documentToView && (
-              <VStack spacing={4} align="stretch">
-                <Box>
-                  <Text fontWeight="bold">File Name:</Text>
-                  <Text>{documentToView.fileName}</Text>
-                </Box>
-                
-                <Box>
-                  <Text fontWeight="bold">User:</Text>
-                  <Text>{getUserLabel(documentToView.userId)}</Text>
-                </Box>
-                
-                <Box>
-                  <Text fontWeight="bold">Document Type:</Text>
-                  <Text>{getDocumentTypeLabel(documentToView.documentTypeId)}</Text>
-                </Box>
-                
-                <Box>
-                  <Text fontWeight="bold">File Size:</Text>
-                  <Text>{formatFileSize(documentToView.size)}</Text>
-                </Box>
-                
-                <Box>
-                  <Text fontWeight="bold">File Type:</Text>
-                  <Text>{documentToView.mimeType || 'N/A'}</Text>
-                </Box>
-                
-                <Box>
-                  <Text fontWeight="bold">Uploaded On:</Text>
-                  <Text>{documentToView.createdAt ? new Date(documentToView.createdAt).toLocaleString() : 'N/A'}</Text>
-                </Box>
-
-                <Box>
-                  <Text fontWeight="bold">Status:</Text>
-                  <Badge colorScheme={documentToView.published ? 'green' : 'red'}>
+              <VStack spacing={6} align="stretch" px={{ base: 0, md: 4 }} w="100%" justify="center">
+                <Flex align="center" justify="flex-start" mb={2}>
+                  <Box
+                    p={3}
+                    borderRadius="full"
+                    bg={modalIconBg}
+                    color={modalIconColor}
+                    border="1.5px solid"
+                    borderColor={modalIconBorder}
+                    minW="56px"
+                    minH="56px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    boxShadow="0 1px 8px 0 rgba(60,72,88,0.10)"
+                    mr={4}
+                  >
+                    <FaFile size={32} />
+                  </Box>
+                  <Box flex={1} minW={0}>
+                    <Text fontWeight="bold" fontSize="xl" color={fileNameColor} noOfLines={1} mb={1}>
+                      {documentToView.fileName}
+                    </Text>
+                    <Text fontSize="sm" color={modalHeaderColor} textTransform="uppercase" letterSpacing="wider" fontWeight="semibold" noOfLines={1}>
+                      {getDocumentTypeLabel(documentToView.documentTypeId)}
+                    </Text>
+                  </Box>
+                  <Badge
+                    colorScheme={documentToView.published ? 'green' : 'red'}
+                    fontSize="sm"
+                    borderRadius="full"
+                    px={4}
+                    py={1}
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                    letterSpacing="wide"
+                    boxShadow="0 1px 4px 0 rgba(60,72,88,0.10)"
+                    alignSelf="flex-start"
+                  >
                     {documentToView.published ? 'Active' : 'Inactive'}
                   </Badge>
-                </Box>
-                
-                {documentToView.displayUrl && (
+                </Flex>
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
                   <Box>
-                    <Text fontWeight="bold">Preview:</Text>
-                    <Image 
-                      src={documentToView.displayUrl} 
-                      alt={documentToView.fileName}
-                      maxH="300px"
-                      objectFit="contain"
-                      fallbackSrc="https://via.placeholder.com/300x200?text=No+Preview"
-                    />
+                    <Text fontWeight="semibold" color={modalLabelColor}>User</Text>
+                    <Text color={modalValueColor}>{getUserLabel(documentToView.userId)}</Text>
                   </Box>
-                )}
-                
-                <HStack spacing={4}>
+                  <Box>
+                    <Text fontWeight="semibold" color={modalLabelColor}>File Size</Text>
+                    <Text color={modalValueColor}>{formatFileSize(documentToView.size)}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontWeight="semibold" color={modalLabelColor}>File Type</Text>
+                    <Text color={modalValueColor}>{documentToView.mimeType || 'N/A'}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontWeight="semibold" color={modalLabelColor}>Uploaded On</Text>
+                    <Text color={modalValueColor}>{documentToView.createdAt ? new Date(documentToView.createdAt).toLocaleString() : 'N/A'}</Text>
+                  </Box>
+                </SimpleGrid>
+                <HStack spacing={4} pt={2} justify="center">
                   <Button
                     leftIcon={<FaDownload />}
                     colorScheme="brand"
+                    variant="solid"
+                    borderRadius="lg"
+                    size="md"
+                    fontWeight="bold"
                     onClick={() => handleDownload(documentToView)}
                   >
                     Download
@@ -839,9 +842,23 @@ const Documents = () => {
                   <Button
                     leftIcon={<EditIcon />}
                     variant="outline"
+                    colorScheme="purple"
+                    borderRadius="lg"
+                    size="md"
+                    fontWeight="bold"
                     onClick={() => {
                       onViewClose();
                       handleEdit(documentToView);
+                    }}
+                    _hover={{
+                      bg: 'purple.50',
+                      borderColor: 'purple.400',
+                      color: 'purple.700',
+                    }}
+                    _active={{
+                      bg: 'purple.100',
+                      borderColor: 'purple.600',
+                      color: 'purple.800',
                     }}
                   >
                     Edit
