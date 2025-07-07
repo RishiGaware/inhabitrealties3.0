@@ -17,6 +17,7 @@ import {
   deletePropertyImage 
 } from '../../../services/propertyService';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
+import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 
 const floatingButtonStyle = {
   bg: 'rgba(30,30,30,0.65)',
@@ -41,6 +42,8 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
   const [error, setError] = useState(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [imageToDelete, setImageToDelete] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const fileInputRef = useRef();
 
   useEffect(() => {
@@ -119,14 +122,19 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
     }
   };
 
-  const handleDeleteImage = async (imageId) => {
-    if (!window.confirm('Are you sure you want to delete this image?')) return;
+  const handleDeleteImage = (image) => {
+    setImageToDelete(image);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteImage = async () => {
+    if (!imageToDelete) return;
 
     try {
-      await deletePropertyImage(imageId);
+      await deletePropertyImage(imageToDelete._id);
       
       // Remove image from list
-      setPropertyImages(prev => prev.filter(img => img._id !== imageId));
+      setPropertyImages(prev => prev.filter(img => img._id !== imageToDelete._id));
       
       // Adjust current index if needed
       if (currentImageIndex >= propertyImages.length - 1) {
@@ -137,6 +145,9 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
     } catch (err) {
       console.error('Failed to delete image:', err);
       showErrorToast('Failed to delete image');
+    } finally {
+      setIsDeleteModalOpen(false);
+      setImageToDelete(null);
     }
   };
 
@@ -885,6 +896,11 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         borderRadius={{ base: "md", sm: "lg" }}
                         fontWeight="bold"
                         w="full"
+                        onClick={() => {
+                          // Redirect to contact page or open phone dialer
+                          const phoneNumber = property.agentPhone || '+1234567890'; // Replace with actual agent phone
+                          window.open(`tel:${phoneNumber}`, '_blank');
+                        }}
                         _hover={{
                           transform: "translateY(-2px) scale(1.02)",
                           boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)"
@@ -901,6 +917,13 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         borderRadius={{ base: "md", sm: "lg" }}
                         fontWeight="bold"
                         w="full"
+                        onClick={() => {
+                          // Redirect to email client or contact form
+                          const subject = `Inquiry about ${property.name}`;
+                          const body = `Hi,\n\nI'm interested in the property: ${property.name}\n\nProperty Details:\n- Price: ${formatPrice(property.price)}\n- Address: ${property.propertyAddress?.street}, ${property.propertyAddress?.area}, ${property.propertyAddress?.city}\n\nPlease provide more information about this property.\n\nThank you!`;
+                          const email = property.agentEmail || 'info@inhabitrealties.com'; // Replace with actual agent email
+                          window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
+                        }}
                         _hover={{
                           bg: "gray.50",
                           borderColor: "gray.400",
@@ -962,11 +985,18 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                           variant="solid"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleDeleteImage(image._id);
+                            handleDeleteImage(image);
                           }}
                           opacity={0}
-                          _groupHover={{ opacity: 1 }}
+                          _hover={{ opacity: 1 }}
                           transition="opacity 0.2s"
+                          zIndex={10}
+                          bg="red.500"
+                          color="white"
+                          _hover={{
+                            bg: "red.600",
+                            transform: "scale(1.1)"
+                          }}
                         />
                       </Box>
                     ))}
@@ -977,6 +1007,18 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
           </Box>
         </Box>
       </ModalContent>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setImageToDelete(null);
+        }}
+        onConfirm={confirmDeleteImage}
+        title="Delete Image"
+        message={`Are you sure you want to delete this image? This action cannot be undone.`}
+      />
     </Modal>
   );
 };
