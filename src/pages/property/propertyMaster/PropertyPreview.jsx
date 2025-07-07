@@ -9,7 +9,7 @@ import {
 import {
   FaTimes, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaCalendarAlt,
   FaChevronLeft, FaChevronRight, FaExternalLinkAlt, FaPhone, FaEnvelope,
-  FaUpload, FaTrash, FaDownload, FaExpand, FaCompress, FaShare
+  FaUpload, FaTrash, FaDownload, FaExpand, FaCompress, FaShare, FaHome
 } from 'react-icons/fa';
 import { 
   fetchPropertyImages, 
@@ -198,15 +198,17 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
   const hasImages = propertyImages.length > 0;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="6xl" isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", sm: "6xl" }} isCentered>
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
       <ModalContent
-        maxW="90vw"
-        maxH="90vh"
-        borderRadius="2xl"
+        maxW={{ base: "100vw", sm: "95vw", md: "90vw", lg: "85vw", xl: "80vw" }}
+        maxH={{ base: "100vh", sm: "95vh", md: "90vh" }}
+        borderRadius={{ base: "0", sm: "2xl" }}
         overflow="hidden"
         bg="white"
         boxShadow="2xl"
+        mx={{ base: 0, sm: 4 }}
+        my={{ base: 0, sm: 4 }}
       >
         <ModalCloseButton
           position="absolute"
@@ -216,9 +218,9 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
           {...floatingButtonStyle}
         />
 
-        <Box maxH="90vh" overflowY="auto">
+        <Box maxH={{ base: "100vh", sm: "95vh", md: "90vh" }} overflowY="auto">
           {/* Image Gallery Section */}
-          <Box position="relative" h={{ base: '300px', md: '400px', lg: '500px' }}>
+          <Box position="relative" h={{ base: '250px', sm: '300px', md: '400px', lg: '500px' }}>
             {loading ? (
               <Flex justify="center" align="center" h="full" bg="gray.100">
                 <VStack spacing={4}>
@@ -394,135 +396,534 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
           </Box>
 
           {/* Content Section */}
-          <Box p={{ base: 4, md: 6, lg: 8 }}>
-            <VStack spacing={6} align="stretch">
+          <Box p={{ base: 3, sm: 4, md: 6, lg: 8 }}>
+            <VStack spacing={{ base: 4, sm: 5, md: 6, lg: 8 }} align="stretch">
               {/* Header */}
-              <Box>
-                <Heading size="lg" color="gray.900" mb={2}>
-                  {property.name}
-                </Heading>
-                <Flex align="center" color="gray.600" fontSize="sm" mb={3}>
-                  <Icon as={FaMapMarkerAlt} mr={2} />
-                  <Text>
-                    {`${property.propertyAddress?.street}, ${property.propertyAddress?.area}, ${property.propertyAddress?.city}, ${property.propertyAddress?.state} ${property.propertyAddress?.zipOrPinCode}`}
+                              <Box>
+                  <Heading size={{ base: "md", sm: "lg", md: "xl" }} color="gray.900" mb={{ base: 2, sm: 3 }}>
+                    {property.name}
+                  </Heading>
+                  <Flex align="center" color="gray.600" fontSize={{ base: "xs", sm: "sm" }} mb={{ base: 2, sm: 3 }}>
+                    <Icon as={FaMapMarkerAlt} mr={{ base: 1, sm: 2 }} />
+                    <Text noOfLines={{ base: 2, sm: 1 }}>
+                      {`${property.propertyAddress?.street}, ${property.propertyAddress?.area}, ${property.propertyAddress?.city}, ${property.propertyAddress?.state} ${property.propertyAddress?.zipOrPinCode}`}
+                    </Text>
+                  </Flex>
+                  <Text fontSize={{ base: "xl", sm: "2xl", md: "3xl" }} fontWeight="bold" color="brand.500">
+                    {formatPrice(property.price)}
                   </Text>
-                </Flex>
-                <Text fontSize="2xl" fontWeight="bold" color="brand.500">
-              {formatPrice(property.price)}
-                </Text>
-              </Box>
+                </Box>
 
-          {/* Features Grid */}
-              <SimpleGrid columns={{ base: 3, md: 4 }} spacing={4} py={4}>
-                <VStack spacing={1}>
-                  <Circle size="40px" bg="brand.50" color="brand.600">
-                    <Icon as={FaBed} />
+          {/* Features Grid - Enhanced with Animations */}
+          <Box 
+            bg="linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)"
+            borderRadius={{ base: "xl", sm: "2xl" }}
+            p={{ base: 4, sm: 5, md: 6 }}
+            border="1px solid"
+            borderColor="gray.200"
+            boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+          >
+            <Text 
+              fontSize={{ base: "md", sm: "lg" }}
+              fontWeight="bold" 
+              color="gray.800" 
+              mb={{ base: 3, sm: 4 }}
+              textAlign="center"
+              letterSpacing="wide"
+            >
+              Property Features
+            </Text>
+            
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 4 }} spacing={{ base: 3, sm: 4, md: 6 }}>
+              {/* Bedrooms */}
+              <Box
+                bg="white"
+                borderRadius={{ base: "lg", sm: "xl" }}
+                p={{ base: 3, sm: 4 }}
+                textAlign="center"
+                border="1px solid"
+                borderColor="gray.200"
+                boxShadow="0 2px 8px rgba(0, 0, 0, 0.06)"
+                _hover={{
+                  transform: 'translateY(-4px) scale(1.02)',
+                  boxShadow: '0 12px 32px rgba(102, 126, 234, 0.15)',
+                  borderColor: 'brand.400'
+                }}
+                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                position="relative"
+                overflow="hidden"
+              >
+                {/* Animated Background */}
+                <Box
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  right="0"
+                  bottom="0"
+                  bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                  opacity="0"
+                  _hover={{ opacity: 0.05 }}
+                  transition="opacity 0.4s ease"
+                />
+                
+                <Box position="relative" zIndex={1}>
+                  <Circle 
+                    size={{ base: "40px", sm: "45px" }}
+                    bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                    color="white"
+                    mb={{ base: 2, sm: 3 }}
+                    boxShadow="0 4px 16px rgba(102, 126, 234, 0.3)"
+                    _hover={{
+                      transform: 'rotate(5deg) scale(1.1)',
+                      boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)'
+                    }}
+                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  >
+                    <Icon as={FaBed} size={{ base: 16, sm: 18 }} />
                   </Circle>
-                  <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                  <Text 
+                    fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
+                    fontWeight="bold" 
+                    color="gray.800"
+                    mb={1}
+                    _hover={{ color: 'brand.600' }}
+                    transition="color 0.3s ease"
+                  >
                     {property.features?.bedRooms || 0}
                   </Text>
-                  <Text fontSize="xs" color="gray.500">Bedrooms</Text>
-                </VStack>
-                <VStack spacing={1}>
-                  <Circle size="40px" bg="blue.50" color="blue.600">
-                    <Icon as={FaBath} />
+                  <Text 
+                    fontSize={{ base: "xs", sm: "sm" }}
+                    color="gray.600" 
+                    fontWeight="semibold"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    _hover={{ color: 'brand.500' }}
+                    transition="color 0.3s ease"
+                  >
+                    Bedrooms
+                  </Text>
+                </Box>
+              </Box>
+
+              {/* Bathrooms */}
+              <Box
+                bg="white"
+                borderRadius={{ base: "lg", sm: "xl" }}
+                p={{ base: 3, sm: 4 }}
+                textAlign="center"
+                border="1px solid"
+                borderColor="gray.200"
+                boxShadow="0 2px 8px rgba(0, 0, 0, 0.06)"
+                _hover={{
+                  transform: 'translateY(-4px) scale(1.02)',
+                  boxShadow: '0 12px 32px rgba(66, 153, 225, 0.15)',
+                  borderColor: 'blue.400'
+                }}
+                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                position="relative"
+                overflow="hidden"
+              >
+                <Box
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  right="0"
+                  bottom="0"
+                  bg="linear-gradient(135deg, #4299e1 0%, #3182ce 100%)"
+                  opacity="0"
+                  _hover={{ opacity: 0.05 }}
+                  transition="opacity 0.4s ease"
+                />
+                
+                <Box position="relative" zIndex={1}>
+                  <Circle 
+                    size={{ base: "40px", sm: "45px" }}
+                    bg="linear-gradient(135deg, #4299e1 0%, #3182ce 100%)"
+                    color="white"
+                    mb={{ base: 2, sm: 3 }}
+                    boxShadow="0 4px 16px rgba(66, 153, 225, 0.3)"
+                    _hover={{
+                      transform: 'rotate(-5deg) scale(1.1)',
+                      boxShadow: '0 8px 24px rgba(66, 153, 225, 0.4)'
+                    }}
+                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  >
+                    <Icon as={FaBath} size={{ base: 16, sm: 18 }} />
                   </Circle>
-                  <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                  <Text 
+                    fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
+                    fontWeight="bold" 
+                    color="gray.800"
+                    mb={1}
+                    _hover={{ color: 'blue.600' }}
+                    transition="color 0.3s ease"
+                  >
                     {property.features?.bathRooms || 0}
                   </Text>
-                  <Text fontSize="xs" color="gray.500">Bathrooms</Text>
-                </VStack>
-                <VStack spacing={1}>
-                  <Circle size="40px" bg="green.50" color="green.600">
-                    <Icon as={FaRuler} />
+                  <Text 
+                    fontSize={{ base: "xs", sm: "sm" }}
+                    color="gray.600" 
+                    fontWeight="semibold"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    _hover={{ color: 'blue.500' }}
+                    transition="color 0.3s ease"
+                  >
+                    Bathrooms
+                  </Text>
+                </Box>
+              </Box>
+
+              {/* Square Feet */}
+              <Box
+                bg="white"
+                borderRadius={{ base: "lg", sm: "xl" }}
+                p={{ base: 3, sm: 4 }}
+                textAlign="center"
+                border="1px solid"
+                borderColor="gray.200"
+                boxShadow="0 2px 8px rgba(0, 0, 0, 0.06)"
+                _hover={{
+                  transform: 'translateY(-4px) scale(1.02)',
+                  boxShadow: '0 12px 32px rgba(72, 187, 120, 0.15)',
+                  borderColor: 'green.400'
+                }}
+                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                position="relative"
+                overflow="hidden"
+              >
+                <Box
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  right="0"
+                  bottom="0"
+                  bg="linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
+                  opacity="0"
+                  _hover={{ opacity: 0.05 }}
+                  transition="opacity 0.4s ease"
+                />
+                
+                <Box position="relative" zIndex={1}>
+                  <Circle 
+                    size={{ base: "40px", sm: "45px" }}
+                    bg="linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
+                    color="white"
+                    mb={{ base: 2, sm: 3 }}
+                    boxShadow="0 4px 16px rgba(72, 187, 120, 0.3)"
+                    _hover={{
+                      transform: 'rotate(3deg) scale(1.1)',
+                      boxShadow: '0 8px 24px rgba(72, 187, 120, 0.4)'
+                    }}
+                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  >
+                    <Icon as={FaRuler} size={{ base: 16, sm: 18 }} />
                   </Circle>
-                  <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                  <Text 
+                    fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
+                    fontWeight="bold" 
+                    color="gray.800"
+                    mb={1}
+                    _hover={{ color: 'green.600' }}
+                    transition="color 0.3s ease"
+                  >
                     {property.features?.areaInSquarFoot || 0}
                   </Text>
-                  <Text fontSize="xs" color="gray.500">sq.ft</Text>
-                </VStack>
-                <VStack spacing={1}>
-                  <Circle size="40px" bg="purple.50" color="purple.600">
-                    <Icon as={FaCalendarAlt} />
+                  <Text 
+                    fontSize={{ base: "xs", sm: "sm" }}
+                    color="gray.600" 
+                    fontWeight="semibold"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    _hover={{ color: 'green.500' }}
+                    transition="color 0.3s ease"
+                  >
+                    sq.ft
+                  </Text>
+                </Box>
+              </Box>
+
+              {/* Listed Date */}
+              <Box
+                bg="white"
+                borderRadius={{ base: "lg", sm: "xl" }}
+                p={{ base: 3, sm: 4 }}
+                textAlign="center"
+                border="1px solid"
+                borderColor="gray.200"
+                boxShadow="0 2px 8px rgba(0, 0, 0, 0.06)"
+                _hover={{
+                  transform: 'translateY(-4px) scale(1.02)',
+                  boxShadow: '0 12px 32px rgba(159, 122, 234, 0.15)',
+                  borderColor: 'purple.400'
+                }}
+                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                position="relative"
+                overflow="hidden"
+              >
+                <Box
+                  position="absolute"
+                  top="0"
+                  left="0"
+                  right="0"
+                  bottom="0"
+                  bg="linear-gradient(135deg, #9f7aea 0%, #805ad5 100%)"
+                  opacity="0"
+                  _hover={{ opacity: 0.05 }}
+                  transition="opacity 0.4s ease"
+                />
+                
+                <Box position="relative" zIndex={1}>
+                  <Circle 
+                    size="45px" 
+                    bg="linear-gradient(135deg, #9f7aea 0%, #805ad5 100%)"
+                    color="white"
+                    mb={3}
+                    boxShadow="0 4px 16px rgba(159, 122, 234, 0.3)"
+                    _hover={{
+                      transform: 'rotate(-3deg) scale(1.1)',
+                      boxShadow: '0 8px 24px rgba(159, 122, 234, 0.4)'
+                    }}
+                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  >
+                    <Icon as={FaCalendarAlt} size={18} />
                   </Circle>
-                  <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                  <Text 
+                    fontSize="lg" 
+                    fontWeight="bold" 
+                    color="gray.800"
+                    mb={1}
+                    noOfLines={2}
+                    _hover={{ color: 'purple.600' }}
+                    transition="color 0.3s ease"
+                  >
                     {property.listedDate ? formatDate(property.listedDate) : 'N/A'}
                   </Text>
-                  <Text fontSize="xs" color="gray.500">Listed</Text>
-                </VStack>
-              </SimpleGrid>
+                  <Text 
+                    fontSize="sm" 
+                    color="gray.600" 
+                    fontWeight="semibold"
+                    textTransform="uppercase"
+                    letterSpacing="wider"
+                    _hover={{ color: 'purple.500' }}
+                    transition="color 0.3s ease"
+                  >
+                    Listed
+                  </Text>
+                </Box>
+              </Box>
+            </SimpleGrid>
+          </Box>
 
               <Divider />
 
           {/* Description */}
               <Box>
-                <Heading size="md" color="gray.900" mb={3}>Description</Heading>
-                <Text color="gray.700" lineHeight="1.6">
+                <Heading size={{ base: "sm", sm: "md" }} color="gray.900" mb={{ base: 2, sm: 3 }}>Description</Heading>
+                <Text color="gray.700" lineHeight="1.6" fontSize={{ base: "sm", sm: "md" }}>
                   {property.description}
                 </Text>
               </Box>
 
-          {/* Amenities */}
-              {property.features?.amenities?.length > 0 && (
-                <Box>
-                  <Heading size="md" color="gray.900" mb={3}>Amenities</Heading>
-                  <SimpleGrid columns={{ base: 2, md: 3, lg: 4 }} spacing={2}>
-              {property.features.amenities.map((amenity) => (
-                      <Flex key={amenity} align="center" color="gray.700">
-                        <Circle size="8px" bg="brand.500" mr={2} />
-                        <Text fontSize="sm">{amenity}</Text>
-                      </Flex>
-                    ))}
-                  </SimpleGrid>
+          {/* Amenities - Enhanced with Animations */}
+          {property.features?.amenities?.length > 0 && (
+            <Box
+              bg="white"
+              borderRadius={{ base: "xl", sm: "2xl" }}
+              p={{ base: 4, sm: 5, md: 6 }}
+              border="1px solid"
+              borderColor="gray.200"
+              boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+            >
+              <Flex align="center" mb={{ base: 3, sm: 4 }}>
+                <Box
+                  p={{ base: 2, sm: 3 }}
+                  bg="green.50"
+                  borderRadius={{ base: "lg", sm: "xl" }}
+                  color="green.600"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                  mr={{ base: 3, sm: 4 }}
+                  _hover={{
+                    transform: 'rotate(5deg) scale(1.05)',
+                    boxShadow: '0 4px 12px rgba(72, 187, 120, 0.3)'
+                  }}
+                  transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                >
+                  <Icon as={FaHome} size={{ base: 18, sm: 20 }} />
                 </Box>
-              )}
-
-              {/* Location & Actions */}
-              <Grid templateColumns={{ base: '1fr', md: '1fr auto' }} gap={4} alignItems="center">
                 <Box>
-                  <Heading size="md" color="gray.900" mb={2}>Location</Heading>
-                  <Button
-                    leftIcon={<FaExternalLinkAlt />}
-                    variant="outline"
-                    colorScheme="brand"
-                    size="sm"
-                    onClick={() => {
-                      const url = `https://www.google.com/maps/search/?api=1&query=${property.propertyAddress?.location?.lat},${property.propertyAddress?.location?.lng}`;
-                      window.open(url, '_blank');
+                  <Heading size={{ base: "sm", sm: "md" }} color="gray.900" mb={1}>Amenities</Heading>
+                  <Text color="gray.600" fontSize={{ base: "xs", sm: "sm" }}>Available features and facilities</Text>
+                </Box>
+              </Flex>
+              <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={{ base: 2, sm: 3 }}>
+                {property.features.amenities.map((amenity, index) => (
+                  <Flex 
+                    key={amenity} 
+                    align="center" 
+                    color="gray.700"
+                    p={{ base: 2, sm: 3 }}
+                    bg="gray.50"
+                    borderRadius={{ base: "md", sm: "lg" }}
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _hover={{
+                      bg: "brand.50",
+                      borderColor: "brand.300",
+                      transform: "translateY(-2px) scale(1.02)",
+                      boxShadow: "0 4px 12px rgba(102, 126, 234, 0.15)"
+                    }}
+                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    style={{
+                      animationDelay: `${index * 0.1}s`
+                    }}
+                    animation="fadeInUp 0.6s ease-out forwards"
+                    opacity="0"
+                    transform="translateY(20px)"
+                    _animation={{
+                      opacity: 1,
+                      transform: "translateY(0)"
                     }}
                   >
-                    View on Google Maps
-                  </Button>
-                </Box>
-                
-                <HStack spacing={3}>
-                  <Button
-                    leftIcon={<FaPhone />}
-                    colorScheme="brand"
-                    variant="solid"
-                    size="sm"
-                  >
-                    Contact
-                  </Button>
-                  <Button
-                    leftIcon={<FaEnvelope />}
-                    colorScheme="gray"
-                    variant="outline"
-                    size="sm"
-                  >
-                    Email
-                  </Button>
-                </HStack>
-              </Grid>
+                    <Circle 
+                      size="10px" 
+                      bg="brand.500" 
+                      mr={3}
+                      _hover={{
+                        transform: 'scale(1.2)',
+                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
+                      }}
+                      transition="all 0.3s ease"
+                    />
+                    <Text 
+                      fontSize={{ base: "xs", sm: "sm" }}
+                      fontWeight="medium"
+                      _hover={{ color: 'brand.600' }}
+                      transition="color 0.3s ease"
+                    >
+                      {amenity}
+                    </Text>
+                  </Flex>
+                ))}
+              </SimpleGrid>
+            </Box>
+          )}
+
+              {/* Location & Actions - Enhanced with Animations */}
+              <Box
+                bg="white"
+                borderRadius={{ base: "xl", sm: "2xl" }}
+                p={{ base: 4, sm: 5, md: 6 }}
+                border="1px solid"
+                borderColor="gray.200"
+                boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+              >
+                <VStack spacing={{ base: 4, sm: 5, md: 6 }} align="center" textAlign="center">
+                  {/* Location Section */}
+                  <Box w="full" maxW="500px" display="flex" flexDirection="column" alignItems="center">
+                    <VStack spacing={{ base: 3, sm: 4 }} align="center" textAlign="center">
+                      <Box
+                        p={{ base: 2, sm: 3 }}
+                        bg="orange.50"
+                        borderRadius={{ base: "lg", sm: "xl" }}
+                        color="orange.600"
+                        display="flex"
+                        alignItems="center"
+                        justifyContent="center"
+                        _hover={{
+                          transform: 'rotate(-5deg) scale(1.05)',
+                          boxShadow: '0 4px 12px rgba(237, 137, 54, 0.3)'
+                        }}
+                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                      >
+                        <Icon as={FaMapMarkerAlt} size={{ base: 18, sm: 20 }} />
+                      </Box>
+                      <Box textAlign="center">
+                        <Heading size={{ base: "sm", sm: "md" }} color="gray.900" mb={1}>Location</Heading>
+                        <Text 
+                          color="gray.600" 
+                          fontSize={{ base: "xs", sm: "sm" }} 
+                          mb={4} // You can adjust the value (e.g., 2, 4, 6)
+                        >
+                          Property location and directions
+                        </Text>                      </Box>
+                    </VStack>
+                    <Button
+                      leftIcon={<FaExternalLinkAlt />}
+                      variant="outline"
+                      colorScheme="brand"
+                      size={{ base: "sm", sm: "md" }}
+                      borderRadius={{ base: "md", sm: "lg" }}
+                      fontWeight="bold"
+                      w="full"
+                      onClick={() => {
+                        const url = `https://www.google.com/maps/search/?api=1&query=${property.propertyAddress?.location?.lat},${property.propertyAddress?.location?.lng}`;
+                        window.open(url, '_blank');
+                      }}
+                      _hover={{
+                        bg: "brand.50",
+                        borderColor: "brand.400",
+                        transform: "translateY(-2px) scale(1.02)",
+                        boxShadow: "0 4px 12px rgba(102, 126, 234, 0.2)"
+                      }}
+                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    >
+                      View on Google Maps
+                    </Button>
+                  </Box>
+                  
+                  {/* Action Buttons */}
+                  <Box w="full" maxW="500px">
+                    <VStack spacing={{ base: 2, sm: 3 }} align="stretch">
+                      <Button
+                        leftIcon={<FaPhone />}
+                        colorScheme="brand"
+                        variant="solid"
+                        size={{ base: "sm", sm: "md" }}
+                        borderRadius={{ base: "md", sm: "lg" }}
+                        fontWeight="bold"
+                        w="full"
+                        _hover={{
+                          transform: "translateY(-2px) scale(1.02)",
+                          boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)"
+                        }}
+                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                      >
+                        Contact Agent
+                      </Button>
+                      <Button
+                        leftIcon={<FaEnvelope />}
+                        colorScheme="gray"
+                        variant="outline"
+                        size={{ base: "sm", sm: "md" }}
+                        borderRadius={{ base: "md", sm: "lg" }}
+                        fontWeight="bold"
+                        w="full"
+                        _hover={{
+                          bg: "gray.50",
+                          borderColor: "gray.400",
+                          transform: "translateY(-2px) scale(1.02)",
+                          boxShadow: "0 4px 12px rgba(113, 128, 150, 0.2)"
+                        }}
+                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                      >
+                        Send Email
+                      </Button>
+                    </VStack>
+                  </Box>
+                </VStack>
+              </Box>
 
               {/* Image Thumbnails */}
               {hasImages && (
                 <Box>
-                  <Flex justify="space-between" align="center" mb={3}>
-                    <Heading size="md" color="gray.900">Gallery</Heading>
+                  <Flex justify="space-between" align="center" mb={{ base: 2, sm: 3 }}>
+                    <Heading size={{ base: "sm", sm: "md" }} color="gray.900">Gallery</Heading>
                     <Button
                       leftIcon={<FaUpload />}
-                      size="sm"
+                      size={{ base: "xs", sm: "sm" }}
                       variant="outline"
                       colorScheme="brand"
                       onClick={() => fileInputRef.current?.click()}
@@ -530,7 +931,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                       Add Image
                     </Button>
                   </Flex>
-                  <SimpleGrid columns={{ base: 4, md: 6, lg: 8 }} spacing={2}>
+                  <SimpleGrid columns={{ base: 3, sm: 4, md: 6, lg: 8 }} spacing={{ base: 1, sm: 2 }}>
                     {propertyImages.map((image, index) => (
                       <Box
                         key={image._id}

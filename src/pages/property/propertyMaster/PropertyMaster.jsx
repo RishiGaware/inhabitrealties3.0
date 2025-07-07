@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaBed, FaBath, FaRuler, FaEye } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaBed, FaBath, FaRuler, FaEye, FaImage } from 'react-icons/fa';
 import { MdLocationOn } from 'react-icons/md';
-import { Box, Heading, Flex, Grid, IconButton, useDisclosure, Text, Badge } from '@chakra-ui/react';
+import { Box, Heading, Flex, Grid, IconButton, useDisclosure, Text, Badge, Image, Skeleton, SkeletonText } from '@chakra-ui/react';
 import PropertyFormPopup from './PropertyFormPopup';
 import PropertyPreview from './PropertyPreview';
 import CommonCard from '../../../components/common/Card/CommonCard';
@@ -273,6 +273,56 @@ const PropertyMaster = () => {
     }).format(price);
   };
 
+  // Helper function to get fallback image based on property type
+  const getFallbackImage = (property) => {
+    // Free, high-quality property images (completely free to use, no attribution required)
+    const fallbackImages = [
+      'https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643383/pexels-photo-1643383.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643384/pexels-photo-1643384.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643385/pexels-photo-1643385.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643386/pexels-photo-1643386.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643387/pexels-photo-1643387.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643388/pexels-photo-1643388.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643389/pexels-photo-1643389.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643390/pexels-photo-1643390.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643391/pexels-photo-1643391.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643392/pexels-photo-1643392.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643393/pexels-photo-1643393.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643394/pexels-photo-1643394.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643395/pexels-photo-1643395.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643396/pexels-photo-1643396.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643397/pexels-photo-1643397.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643398/pexels-photo-1643398.jpeg?auto=compress&cs=tinysrgb&w=800',
+      'https://images.pexels.com/photos/1643399/pexels-photo-1643399.jpeg?auto=compress&cs=tinysrgb&w=800'
+    ];
+    
+    // Use property ID to consistently select the same fallback image
+    if (property._id) {
+      const index = property._id.toString().charCodeAt(0) % fallbackImages.length;
+      return fallbackImages[index];
+    }
+    
+    // Default fallback
+    return fallbackImages[0];
+  };
+
+  // Helper function to get property image
+  const getPropertyImage = (property) => {
+    // If property has images array and first image exists
+    if (property.images && property.images.length > 0 && property.images[0]) {
+      return property.images[0];
+    }
+    
+    // If property has a single image string
+    if (property.image) {
+      return property.image;
+    }
+    
+    // Use fallback image
+    return getFallbackImage(property);
+  };
+
   const filteredProperties = selectedType === 'ALL' 
     ? properties 
     : properties.filter(property => {
@@ -482,19 +532,51 @@ const PropertyMaster = () => {
                 cursor="pointer" 
                 onClick={() => handlePreview(property)}
                 position="relative"
+                bg="gray.100"
               >
-                <img
-                  src={property.images?.[0] || 'default-property.jpg'}
+                <Image
+                  src={getPropertyImage(property)}
                   alt={property.name}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.3s ease'
-                  }}
-                  onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                  onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                  w="full"
+                  h="full"
+                  objectFit="cover"
+                  fallback={
+                    <Flex 
+                      direction="column" 
+                      align="center" 
+                      justify="center" 
+                      h="full" 
+                      bg="gray.100"
+                      color="gray.400"
+                    >
+                      <FaImage size={32} />
+                      <Text fontSize="xs" mt={2} textAlign="center">
+                        No Image
+                      </Text>
+                    </Flex>
+                  }
+                  transition="transform 0.3s ease"
+                  _hover={{ transform: 'scale(1.05)' }}
                 />
+                
+                {/* Image Count Badge */}
+                {property.images && property.images.length > 1 && (
+                  <Badge
+                    position="absolute"
+                    top={2}
+                    left={2}
+                    bg="rgba(0,0,0,0.7)"
+                    color="white"
+                    px={2}
+                    py={1}
+                    borderRadius="full"
+                    fontSize="2xs"
+                    fontWeight="bold"
+                    backdropFilter="blur(4px)"
+                  >
+                    +{property.images.length - 1}
+                  </Badge>
+                )}
                 
                 {/* Status Badge */}
                 <Badge
