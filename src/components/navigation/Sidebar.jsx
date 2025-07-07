@@ -37,7 +37,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     {
       title: "Customer Management",
       icon: <BiUser />,
-      subMenu: ["Customer Profiles", "Documents", "Site Visits"],
+      subMenu: ["Customer Profiles", "Documents", "Meeting Scheduler"],
       key: "customers"
     },
     
@@ -103,6 +103,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       icon: <MdPerson />,
       subMenu: [
         "My Bookings",
+        "My Meetings",
         "Documents",
         "Payments",
         "Referrals"
@@ -137,7 +138,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'customer-profiles': '/customers/profiles',
       'documents': '/customers/documents',
       'document-types': '/customers/document-types',
-      'site-visits': '/customers/site-visits'
+      'meeting-scheduler': '/customers/meeting-scheduler'
     },
     'sales': {
       'sales-list': '/admin/sales/list',
@@ -169,6 +170,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     },
     'client': {
       'my-bookings': '/client/my-bookings',
+      'my-meetings': '/client/my-meetings',
       'documents': '/client/documents',
       'payments': '/client/payments',
       'referrals': '/client/referrals'

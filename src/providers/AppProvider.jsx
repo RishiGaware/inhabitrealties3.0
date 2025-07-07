@@ -11,6 +11,7 @@ import { ReferenceSourceProvider } from '../context/ReferenceSourceContext';
 import { UserProfilePictureProvider } from '../context/UserProfilePictureContext';
 import { DocumentTypeProvider } from '../context/DocumentTypeContext';
 import { DocumentProvider } from '../context/DocumentContext';
+import { MeetingProvider } from '../context/MeetingContext';
 
 const AppProvider = ({ children }) => {
   return (
@@ -26,7 +27,9 @@ const AppProvider = ({ children }) => {
                       <UserProfilePictureProvider>
                         <DocumentTypeProvider>
                           <DocumentProvider>
-                            {children}
+                            <MeetingProvider>
+                              {children}
+                            </MeetingProvider>
                           </DocumentProvider>
                         </DocumentTypeProvider>
                       </UserProfilePictureProvider>

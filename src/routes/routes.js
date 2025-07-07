@@ -21,7 +21,7 @@ import LeadQualification from '../pages/lead/LeadQualification';
 import CustomerProfiles from '../pages/customers/CustomerProfiles';
 import CustomerDocuments from '../pages/customers/Documents';
 import CustomerDocumentTypeManagement from '../pages/customers/DocumentTypeManagement';
-import SiteVisits from '../pages/customers/SiteVisits';
+import MeetingScheduler from '../pages/customers/MeetingScheduler';
 import Inventory from '../pages/bookings/Inventory';
 import BookedUnits from '../pages/bookings/BookedUnits';
 import PaymentStatus from '../pages/bookings/PaymentStatus';
@@ -32,6 +32,7 @@ import Referrals from '../pages/postSale/Referrals';
 import Rewards from '../pages/postSale/Rewards';
 import Points from '../pages/postSale/Points';
 import MyBookings from '../pages/client/MyBookings';
+import MyMeetings from '../pages/client/MyMeetings';
 import ClientDocuments from '../pages/client/Documents';
 import ClientPayments from '../pages/client/Payments';
 import ClientReferrals from '../pages/client/Referrals';
@@ -86,7 +87,7 @@ export const ROUTES = [
   { name: 'customerProfiles', path: '/customers/profiles', component: CustomerProfiles, permissions: 'public' },
   { name: 'customerDocuments', path: '/customers/documents', component: CustomerDocuments, permissions: 'public' },
   { name: 'customerDocumentTypes', path: '/customers/document-types', component: CustomerDocumentTypeManagement, permissions: 'public' },
-  { name: 'customerSiteVisits', path: '/customers/site-visits', component: SiteVisits, permissions: 'public' },
+  { name: 'customerMeetingScheduler', path: '/customers/meeting-scheduler', component: MeetingScheduler, permissions: 'public' },
 
   // Sales
   { name: 'salesList', path: '/sales/sales-list', component: SalesList, permissions: 'public' },
@@ -119,6 +120,7 @@ export const ROUTES = [
 
   // Client
   { name: 'clientMyBookings', path: '/client/my-bookings', component: MyBookings, permissions: 'public' },
+  { name: 'clientMyMeetings', path: '/client/my-meetings', component: MyMeetings, permissions: 'public' },
   { name: 'clientDocuments', path: '/client/documents', component: ClientDocuments, permissions: 'public' },
   { name: 'clientPayments', path: '/client/payments', component: ClientPayments, permissions: 'public' },
   { name: 'clientReferrals', path: '/client/referrals', component: ClientReferrals, permissions: 'public' },

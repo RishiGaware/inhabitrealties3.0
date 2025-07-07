@@ -30,7 +30,7 @@ import LeadFollowUp from './pages/lead/LeadFollowUp';
 import CustomerProfiles from './pages/customers/CustomerProfiles';
 import CustomerDocuments from './pages/customers/Documents';
 import CustomerDocumentTypeManagement from './pages/customers/DocumentTypeManagement';
-import SiteVisits from './pages/customers/SiteVisits';
+import MeetingScheduler from './pages/customers/MeetingScheduler';
 import Inventory from './pages/bookings/Inventory';
 import BookedUnits from './pages/bookings/BookedUnits';
 import PaymentStatus from './pages/bookings/PaymentStatus';
@@ -41,6 +41,7 @@ import Referrals from './pages/postSale/Referrals';
 import Rewards from './pages/postSale/Rewards';
 import Points from './pages/postSale/Points';
 import MyBookings from './pages/client/MyBookings';
+import MyMeetings from './pages/client/MyMeetings';
 import ClientDocuments from './pages/client/Documents';
 import ClientPayments from './pages/client/Payments';
 import ClientReferrals from './pages/client/Referrals';
@@ -149,7 +150,7 @@ const App = () => {
             <Route path='/customers/profiles' element={<DashboardLayout><CustomerProfiles /></DashboardLayout>} />
             <Route path='/customers/documents' element={<DashboardLayout><CustomerDocuments /></DashboardLayout>} />
             <Route path='/customers/document-types' element={<DashboardLayout><CustomerDocumentTypeManagement /></DashboardLayout>} />
-            <Route path='/customers/site-visits' element={<DashboardLayout><SiteVisits /></DashboardLayout>} />
+            <Route path='/customers/meeting-scheduler' element={<DashboardLayout><MeetingScheduler /></DashboardLayout>} />
             
             {/* Sales Management Routes */}
             <Route path='/sales/sales-list' element={<DashboardLayout><SalesList /></DashboardLayout>} />
@@ -182,6 +183,7 @@ const App = () => {
             
             {/* Client Portal Routes */}
             <Route path='/client/my-bookings' element={<DashboardLayout><MyBookings /></DashboardLayout>} />
+            <Route path='/client/my-meetings' element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
             <Route path='/client/documents' element={<DashboardLayout><ClientDocuments /></DashboardLayout>} />
             <Route path='/client/payments' element={<DashboardLayout><ClientPayments /></DashboardLayout>} />
             <Route path='/client/referrals' element={<DashboardLayout><ClientReferrals /></DashboardLayout>} />
