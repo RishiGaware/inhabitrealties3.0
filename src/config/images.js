@@ -1,6 +1,8 @@
 // Banner Images
 export const BANNER_IMAGES = {
   main: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=1600&q=80',
+  // Futuristic real estate banner image - modern luxury homes and architecture
+  futuristic: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=1600&q=80',
 };
 
 // Authentication Pages

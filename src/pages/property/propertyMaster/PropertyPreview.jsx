@@ -410,20 +410,20 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
           <Box p={{ base: 3, sm: 4, md: 6, lg: 8 }}>
             <VStack spacing={{ base: 4, sm: 5, md: 6, lg: 8 }} align="stretch">
               {/* Header */}
-                              <Box>
+              <Box>
                   <Heading size={{ base: "md", sm: "lg", md: "xl" }} color="gray.900" mb={{ base: 2, sm: 3 }}>
-                    {property.name}
-                  </Heading>
+                  {property.name}
+                </Heading>
                   <Flex align="center" color="gray.600" fontSize={{ base: "xs", sm: "sm" }} mb={{ base: 2, sm: 3 }}>
                     <Icon as={FaMapMarkerAlt} mr={{ base: 1, sm: 2 }} />
                     <Text noOfLines={{ base: 2, sm: 1 }}>
-                      {`${property.propertyAddress?.street}, ${property.propertyAddress?.area}, ${property.propertyAddress?.city}, ${property.propertyAddress?.state} ${property.propertyAddress?.zipOrPinCode}`}
-                    </Text>
-                  </Flex>
-                  <Text fontSize={{ base: "xl", sm: "2xl", md: "3xl" }} fontWeight="bold" color="brand.500">
-                    {formatPrice(property.price)}
+                    {`${property.propertyAddress?.street}, ${property.propertyAddress?.area}, ${property.propertyAddress?.city}, ${property.propertyAddress?.state} ${property.propertyAddress?.zipOrPinCode}`}
                   </Text>
-                </Box>
+                </Flex>
+                  <Text fontSize={{ base: "xl", sm: "2xl", md: "3xl" }} fontWeight="bold" color="brand.500">
+              {formatPrice(property.price)}
+                </Text>
+              </Box>
 
           {/* Features Grid - Enhanced with Animations */}
           <Box 
@@ -723,7 +723,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                   </Text>
                 </Box>
               </Box>
-            </SimpleGrid>
+              </SimpleGrid>
           </Box>
 
               <Divider />
@@ -737,7 +737,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
               </Box>
 
           {/* Amenities - Enhanced with Animations */}
-          {property.features?.amenities?.length > 0 && (
+              {property.features?.amenities?.length > 0 && (
             <Box
               bg="white"
               borderRadius={{ base: "xl", sm: "2xl" }}
@@ -816,11 +816,11 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     >
                       {amenity}
                     </Text>
-                  </Flex>
-                ))}
-              </SimpleGrid>
-            </Box>
-          )}
+                      </Flex>
+                    ))}
+                  </SimpleGrid>
+                </Box>
+              )}
 
               {/* Location & Actions - Enhanced with Animations */}
               <Box
@@ -861,18 +861,18 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                           Property location and directions
                         </Text>                      </Box>
                     </VStack>
-                    <Button
-                      leftIcon={<FaExternalLinkAlt />}
-                      variant="outline"
-                      colorScheme="brand"
+                  <Button
+                    leftIcon={<FaExternalLinkAlt />}
+                    variant="outline"
+                    colorScheme="brand"
                       size={{ base: "sm", sm: "md" }}
                       borderRadius={{ base: "md", sm: "lg" }}
                       fontWeight="bold"
                       w="full"
-                      onClick={() => {
-                        const url = `https://www.google.com/maps/search/?api=1&query=${property.propertyAddress?.location?.lat},${property.propertyAddress?.location?.lng}`;
-                        window.open(url, '_blank');
-                      }}
+                    onClick={() => {
+                      const url = `https://www.google.com/maps/search/?api=1&query=${property.propertyAddress?.location?.lat},${property.propertyAddress?.location?.lng}`;
+                      window.open(url, '_blank');
+                    }}
                       _hover={{
                         bg: "brand.50",
                         borderColor: "brand.400",
@@ -880,18 +880,18 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         boxShadow: "0 4px 12px rgba(102, 126, 234, 0.2)"
                       }}
                       transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                    >
-                      View on Google Maps
-                    </Button>
-                  </Box>
-                  
+                  >
+                    View on Google Maps
+                  </Button>
+                </Box>
+                
                   {/* Action Buttons */}
                   <Box w="full" maxW="500px">
                     <VStack spacing={{ base: 2, sm: 3 }} align="stretch">
-                      <Button
-                        leftIcon={<FaPhone />}
-                        colorScheme="brand"
-                        variant="solid"
+                  <Button
+                    leftIcon={<FaPhone />}
+                    colorScheme="brand"
+                    variant="solid"
                         size={{ base: "sm", sm: "md" }}
                         borderRadius={{ base: "md", sm: "lg" }}
                         fontWeight="bold"
@@ -908,11 +908,11 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                       >
                         Contact Agent
-                      </Button>
-                      <Button
-                        leftIcon={<FaEnvelope />}
-                        colorScheme="gray"
-                        variant="outline"
+                  </Button>
+                  <Button
+                    leftIcon={<FaEnvelope />}
+                    colorScheme="gray"
+                    variant="outline"
                         size={{ base: "sm", sm: "md" }}
                         borderRadius={{ base: "md", sm: "lg" }}
                         fontWeight="bold"
@@ -933,7 +933,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                       >
                         Send Email
-                      </Button>
+                  </Button>
                     </VStack>
                   </Box>
                 </VStack>

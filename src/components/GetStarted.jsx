@@ -23,7 +23,7 @@ const GetStarted = () => {
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/register')}
             className="group relative inline-flex items-center justify-center px-6 py-3 text-base sm:px-8 sm:py-3.5 sm:text-lg overflow-hidden font-bold text-white transition-all duration-300 ease-in-out rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-xl hover:shadow-2xl transform hover:scale-105"
             style={{ 
               fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -43,7 +43,7 @@ const GetStarted = () => {
           </button>
           
           <button
-            onClick={() => navigate('/register')}
+            onClick={() => navigate('/login')}
             className="group relative inline-flex items-center justify-center px-6 py-3 text-base sm:px-8 sm:py-3.5 sm:text-lg overflow-hidden font-bold text-purple-600 transition-all duration-300 ease-in-out rounded-full border-2 border-purple-600 hover:bg-purple-600 hover:text-white shadow-lg hover:shadow-xl transform hover:scale-105"
             style={{ 
               fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
@@ -54,7 +54,7 @@ const GetStarted = () => {
             }}
           >
             <span className="relative flex items-center font-semibold">
-              Create Account
+              Sign In
             </span>
           </button>
         </div>

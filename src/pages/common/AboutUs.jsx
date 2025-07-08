@@ -1,14 +1,27 @@
 import React from 'react';
-import { FaUserFriends, FaHome, FaHandshake } from 'react-icons/fa';
+import { FaUserFriends, FaHome, FaHandshake, FaArrowLeft } from 'react-icons/fa';
 import aboutImage from '../../assets/images/loginImage1.jpg'; // Reusing a nice image
 import useOnScreen from '../../hooks/useOnScreen';
+import { useNavigate } from 'react-router-dom';
 
 const AboutUs = () => {
+  const navigate = useNavigate();
   const [headingRef, isVisible] = useOnScreen({ threshold: 0.3 });
   const [contentRef, isContentVisible] = useOnScreen({ threshold: 0.2 });
 
   return (
     <div className="bg-gradient-to-br from-white to-gray-50 py-20 px-4 sm:px-6 lg:px-8">
+      {/* Back to Home Button */}
+      <div className="max-w-7xl mx-auto mb-8">
+        <button
+          onClick={() => navigate('/')}
+          className="inline-flex items-center px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100 hover:text-purple-700 transition-all duration-300 transform hover:scale-105"
+          style={{ fontFamily: "'Inter', sans-serif" }}
+        >
+          <FaArrowLeft className="mr-2" />
+          Back to Home
+        </button>
+      </div>
       <div className="max-w-7xl mx-auto">
         <div ref={headingRef} className="lg:text-center">
           <h2

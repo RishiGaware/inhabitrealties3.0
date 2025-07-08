@@ -1,8 +1,10 @@
 import React from 'react';
 import { FaStar, FaQuoteLeft } from 'react-icons/fa';
 import { TESTIMONIAL_IMAGES } from '../config/images';
+import { useNavigate } from 'react-router-dom';
 
 const Testimonials = () => {
+  const navigate = useNavigate();
   const testimonials = [
     {
       name: "Sarah L.",
@@ -92,10 +94,14 @@ const Testimonials = () => {
               Start your journey today and experience the difference that professional real estate services can make.
             </p>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <button className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 text-xs font-semibold">
+              <button 
+                onClick={() => navigate('/register')}
+                className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-all duration-300 transform hover:scale-105 text-xs font-semibold">
                 Get Started Today
               </button>
-              <button className="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-md hover:bg-purple-600 hover:text-white transition-all duration-300 transform hover:scale-105 text-xs font-semibold">
+              <button 
+                onClick={() => navigate('/about')}
+                className="px-4 py-2 border-2 border-purple-600 text-purple-600 rounded-md hover:bg-purple-600 hover:text-white transition-all duration-300 transform hover:scale-105 text-xs font-semibold">
                 Learn More
               </button>
             </div>

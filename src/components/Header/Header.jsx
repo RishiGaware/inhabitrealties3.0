@@ -69,6 +69,9 @@ const Header = () => {
 
   const NavLinks = ({ inMobileMenu = false }) => (
     <div className={`flex ${inMobileMenu ? 'flex-col space-y-4 p-4' : 'items-center space-x-6'}`}>
+      <Link to="/" onClick={closeMenu} className="hover:text-purple-600 transition-colors">
+        Home
+      </Link>
       <Link to="/contact" onClick={closeMenu} className="hover:text-purple-600 transition-colors">
         Contact Us
       </Link>
