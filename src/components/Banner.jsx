@@ -19,10 +19,10 @@ const Banner = () => {
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-tight tracking-tight bounce-in"
               style={{
                 fontFamily: "'Playfair Display', Georgia, serif",
-                textShadow: '0 6px 20px rgba(0,0,0,0.95), 0 4px 12px rgba(0,0,0,0.8), 0 2px 6px rgba(0,0,0,0.7)',
-                color: '#FFFFFF',
+                color: 'rgb(215, 17, 220)', // Updated vibrant magenta
                 fontWeight: '900',
-                letterSpacing: '-0.02em'
+                letterSpacing: '-0.02em',
+                textShadow: '0 2px 8px rgba(0,0,0,0.18)', // Soft black shadow only
               }}>
             INHABIT REALTIES
           </h1>
@@ -32,13 +32,12 @@ const Banner = () => {
              style={{
                animationDelay: '0.2s',
                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-               textShadow: '0 4px 12px rgba(0,0,0,0.95), 0 2px 8px rgba(0,0,0,0.9), 0 1px 4px rgba(0,0,0,0.8)',
-               color: '#FFFFFF',
+               color: '#fff',
                fontWeight: '600',
-               lineHeight: '1.6'
+               lineHeight: '1.6',
+               textShadow: '0 2px 8px rgba(0,0,0,0.32)'
              }}>
-            Discover exceptional properties with our curated collection of premium real estate listings.
-            Your perfect home awaits.
+            We connect people with the homes they’ve always imagined
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3 justify-center items-center bounce-in" style={{ animationDelay: '0.4s' }}>
@@ -74,10 +73,10 @@ const Banner = () => {
           <p className="text-sm font-semibold tracking-wide uppercase"
              style={{
                fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-               textShadow: '0 3px 8px rgba(0,0,0,0.95), 0 2px 6px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)',
-               color: '#FFFFFF',
+               color: 'rgb(77, 61, 112)',
                fontWeight: '700',
-               letterSpacing: '0.05em'
+               letterSpacing: '0.05em',
+               textShadow: '0 0 4px rgba(255,255,255,0.8), 0 0 8px rgba(255,255,255,0.7), 0 0 12px rgba(255,255,255,0.6)'
             }}>
             Trusted by 10,000+ families
           </p>
