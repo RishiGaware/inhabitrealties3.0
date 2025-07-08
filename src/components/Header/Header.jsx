@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiMenu, FiX } from 'react-icons/fi';
 import logo from '../../assets/images/logo.png';
 import logoWhite from '../../assets/images/logown.png';
@@ -44,6 +44,7 @@ const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const location = useLocation();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -69,17 +70,43 @@ const Header = () => {
 
   const NavLinks = ({ inMobileMenu = false }) => (
     <div className={`flex ${inMobileMenu ? 'flex-col space-y-4 p-4' : 'items-center space-x-6'}`}>
-      <Link to="/" onClick={closeMenu} 
-        className="hover:text-purple-600 transition-colors"
-        style={{ color: '#1E293B', fontWeight: 600 }}
+      <Link
+        to="/"
+        onClick={closeMenu}
+        className="group transition-colors relative"
+        style={{ color: '#1E293B', fontWeight: 600, paddingBottom: 2 }}
       >
-        Home
+        <span
+          style={{
+            borderBottom: location.pathname === '/' ? '2.5px solid #D711DC' : '2.5px solid transparent',
+            transition: 'border-color 0.2s',
+            color: location.pathname === '/' ? '#D711DC' : undefined,
+            paddingBottom: 2,
+            display: 'inline-block',
+          }}
+          className="group-hover:border-b-2 group-hover:border-[#D711DC] group-hover:text-[#D711DC]"
+        >
+          Home
+        </span>
       </Link>
-      <Link to="/contact" onClick={closeMenu} 
-        className="hover:text-purple-600 transition-colors"
-        style={{ color: '#1E293B', fontWeight: 600 }}
+      <Link
+        to="/contact"
+        onClick={closeMenu}
+        className="group transition-colors relative"
+        style={{ color: '#1E293B', fontWeight: 600, paddingBottom: 2 }}
       >
-        Contact Us
+        <span
+          style={{
+            borderBottom: location.pathname === '/contact' ? '2.5px solid #D711DC' : '2.5px solid transparent',
+            transition: 'border-color 0.2s',
+            color: location.pathname === '/contact' ? '#D711DC' : undefined,
+            paddingBottom: 2,
+            display: 'inline-block',
+          }}
+          className="group-hover:border-b-2 group-hover:border-[#D711DC] group-hover:text-[#D711DC]"
+        >
+          Contact Us
+        </span>
       </Link>
       <button
         onClick={() => {
