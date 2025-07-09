@@ -25,10 +25,10 @@ export const ROLE_ENDPOINTS = {
 };
 
 export const PROPERTY_TYPE_ENDPOINTS = {
-  GET_ALL: '/properytypes',
-  CREATE: '/properytypes/create',
-  EDIT: (id) => `/properytypes/edit/${id}`,
-  DELETE: (id) => `/properytypes/delete/${id}`,
+  GET_ALL: '/propertytypes',
+  CREATE: '/propertytypes/create',
+  EDIT: (id) => `/propertytypes/edit/${id}`,
+  DELETE: (id) => `/propertytypes/delete/${id}`,
 };
 
 export const LEAD_STATUS_ENDPOINTS = {
