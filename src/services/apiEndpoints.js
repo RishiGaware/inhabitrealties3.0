@@ -85,6 +85,6 @@ export const DOCUMENT_ENDPOINTS = {
   CREATE: '/documents/create',
   EDIT: (id) => `/documents/edit/${id}`,
   DELETE: (id) => `/documents/delete/${id}`,
-  GET_BY_USER: (userId) => `/documents/user/${userId}`,
+  GET_BY_USER: (userId) => `/documents/${userId}`,
   GET_BY_DOCUMENT_TYPE: (documentTypeId) => `/documents/type/${documentTypeId}`,
 };

@@ -53,7 +53,6 @@ import { useDocumentTypeContext } from '../../context/DocumentTypeContext';
 import { useUserContext } from '../../context/UserContext';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
-
 const Documents = () => {
   const toast = useToast();
   const [selectedDocument, setSelectedDocument] = useState(null);
@@ -109,7 +108,7 @@ const Documents = () => {
   const documentContext = useDocumentContext();
   const documentTypeContext = useDocumentTypeContext();
   const userContext = useUserContext();
-  const { documents, getAllDocuments, addDocument, updateDocument, removeDocument, loading } = documentContext;
+  const { documents, addDocument, updateDocument, removeDocument, loading, getAllDocuments } = documentContext;
   const { documentTypes, getAllDocumentTypes } = documentTypeContext;
   const { users, getAllUsers } = userContext;
 
@@ -288,12 +287,13 @@ const Documents = () => {
 
     setIsSubmitting(true);
     setIsApiCallInProgress(true);
-
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('userId', formData.userId);
+      // Always include userId in the payload (for both add and edit)
+      const auth = JSON.parse(localStorage.getItem("auth"));
+      const userId = auth?.data?._id;
+      formDataToSend.append('userId', userId);
       formDataToSend.append('documentTypeId', formData.documentTypeId);
-      
       if (uploadedFile) {
         formDataToSend.append('document', uploadedFile);
       }

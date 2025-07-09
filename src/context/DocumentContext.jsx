@@ -3,7 +3,8 @@ import {
   fetchDocuments, 
   createDocument, 
   editDocument, 
-  deleteDocument
+  deleteDocument,
+  getDocumentsByUser as getDocumentsByUserService
 } from '../services/documents/documentService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
 
@@ -30,7 +31,6 @@ export const DocumentProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchDocuments();
-      console.log('DocumentContext: Fetch documents response:', res);
       setDocuments(res.data || []);
     } catch (err) {
       console.error('DocumentContext: Fetch documents error:', err);
@@ -64,7 +64,6 @@ export const DocumentProvider = ({ children }) => {
   const getDocumentById = useCallback(async (id) => {
     try {
       const res = await getDocumentById(id);
-      console.log('DocumentContext: Get by ID response:', res);
       return res.data;
     } catch (err) {
       console.error('DocumentContext: Get by ID error:', err);
@@ -76,8 +75,7 @@ export const DocumentProvider = ({ children }) => {
   const getDocumentsByUser = useCallback(async (userId) => {
     setLoading(true);
     try {
-      const res = await getDocumentsByUser(userId);
-      console.log('DocumentContext: Get by user response:', res);
+      const res = await getDocumentsByUserService(userId);
       return res.data || [];
     } catch (err) {
       console.error('DocumentContext: Get by user error:', err);
@@ -92,7 +90,6 @@ export const DocumentProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await getDocumentsByType(documentTypeId);
-      console.log('DocumentContext: Get by type response:', res);
       return res.data || [];
     } catch (err) {
       console.error('DocumentContext: Get by type error:', err);
@@ -107,7 +104,6 @@ export const DocumentProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createDocument(documentData);
-      console.log('DocumentContext: Add document response:', response);
       
       const newDocument = {
         ...documentData,
@@ -124,6 +120,9 @@ export const DocumentProvider = ({ children }) => {
       };
       
       setDocuments(prevDocs => [...prevDocs, newDocument]);
+      
+      // Refresh all documents after add
+      await getAllDocuments();
       
       const successMessage = response?.message || 'Document added successfully';
       showSuccessToast(successMessage);
@@ -159,12 +158,7 @@ export const DocumentProvider = ({ children }) => {
   const updateDocument = async (id, documentData) => {
     setLoading(true);
     try {
-      console.log('DocumentContext: Updating document with ID:', id);
-      console.log('DocumentContext: Update data:', documentData);
-      
       const response = await editDocument(id, documentData);
-      console.log('DocumentContext: Update response:', response);
-      
       setDocuments(prevDocs => 
         prevDocs.map(doc => 
           doc._id === id 
@@ -221,8 +215,6 @@ export const DocumentProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deleteDocument(id);
-      console.log('DocumentContext: Delete document response:', response);
-      
       setDocuments(prevDocs => prevDocs.filter(doc => doc._id !== id));
       
       const successMessage = response?.message || 'Document deleted successfully';
