@@ -69,15 +69,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       key: "payments"
     },
     {
-      title: "Rent Management", 
-      icon: <FaHome />,
-      subMenu: [
-        "Rent Roll",
-        "Lease Management"
-      ],
-      key: "rent"
-    },
-    {
       title: "Accounting", 
       icon: <FaChartBar />,
       subMenu: [
