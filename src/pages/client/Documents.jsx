@@ -1,256 +1,874 @@
-import React, { useState } from 'react';
-import { Box, Heading, Flex, Button, Text, Tag, IconButton, Grid, useDisclosure } from '@chakra-ui/react';
-import { FaDownload, FaEye, FaFileAlt, FaUpload, FaPlus } from 'react-icons/fa';
-import CommonCard from '../../components/common/Card/CommonCard';
-import CommonTable from '../../components/common/Table/CommonTable';
+import { useState, useEffect, useMemo } from 'react';
+import {
+  Box,
+  useDisclosure,
+  FormControl,
+  VStack,
+  HStack,
+  Text,
+  IconButton,
+  InputGroup,
+  InputLeftElement,
+  Input,
+  Button,
+  Flex,
+  Heading,
+  Select,
+  useToast,
+  Badge,
+  Link,
+  Image,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  Tabs,
+  TabList,
+  TabPanels,
+  Tab,
+  TabPanel,
+  SimpleGrid,
+  Card,
+  CardBody,
+  CardHeader,
+  CardFooter,
+  Stack,
+  Divider,
+  Tooltip,
+  useColorModeValue,
+  FormLabel,
+} from '@chakra-ui/react';
+import { EditIcon, DeleteIcon, SearchIcon, AddIcon, ViewIcon, DownloadIcon, CalendarIcon } from '@chakra-ui/icons';
+import { FaEye, FaDownload, FaTrash, FaUpload, FaFilter, FaFile, FaFilePdf, FaFileImage, FaFileWord, FaFileExcel } from 'react-icons/fa';
+import CommonPagination from '../../components/common/pagination/CommonPagination';
 import FormModal from '../../components/common/FormModal';
-import FloatingInput from '../../components/common/floatingInput/FloatingInput';
-
+import FloatingInput from '../../components/common/FloatingInput';
+import SearchableSelect from '../../components/common/SearchableSelect';
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
+import DocumentUpload from '../../components/common/DocumentUpload';
+import { useDocumentContext } from '../../context/DocumentContext';
+import { useDocumentTypeContext } from '../../context/DocumentTypeContext';
+import { useUserContext } from '../../context/UserContext';
+import Loader from '../../components/common/Loader';
+import CommonAddButton from '../../components/common/Button/CommonAddButton';
 const Documents = () => {
-  const [documents, setDocuments] = useState([
-    {
-      _id: '1',
-      documentName: 'Property Agreement',
-      documentType: 'Legal',
-      uploadDate: '2023-12-15',
-      status: 'Verified',
-      size: '2.5 MB',
-      category: 'Purchase Documents'
-    },
-    {
-      _id: '2',
-      documentName: 'Payment Receipt',
-      documentType: 'Financial',
-      uploadDate: '2023-12-10',
-      status: 'Pending',
-      size: '1.2 MB',
-      category: 'Payment Documents'
-    },
-    {
-      _id: '3',
-      documentName: 'Property Photos',
-      documentType: 'Images',
-      uploadDate: '2023-12-08',
-      status: 'Verified',
-      size: '5.8 MB',
-      category: 'Property Documents'
+  const toast = useToast();
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [formData, setFormData] = useState({});
+  const [errors, setErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12); // Changed to 12 for cards (3x4 grid)
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [documentTypeFilter, setDocumentTypeFilter] = useState('');
+  const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  const {
+    isOpen: isDeleteOpen,
+    onOpen: onDeleteOpen,
+    onClose: onDeleteClose,
+  } = useDisclosure();
+  const {
+    isOpen: isViewOpen,
+    onOpen: onViewOpen,
+    onClose: onViewClose,
+  } = useDisclosure();
+  const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [documentToView, setDocumentToView] = useState(null);
+  const [originalFormData, setOriginalFormData] = useState(null);
+
+  // Color mode values
+  const cardGradientBg = useColorModeValue('linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 'gray.800');
+  const cardBorderColor = useColorModeValue('gray.200', 'gray.700');
+  const fileNameColor = useColorModeValue('gray.800', 'white');
+  const docTypeColor = useColorModeValue('purple.600', 'purple.200');
+  const textColor = useColorModeValue('gray.600', 'gray.300');
+  const dividerColor = useColorModeValue('gray.200', 'gray.600');
+  const modalHeaderBg = useColorModeValue('#f8fafc', 'gray.800');
+  const modalHeaderColor = useColorModeValue('purple.700', 'purple.200');
+  const modalBodyBg = useColorModeValue('white', 'gray.900');
+  const modalIconBg = useColorModeValue('purple.50', 'purple.900');
+  const modalIconColor = useColorModeValue('purple.600', 'purple.200');
+  const modalIconBorder = useColorModeValue('purple.200', 'purple.700');
+  const modalLabelColor = useColorModeValue('gray.600', 'gray.300');
+  const modalValueColor = useColorModeValue('gray.800', 'white');
+  const fileCardBg = useColorModeValue('gray.50', 'gray.800');
+  const fileCardBorder = useColorModeValue('gray.200', 'gray.700');
+  const fileIconBg = useColorModeValue('purple.50', 'purple.900');
+  const fileIconColor = useColorModeValue('purple.600', 'purple.200');
+  const fileIconBorder = useColorModeValue('purple.200', 'purple.700');
+  const fileNameTextColor = useColorModeValue('gray.800', 'white');
+  const fileMetaTextColor = useColorModeValue('gray.600', 'gray.300');
+
+  // Get contexts
+  const documentContext = useDocumentContext();
+  const documentTypeContext = useDocumentTypeContext();
+  const userContext = useUserContext();
+  const { documents, addDocument, updateDocument, removeDocument, loading, getAllDocuments } = documentContext;
+  const { documentTypes, getAllDocumentTypes } = documentTypeContext;
+  const { users, getAllUsers } = userContext;
+
+  // Convert document types to options for dropdown
+  const documentTypeOptions = useMemo(() => {
+    return documentTypes.map(type => ({
+      value: type._id,
+      label: type.name
+    }));
+  }, [documentTypes]);
+
+  // Convert users to options for dropdown
+  const userOptions = useMemo(() => {
+    return users.map(user => ({
+      value: user._id,
+      label: `${user.firstName} ${user.lastName} (${user.email})`
+    }));
+  }, [users]);
+
+  // Helper function to get document type label from value
+  const getDocumentTypeLabel = (documentTypeId) => {
+    const documentType = documentTypeOptions.find(t => t.value === documentTypeId);
+    return documentType ? documentType.label : documentTypeId;
+  };
+
+  // Helper function to get user label from value
+  const getUserLabel = (userId) => {
+    const user = userOptions.find(u => u.value === userId);
+    return user ? user.label : userId;
+  };
+
+  // Memoize filtered documents
+  const filteredDocuments = useMemo(() => {
+    let filtered = documents;
+    if (searchTerm) {
+      filtered = filtered.filter(doc =>
+        doc.fileName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getDocumentTypeLabel(doc.documentTypeId)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getUserLabel(doc.userId)?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-  ]);
+    if (documentTypeFilter) {
+      filtered = filtered.filter(doc => doc.documentTypeId === documentTypeFilter);
+    }
+    return filtered;
+  }, [documents, searchTerm, documentTypeFilter]);
 
-  const { isOpen: isFormOpen, onOpen: onFormOpen, onClose: onFormClose } = useDisclosure();
-  const [formData, setFormData] = useState({
-    documentName: '',
-    documentType: '',
-    category: '',
-    description: ''
-  });
+  useEffect(() => {
+    getAllDocuments();
+    getAllDocumentTypes();
+    getAllUsers();
+  }, [getAllDocuments, getAllDocumentTypes, getAllUsers]);
 
-  const handleUpload = () => {
+  // Reset page when filtered results change
+  useEffect(() => {
+    const maxPage = Math.ceil(filteredDocuments.length / pageSize);
+    if (currentPage > maxPage && maxPage > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredDocuments.length, pageSize, currentPage]);
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= Math.ceil(filteredDocuments.length / pageSize)) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
+  const handleDocumentTypeChange = (value) => {
+    setFormData({ ...formData, documentTypeId: value });
+    if (errors.documentTypeId) {
+      setErrors({ ...errors, documentTypeId: '' });
+    }
+  };
+
+  const handleFileUpload = (file) => {
+    setUploadedFile(file);
+    if (errors.file) {
+      setErrors({ ...errors, file: '' });
+    }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.documentTypeId) {
+      newErrors.documentTypeId = 'Document type is required';
+    }
+    if (!uploadedFile && !selectedDocument) {
+      newErrors.file = 'Document file is required';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleAddNew = () => {
+    setSelectedDocument(null);
     setFormData({
-      documentName: '',
-      documentType: '',
-      category: '',
-      description: ''
+      userId: '',
+      documentTypeId: '',
     });
-    onFormOpen();
+    setOriginalFormData(null);
+    setErrors({});
+    setUploadedFile(null);
+    onOpen();
+  };
+
+  const handleEdit = (document) => {
+    setSelectedDocument(document);
+    const data = {
+      userId: document.userId || '',
+      documentTypeId: document.documentTypeId || '',
+    };
+    setFormData(data);
+    setOriginalFormData(data);
+    setErrors({});
+    setUploadedFile(null);
+    onOpen();
+  };
+
+  const handleDelete = (document) => {
+    setDocumentToDelete(document);
+    onDeleteOpen();
   };
 
   const handleView = (document) => {
-    console.log('View document:', document._id);
+    setDocumentToView(document);
+    onViewOpen();
   };
 
   const handleDownload = (document) => {
-    console.log('Download document:', document._id);
+    if (document.originalUrl) {
+      window.open(document.originalUrl, '_blank');
+    } else {
+      toast({
+        title: 'Download Error',
+        description: 'Download URL not available',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
-  const handleSubmit = () => {
-    const newDocument = {
-      ...formData,
-      _id: Date.now().toString(),
-      uploadDate: new Date().toISOString().split('T')[0],
-      status: 'Pending',
-      size: '1.0 MB'
-    };
-    setDocuments([...documents, newDocument]);
-    onFormClose();
+  const confirmDelete = async () => {
+    if (documentToDelete && !isApiCallInProgress) {
+      setIsApiCallInProgress(true);
+      try {
+        await removeDocument(documentToDelete._id);
+        onDeleteClose();
+        setDocumentToDelete(null);
+      } catch (error) {
+        console.error('Delete error:', error);
+      } finally {
+        setIsApiCallInProgress(false);
+      }
+    }
   };
 
-  const columns = [
-    { key: 'documentName', label: 'Document Name' },
-    { key: 'documentType', label: 'Type' },
-    { key: 'category', label: 'Category' },
-    { key: 'uploadDate', label: 'Upload Date' },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (status) => (
-        <Tag colorScheme={status === 'Verified' ? 'green' : status === 'Pending' ? 'orange' : 'red'}>
-          {status}
-        </Tag>
-      )
-    },
-    { key: 'size', label: 'Size' }
-  ];
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (isApiCallInProgress || isSubmitting) {
+      console.log('API call already in progress, ignoring duplicate request');
+      return;
+    }
+    
+    if (!validateForm()) return;
 
-  const renderRowActions = (document) => (
-    <Flex gap={2}>
-      <IconButton
-        icon={<FaEye />}
-        size="sm"
-        variant="ghost"
-        colorScheme="brand"
-        onClick={() => handleView(document)}
-      />
-      <IconButton
-        icon={<FaDownload />}
-        size="sm"
-        variant="ghost"
-        colorScheme="brand"
-        onClick={() => handleDownload(document)}
-      />
-    </Flex>
-  );
+    setIsSubmitting(true);
+    setIsApiCallInProgress(true);
+    try {
+      const formDataToSend = new FormData();
+      // Always include userId in the payload (for both add and edit)
+      const auth = JSON.parse(localStorage.getItem("auth"));
+      const userId = auth?.data?._id;
+      formDataToSend.append('userId', userId);
+      formDataToSend.append('documentTypeId', formData.documentTypeId);
+      if (uploadedFile) {
+        formDataToSend.append('document', uploadedFile);
+      }
 
-  // Calculate summary statistics
-  const totalDocuments = documents.length;
-  const verifiedDocuments = documents.filter(d => d.status === 'Verified').length;
-  const pendingDocuments = documents.filter(d => d.status === 'Pending').length;
-  const totalSize = documents.reduce((sum, doc) => {
-    const size = parseFloat(doc.size.split(' ')[0]);
-    return sum + size;
-  }, 0);
+      if (selectedDocument) {
+        console.log('Editing document:', selectedDocument._id, 'with data:', formData);
+        await updateDocument(selectedDocument._id, formDataToSend);
+      } else {
+        console.log('Adding new document with data:', formData);
+        await addDocument(formDataToSend);
+      }
+      
+      setIsSubmitting(false);
+      setIsApiCallInProgress(false);
+      setSelectedDocument(null);
+      setFormData({});
+      setUploadedFile(null);
+      onClose();
+    } catch (error) {
+      console.error('Form submission error:', error);
+      setIsSubmitting(false);
+      setIsApiCallInProgress(false);
+    }
+  };
+
+  const isFormChanged = () => {
+    if (!selectedDocument || !originalFormData) return true;
+    return (
+      formData.userId !== originalFormData.userId ||
+      formData.documentTypeId !== originalFormData.documentTypeId ||
+      uploadedFile !== null
+    );
+  };
+
+  const formatFileSize = (bytes) => {
+    if (!bytes) return 'N/A';
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const getFileIcon = (mimeType) => {
+    if (!mimeType) return FaFile;
+    if (mimeType.includes('pdf')) return FaFilePdf;
+    if (mimeType.includes('image')) return FaFileImage;
+    if (mimeType.includes('word') || mimeType.includes('doc')) return FaFileWord;
+    if (mimeType.includes('excel') || mimeType.includes('sheet')) return FaFileExcel;
+    return FaFile;
+  };
+
+  const getFileIconColor = (mimeType) => {
+    if (!mimeType) return 'gray.400';
+    if (mimeType.includes('pdf')) return 'red.500';
+    if (mimeType.includes('image')) return 'green.500';
+    if (mimeType.includes('word') || mimeType.includes('doc')) return 'blue.500';
+    if (mimeType.includes('excel') || mimeType.includes('sheet')) return 'green.600';
+    return 'gray.400';
+  };
+
+  const renderDocumentCard = (document) => {
+    const FileIconComponent = getFileIcon(document.mimeType);
+    const iconColor = getFileIconColor(document.mimeType);
+    const iconBgColor =
+      iconColor === 'red.500'
+        ? 'red.50'
+        : iconColor === 'green.500' || iconColor === 'green.600'
+        ? 'green.50'
+        : iconColor === 'blue.500'
+        ? 'blue.50'
+        : 'gray.100';
+
+    return (
+      <Card
+        key={document._id}
+        bg={cardGradientBg}
+        border="1px"
+        borderColor={cardBorderColor}
+        borderRadius="2xl"
+        boxShadow="0 2px 8px 0 rgba(60,72,88,0.08)"
+        _hover={{
+          boxShadow: '0 8px 24px 0 rgba(60,72,88,0.16)',
+          borderColor: 'purple.400',
+          transform: 'translateY(-4px) scale(1.03)',
+          transition: 'all 0.2s',
+        }}
+        transition="all 0.2s"
+        overflow="hidden"
+        position="relative"
+        maxW={{ base: '100%', sm: '220px', md: '240px', lg: '260px' }}
+        minH={{ base: '140px', sm: '160px', md: '180px' }}
+        p={4}
+        display="flex"
+        flexDirection="column"
+        justifyContent="space-between"
+      >
+        <Flex align="flex-start" justify="space-between" mb={2}>
+          <Box
+            p={2}
+            borderRadius="full"
+            bg={iconBgColor}
+            color={iconColor}
+            border="1.5px solid"
+            borderColor={iconColor}
+            minW="40px"
+            minH="40px"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            boxShadow="0 1px 4px 0 rgba(60,72,88,0.10)"
+            mr={2}
+          >
+            <FileIconComponent size={20} />
+          </Box>
+          <Badge
+            colorScheme={document.published ? 'green' : 'red'}
+            fontSize="2xs"
+            borderRadius="full"
+            px={2}
+            py={0.5}
+            fontWeight="bold"
+            textTransform="uppercase"
+            letterSpacing="wide"
+            boxShadow="0 1px 4px 0 rgba(60,72,88,0.10)"
+            alignSelf="flex-start"
+          >
+            {document.published ? 'Active' : 'Inactive'}
+          </Badge>
+        </Flex>
+        <Box flex={1} minW={0} mb={1}>
+          <Text
+            fontWeight="bold"
+            fontSize={{ base: 'sm', md: 'md' }}
+            noOfLines={1}
+            color={fileNameColor}
+            mb={0.5}
+            letterSpacing="tight"
+          >
+            {document.fileName}
+          </Text>
+          <Text
+            fontSize="2xs"
+            color={docTypeColor}
+            textTransform="uppercase"
+            letterSpacing="widest"
+            fontWeight="semibold"
+            noOfLines={1}
+            mb={0.5}
+            lineHeight={1.1}
+          >
+            {getDocumentTypeLabel(document.documentTypeId)}
+          </Text>
+          <Text fontSize="2xs" color={textColor} noOfLines={1} mb={0.5} lineHeight={1.1} fontWeight="normal">
+            <strong>User:</strong> {getUserLabel(document.userId)}
+          </Text>
+          <HStack spacing={2} fontSize="2xs" color={textColor} mt={1}>
+            <HStack spacing={1}>
+              <FaFile size={10} />
+              <Text fontWeight="medium" noOfLines={1} fontSize="2xs" color={textColor} opacity={0.8}>
+                {formatFileSize(document.size)}
+              </Text>
+            </HStack>
+            <HStack spacing={1}>
+              <CalendarIcon boxSize={3} />
+              <Text fontWeight="medium" noOfLines={1} fontSize="2xs" color={textColor} opacity={0.8}>
+                {document.createdAt ? new Date(document.createdAt).toLocaleDateString() : 'N/A'}
+              </Text>
+            </HStack>
+          </HStack>
+        </Box>
+        <Divider borderColor={dividerColor} my={2} />
+        <HStack spacing={2} w="full" justify="center">
+          <Tooltip label="View Details" placement="top">
+            <IconButton
+              icon={<FaEye />}
+              size="sm"
+              variant="ghost"
+              colorScheme="blue"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleView(document);
+              }}
+              aria-label="View document"
+              _hover={{
+                bg: 'blue.50',
+                color: 'blue.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+          <Tooltip label="Download" placement="top">
+            <IconButton
+              icon={<FaDownload />}
+              size="sm"
+              variant="ghost"
+              colorScheme="green"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownload(document);
+              }}
+              aria-label="Download document"
+              _hover={{
+                bg: 'green.50',
+                color: 'green.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+          <Tooltip label="Edit" placement="top">
+            <IconButton
+              icon={<EditIcon />}
+              size="sm"
+              variant="ghost"
+              colorScheme="brand"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(document);
+              }}
+              aria-label="Edit document"
+              _hover={{
+                bg: 'brand.50',
+                color: 'brand.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+          <Tooltip label="Delete" placement="top">
+            <IconButton
+              icon={<FaTrash />}
+              size="sm"
+              variant="ghost"
+              colorScheme="red"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(document);
+              }}
+              aria-label="Delete document"
+              _hover={{
+                bg: 'red.50',
+                color: 'red.600',
+                transform: 'scale(1.1)'
+              }}
+              transition="all 0.2s"
+            />
+          </Tooltip>
+        </HStack>
+      </Card>
+    );
+  };
 
   return (
     <Box p={5}>
+      {loading && (
+        <Loader size="xl" />
+      )}
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading as="h1" variant="pageTitle">
-          Documents
+        <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
+          Document Management
         </Heading>
-        <Button
-          leftIcon={<FaUpload />}
-          colorScheme="brand"
-          onClick={handleUpload}
-        >
-          Upload Document
-        </Button>
+        <CommonAddButton onClick={handleAddNew} />
       </Flex>
 
-      {/* Summary Cards */}
-      <Grid templateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={4} mb={6}>
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="blue.100" borderRadius="lg">
-              <FaFileAlt color="#3b82f6" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Total Documents</Text>
-              <Text fontSize="lg" fontWeight="bold" color="blue.600">{totalDocuments}</Text>
+      <Box mb={6}>
+        <Flex direction={{ base: 'column', sm: 'row' }} gap={3} align={{ base: 'stretch', sm: 'center' }}>
+          <Box maxW="400px" flex={1}>
+            <InputGroup>
+              <InputLeftElement pointerEvents="none">
+                <SearchIcon color="gray.300" />
+              </InputLeftElement>
+              <Input
+                placeholder="Search documents..."
+                value={searchTerm}
+                onChange={handleSearch}
+                size="md"
+              />
+            </InputGroup>
+          </Box>
+          <IconButton
+            icon={<FaFilter />}
+            aria-label="Show filters"
+            variant={showFilters ? 'solid' : 'outline'}
+            colorScheme="purple"
+            size="sm"
+            onClick={() => setShowFilters(v => !v)}
+            ml={{ base: 0, sm: 2 }}
+            alignSelf={{ base: 'flex-start', sm: 'center' }}
+          />
+          {documentTypeFilter && (
+            <Button
+              size="sm"
+              colorScheme="gray"
+              variant="outline"
+              onClick={() => { setDocumentTypeFilter(''); }}
+              ml={{ base: 0, sm: 2 }}
+              alignSelf={{ base: 'flex-start', sm: 'center' }}
+            >
+              Clear Filter
+            </Button>
+          )}
+        </Flex>
+        {showFilters && (
+          <Flex mt={3} gap={3} direction={{ base: 'column', sm: 'row' }}>
+            <Box minW={{ base: '120px', sm: '180px' }} flexShrink={0}>
+              <SearchableSelect
+                options={documentTypeOptions}
+                value={documentTypeFilter}
+                onChange={setDocumentTypeFilter}
+                placeholder="Filter by type"
+                size="sm"
+                isClearable
+              />
             </Box>
           </Flex>
-        </CommonCard>
-        
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="green.100" borderRadius="lg">
-              <FaFileAlt color="#22c55e" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Verified</Text>
-              <Text fontSize="lg" fontWeight="bold" color="green.600">{verifiedDocuments}</Text>
-            </Box>
-          </Flex>
-        </CommonCard>
-        
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="orange.100" borderRadius="lg">
-              <FaFileAlt color="#f59e0b" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Pending</Text>
-              <Text fontSize="lg" fontWeight="bold" color="orange.600">{pendingDocuments}</Text>
-            </Box>
-          </Flex>
-        </CommonCard>
-        
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="purple.100" borderRadius="lg">
-              <FaFileAlt color="#8b5cf6" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Total Size</Text>
-              <Text fontSize="lg" fontWeight="bold" color="purple.600">{totalSize.toFixed(1)} MB</Text>
-            </Box>
-          </Flex>
-        </CommonCard>
-      </Grid>
+        )}
+      </Box>
+      
+      {/* Document Cards Grid */}
+      <Box mb={6}>
+        {filteredDocuments.length === 0 && !loading ? (
+          <Box textAlign="center" py={10}>
+            <FaFile size={48} color="gray.300" />
+            <Text mt={4} color="gray.500" fontSize="lg">
+              No documents found
+            </Text>
+            <Text color="gray.400" fontSize="sm">
+              Try adjusting your search or filters
+            </Text>
+          </Box>
+        ) : (
+          <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={{ base: 3, sm: 4, md: 5, lg: 6 }}>
+            {filteredDocuments
+              .slice((currentPage - 1) * pageSize, currentPage * pageSize)
+              .map(renderDocumentCard)}
+          </SimpleGrid>
+        )}
+      </Box>
 
-      <CommonCard p={6}>
-        <Box mb={4}>
-          <Text color="gray.600" fontSize="sm">
-            Manage and view your property-related documents
-          </Text>
+      {/* Pagination */}
+      {filteredDocuments.length > 0 && (
+        <Box mt={6}>
+          <CommonPagination
+            currentPage={currentPage}
+            totalPages={Math.ceil(filteredDocuments.length / pageSize)}
+            onPageChange={handlePageChange}
+            pageSize={pageSize}
+            onPageSizeChange={handlePageSizeChange}
+            totalItems={filteredDocuments.length}
+          />
         </Box>
-        
-        <CommonTable
-          columns={columns}
-          data={documents}
-          rowActions={renderRowActions}
-        />
-      </CommonCard>
+      )}
 
-      {/* Upload Modal */}
       <FormModal
-        isOpen={isFormOpen}
-        onClose={onFormClose}
-        title="Upload Document"
-        onSave={handleSubmit}
+        isOpen={isOpen}
+        onClose={() => {
+          onClose();
+          setSelectedDocument(null);
+          setFormData({
+            userId: '',
+            documentTypeId: '',
+          });
+          setOriginalFormData(null);
+          setErrors({});
+          setUploadedFile(null);
+        }}
+        title={selectedDocument ? 'Edit Document' : 'Add New Document'}
+        onSave={handleFormSubmit}
+        isSubmitting={isSubmitting}
+        buttonLabel={selectedDocument ? 'Update' : 'Save'}
+        loadingText={selectedDocument ? 'Updating...' : 'Saving...'}
+        isDisabled={selectedDocument ? !isFormChanged() : false}
       >
-        <Box display="grid" gridTemplateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
-          <FloatingInput
-            name="documentName"
-            label="Document Name"
-            value={formData.documentName}
-            onChange={(e) => setFormData({ ...formData, documentName: e.target.value })}
-            required
-          />
-          <FloatingInput
-            name="documentType"
-            label="Document Type"
-            value={formData.documentType}
-            onChange={(e) => setFormData({ ...formData, documentType: e.target.value })}
-            required
-          />
-          <FloatingInput
-            name="category"
-            label="Category"
-            value={formData.category}
-            onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-            required
-          />
-        </Box>
-        <Box mt={4}>
-          <FloatingInput
-            name="description"
-            label="Description"
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            as="textarea"
-            rows={3}
-          />
-        </Box>
-        <Box mt={4}>
-          <Button
-            leftIcon={<FaPlus />}
-            variant="outline"
-            colorScheme="brand"
-            width="full"
-          >
-            Choose File
-          </Button>
-        </Box>
+        <VStack spacing={4}>
+          <FormControl isInvalid={!!errors.documentTypeId}>
+            <SearchableSelect
+              options={documentTypeOptions}
+              value={formData.documentTypeId || ''}
+              onChange={handleDocumentTypeChange}
+              placeholder="Select document type"
+              searchPlaceholder="Search document types..."
+              label="Document Type"
+              error={errors.documentTypeId}
+              isRequired={true}
+            />
+          </FormControl>
+          <FormControl isInvalid={!!errors.file}>
+            <FormLabel>Document File</FormLabel>
+            <DocumentUpload
+              onFileSelect={handleFileUpload}
+              acceptedFileTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']}
+              maxFileSize={10 * 1024 * 1024} // 10MB
+            />
+            {errors.file && (
+              <Text color="red.500" fontSize="sm" mt={1}>
+                {errors.file}
+              </Text>
+            )}
+            {(uploadedFile || (selectedDocument && selectedDocument.fileName)) && (
+              <Box
+                mt={3}
+                p={3}
+                borderRadius="lg"
+                bg={fileCardBg}
+                border="1px solid"
+                borderColor={fileCardBorder}
+                display="flex"
+                alignItems="center"
+                gap={3}
+              >
+                <Box
+                  p={2}
+                  borderRadius="full"
+                  bg={fileIconBg}
+                  color={fileIconColor}
+                  border="1.5px solid"
+                  borderColor={fileIconBorder}
+                  minW="40px"
+                  minH="40px"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
+                  <FaFile size={20} />
+                </Box>
+                <Box flex={1} minW={0}>
+                  <Text fontWeight="bold" fontSize="sm" color={fileNameTextColor} noOfLines={1}>
+                    {uploadedFile ? uploadedFile.name : selectedDocument.fileName}
+                  </Text>
+                  <Text fontSize="xs" color={fileMetaTextColor}>
+                    {uploadedFile
+                      ? `${(uploadedFile.size / 1024).toFixed(2)} KB`
+                      : selectedDocument.size
+                      ? `${(selectedDocument.size / 1024).toFixed(2)} KB`
+                      : ''}
+                    {' '}
+                    {uploadedFile
+                      ? uploadedFile.type || 'N/A'
+                      : selectedDocument.mimeType || 'N/A'}
+                  </Text>
+                </Box>
+              </Box>
+            )}
+          </FormControl>
+        </VStack>
       </FormModal>
+
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={confirmDelete}
+        title="Delete Document"
+        message={`Are you sure you want to delete the document "${documentToDelete?.fileName}"?`}
+      />
+
+      {/* Document View Modal */}
+      <Modal isOpen={isViewOpen} onClose={onViewClose} size="xl" isCentered>
+        <ModalOverlay />
+        <ModalContent
+          borderRadius="2xl"
+          boxShadow="0 8px 32px 0 rgba(60,72,88,0.18)"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          maxW="480px"
+          m="auto"
+        >
+          <ModalHeader fontWeight="bold" fontSize="2xl" color={modalHeaderColor} bg={modalHeaderBg} borderTopRadius="2xl">Document Details</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6} bg={modalBodyBg} borderBottomRadius="2xl" display="flex" alignItems="center" justifyContent="center" minH="400px">
+            {documentToView && (
+              <VStack spacing={6} align="stretch" px={{ base: 0, md: 4 }} w="100%" justify="center">
+                <Flex align="center" justify="flex-start" mb={2}>
+                  <Box
+                    p={3}
+                    borderRadius="full"
+                    bg={modalIconBg}
+                    color={modalIconColor}
+                    border="1.5px solid"
+                    borderColor={modalIconBorder}
+                    minW="56px"
+                    minH="56px"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    boxShadow="0 1px 8px 0 rgba(60,72,88,0.10)"
+                    mr={4}
+                  >
+                    <FaFile size={32} />
+                  </Box>
+                  <Box flex={1} minW={0}>
+                    <Text fontWeight="bold" fontSize="xl" color={fileNameColor} noOfLines={1} mb={1}>
+                      {documentToView.fileName}
+                    </Text>
+                    <Text fontSize="sm" color={modalHeaderColor} textTransform="uppercase" letterSpacing="wider" fontWeight="semibold" noOfLines={1}>
+                      {getDocumentTypeLabel(documentToView.documentTypeId)}
+                    </Text>
+                  </Box>
+                  <Badge
+                    colorScheme={documentToView.published ? 'green' : 'red'}
+                    fontSize="sm"
+                    borderRadius="full"
+                    px={4}
+                    py={1}
+                    fontWeight="bold"
+                    textTransform="uppercase"
+                    letterSpacing="wide"
+                    boxShadow="0 1px 4px 0 rgba(60,72,88,0.10)"
+                    alignSelf="flex-start"
+                  >
+                    {documentToView.published ? 'Active' : 'Inactive'}
+                  </Badge>
+                </Flex>
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
+                  <Box>
+                    <Text fontWeight="semibold" color={modalLabelColor}>User</Text>
+                    <Text color={modalValueColor}>{getUserLabel(documentToView.userId)}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontWeight="semibold" color={modalLabelColor}>File Size</Text>
+                    <Text color={modalValueColor}>{formatFileSize(documentToView.size)}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontWeight="semibold" color={modalLabelColor}>File Type</Text>
+                    <Text color={modalValueColor}>{documentToView.mimeType || 'N/A'}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontWeight="semibold" color={modalLabelColor}>Uploaded On</Text>
+                    <Text color={modalValueColor}>{documentToView.createdAt ? new Date(documentToView.createdAt).toLocaleString() : 'N/A'}</Text>
+                  </Box>
+                </SimpleGrid>
+                <HStack spacing={4} pt={2} justify="center">
+                  <Button
+                    leftIcon={<FaDownload />}
+                    colorScheme="brand"
+                    variant="solid"
+                    borderRadius="lg"
+                    size="md"
+                    fontWeight="bold"
+                    onClick={() => handleDownload(documentToView)}
+                  >
+                    Download
+                  </Button>
+                  <Button
+                    leftIcon={<EditIcon />}
+                    variant="outline"
+                    colorScheme="purple"
+                    borderRadius="lg"
+                    size="md"
+                    fontWeight="bold"
+                    onClick={() => {
+                      onViewClose();
+                      handleEdit(documentToView);
+                    }}
+                    _hover={{
+                      bg: 'purple.50',
+                      borderColor: 'purple.400',
+                      color: 'purple.700',
+                    }}
+                    _active={{
+                      bg: 'purple.100',
+                      borderColor: 'purple.600',
+                      color: 'purple.800',
+                    }}
+                  >
+                    Edit
+                  </Button>
+                </HStack>
+              </VStack>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };
