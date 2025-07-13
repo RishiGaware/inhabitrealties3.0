@@ -209,29 +209,32 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
   const hasImages = propertyImages.length > 0;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", sm: "6xl" }} isCentered>
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", sm: "full", md: "7xl" }} isCentered>
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
       <ModalContent
-        maxW={{ base: "100vw", sm: "95vw", md: "90vw", lg: "85vw", xl: "80vw" }}
-        maxH={{ base: "100vh", sm: "95vh", md: "90vh" }}
-        borderRadius={{ base: "0", sm: "2xl" }}
+        maxW={{ base: "100vw", sm: "100vw", md: "98vw", lg: "95vw", xl: "90vw" }}
+        maxH={{ base: "100vh", sm: "100vh", md: "98vh", lg: "95vh" }}
+        borderRadius={{ base: "0", sm: "0", md: "2xl" }}
         overflow="hidden"
         bg="white"
         boxShadow="2xl"
-        mx={{ base: 0, sm: 4 }}
-        my={{ base: 0, sm: 4 }}
+        mx={{ base: 0, sm: 0, md: 4 }}
+        my={{ base: 0, sm: 0, md: 4 }}
+        p={0} // Remove default padding
       >
         <ModalCloseButton
           position="absolute"
-          top={4}
-          right={4}
+          top={{ base: 2, sm: 3, md: 4 }}
+          right={{ base: 2, sm: 3, md: 4 }}
           zIndex={10}
+          size={{ base: "xs", sm: "sm", md: "md" }}
           {...floatingButtonStyle}
         />
 
-        <Box maxH={{ base: "100vh", sm: "95vh", md: "90vh" }} overflowY="auto">
-          {/* Image Gallery Section */}
-          <Box position="relative" h={{ base: '250px', sm: '300px', md: '400px', lg: '500px' }}>
+        {/* Remove extra Box wrapper and set image flush to top */}
+        <Box maxH={{ base: "100vh", sm: "100vh", md: "95vh", lg: "90vh" }} overflowY="auto" p={0}>
+          {/* Image Gallery Section - no margin at top */}
+          <Box position="relative" h={{ base: '300px', sm: '350px', md: '400px', lg: '500px' }} m={0} p={0}>
             {loading ? (
               <Flex justify="center" align="center" h="full" bg="gray.100">
                 <VStack spacing={4}>
@@ -406,9 +409,9 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
             />
           </Box>
 
-          {/* Content Section */}
-          <Box p={{ base: 3, sm: 4, md: 6, lg: 8 }}>
-            <VStack spacing={{ base: 4, sm: 5, md: 6, lg: 8 }} align="stretch">
+          {/* Content Section - minimal bottom padding */}
+          <Box p={{ base: 2, sm: 3, md: 6, lg: 8 }} pb={{ base: 2, sm: 3, md: 4 }} mb={0}>
+            <VStack spacing={{ base: 3, sm: 4, md: 6, lg: 8 }} align="stretch">
               {/* Header */}
               <Box>
                   <Heading size={{ base: "md", sm: "lg", md: "xl" }} color="gray.900" mb={{ base: 2, sm: 3 }}>
@@ -428,99 +431,99 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
           {/* Features Grid - Enhanced with Animations */}
           <Box 
             bg="linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)"
-            borderRadius={{ base: "xl", sm: "2xl" }}
-            p={{ base: 4, sm: 5, md: 6 }}
+            borderRadius={{ base: "lg", sm: "xl", md: "2xl" }}
+            p={{ base: 3, sm: 4, md: 6 }}
             border="1px solid"
             borderColor="gray.200"
             boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
           >
             <Text 
-              fontSize={{ base: "md", sm: "lg" }}
+              fontSize={{ base: "sm", sm: "md", md: "lg" }}
               fontWeight="bold" 
               color="gray.800" 
-              mb={{ base: 3, sm: 4 }}
+              mb={{ base: 2, sm: 3, md: 4 }}
               textAlign="center"
               letterSpacing="wide"
             >
               Property Features
             </Text>
             
-            <SimpleGrid columns={{ base: 2, sm: 2, md: 4 }} spacing={{ base: 3, sm: 4, md: 6 }}>
+            <SimpleGrid columns={{ base: 2, sm: 2, md: 4 }} spacing={{ base: 2, sm: 3, md: 6 }}>
               {/* Bedrooms */}
-              <Box
-                bg="white"
-                borderRadius={{ base: "lg", sm: "xl" }}
-                p={{ base: 3, sm: 4 }}
-                textAlign="center"
-                border="1px solid"
-                borderColor="gray.200"
-                boxShadow="0 2px 8px rgba(0, 0, 0, 0.06)"
-                _hover={{
-                  transform: 'translateY(-4px) scale(1.02)',
-                  boxShadow: '0 12px 32px rgba(102, 126, 234, 0.15)',
-                  borderColor: 'brand.400'
-                }}
-                transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
-                position="relative"
-                overflow="hidden"
-              >
-                {/* Animated Background */}
-                <Box
-                  position="absolute"
-                  top="0"
-                  left="0"
-                  right="0"
-                  bottom="0"
-                  bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                  opacity="0"
-                  _hover={{ opacity: 0.05 }}
-                  transition="opacity 0.4s ease"
-                />
-                
-                <Box position="relative" zIndex={1}>
-                  <Circle 
-                    size={{ base: "40px", sm: "45px" }}
+                              <Box
+                  bg="white"
+                  borderRadius={{ base: "md", sm: "lg", md: "xl" }}
+                  p={{ base: 2, sm: 3, md: 4 }}
+                  textAlign="center"
+                  border="1px solid"
+                  borderColor="gray.200"
+                  boxShadow="0 2px 8px rgba(0, 0, 0, 0.06)"
+                  _hover={{
+                    transform: 'translateY(-4px) scale(1.02)',
+                    boxShadow: '0 12px 32px rgba(102, 126, 234, 0.15)',
+                    borderColor: 'brand.400'
+                  }}
+                  transition="all 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
+                  position="relative"
+                  overflow="hidden"
+                >
+                  {/* Animated Background */}
+                  <Box
+                    position="absolute"
+                    top="0"
+                    left="0"
+                    right="0"
+                    bottom="0"
                     bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-                    color="white"
-                    mb={{ base: 2, sm: 3 }}
-                    boxShadow="0 4px 16px rgba(102, 126, 234, 0.3)"
-                    _hover={{
-                      transform: 'rotate(5deg) scale(1.1)',
-                      boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)'
-                    }}
-                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                  >
-                    <Icon as={FaBed} size={{ base: 16, sm: 18 }} />
+                    opacity="0"
+                    _hover={{ opacity: 0.05 }}
+                    transition="opacity 0.4s ease"
+                  />
+                  
+                  <Box position="relative" zIndex={1}>
+                    <Circle 
+                      size={{ base: "35px", sm: "40px", md: "45px" }}
+                      bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+                      color="white"
+                      mb={{ base: 1, sm: 2, md: 3 }}
+                      boxShadow="0 4px 16px rgba(102, 126, 234, 0.3)"
+                      _hover={{
+                        transform: 'rotate(5deg) scale(1.1)',
+                        boxShadow: '0 8px 24px rgba(102, 126, 234, 0.4)'
+                      }}
+                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    >
+                      <Icon as={FaBed} size={{ base: 14, sm: 16, md: 18 }} />
                   </Circle>
-                  <Text 
-                    fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
-                    fontWeight="bold" 
-                    color="gray.800"
-                    mb={1}
-                    _hover={{ color: 'brand.600' }}
-                    transition="color 0.3s ease"
-                  >
+                    <Text 
+                      fontSize={{ base: "md", sm: "lg", md: "xl" }}
+                      fontWeight="bold" 
+                      color="gray.800"
+                      mb={1}
+                      _hover={{ color: 'brand.600' }}
+                      transition="color 0.3s ease"
+                    >
                     {property.features?.bedRooms || 0}
                   </Text>
-                  <Text 
-                    fontSize={{ base: "xs", sm: "sm" }}
-                    color="gray.600" 
-                    fontWeight="semibold"
-                    textTransform="uppercase"
-                    letterSpacing="wider"
-                    _hover={{ color: 'brand.500' }}
-                    transition="color 0.3s ease"
-                  >
-                    Bedrooms
-                  </Text>
+                    <Text 
+                      fontSize={{ base: "2xs", sm: "xs", md: "sm" }}
+                      color="gray.600" 
+                      fontWeight="semibold"
+                      textTransform="uppercase"
+                      letterSpacing="wider"
+                      _hover={{ color: 'brand.500' }}
+                      transition="color 0.3s ease"
+                    >
+                      Bedrooms
+                    </Text>
+                  </Box>
                 </Box>
-              </Box>
 
               {/* Bathrooms */}
               <Box
                 bg="white"
-                borderRadius={{ base: "lg", sm: "xl" }}
-                p={{ base: 3, sm: 4 }}
+                borderRadius={{ base: "md", sm: "lg", md: "xl" }}
+                p={{ base: 2, sm: 3, md: 4 }}
                 textAlign="center"
                 border="1px solid"
                 borderColor="gray.200"
@@ -548,10 +551,10 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                 
                 <Box position="relative" zIndex={1}>
                   <Circle 
-                    size={{ base: "40px", sm: "45px" }}
+                    size={{ base: "35px", sm: "40px", md: "45px" }}
                     bg="linear-gradient(135deg, #4299e1 0%, #3182ce 100%)"
                     color="white"
-                    mb={{ base: 2, sm: 3 }}
+                    mb={{ base: 1, sm: 2, md: 3 }}
                     boxShadow="0 4px 16px rgba(66, 153, 225, 0.3)"
                     _hover={{
                       transform: 'rotate(-5deg) scale(1.1)',
@@ -559,10 +562,10 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     }}
                     transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                   >
-                    <Icon as={FaBath} size={{ base: 16, sm: 18 }} />
+                    <Icon as={FaBath} size={{ base: 14, sm: 16, md: 18 }} />
                   </Circle>
                   <Text 
-                    fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
+                    fontSize={{ base: "md", sm: "lg", md: "xl" }}
                     fontWeight="bold" 
                     color="gray.800"
                     mb={1}
@@ -572,7 +575,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     {property.features?.bathRooms || 0}
                   </Text>
                   <Text 
-                    fontSize={{ base: "xs", sm: "sm" }}
+                    fontSize={{ base: "2xs", sm: "xs", md: "sm" }}
                     color="gray.600" 
                     fontWeight="semibold"
                     textTransform="uppercase"
@@ -588,8 +591,8 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
               {/* Square Feet */}
               <Box
                 bg="white"
-                borderRadius={{ base: "lg", sm: "xl" }}
-                p={{ base: 3, sm: 4 }}
+                borderRadius={{ base: "md", sm: "lg", md: "xl" }}
+                p={{ base: 2, sm: 3, md: 4 }}
                 textAlign="center"
                 border="1px solid"
                 borderColor="gray.200"
@@ -617,10 +620,10 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                 
                 <Box position="relative" zIndex={1}>
                   <Circle 
-                    size={{ base: "40px", sm: "45px" }}
+                    size={{ base: "35px", sm: "40px", md: "45px" }}
                     bg="linear-gradient(135deg, #48bb78 0%, #38a169 100%)"
                     color="white"
-                    mb={{ base: 2, sm: 3 }}
+                    mb={{ base: 1, sm: 2, md: 3 }}
                     boxShadow="0 4px 16px rgba(72, 187, 120, 0.3)"
                     _hover={{
                       transform: 'rotate(3deg) scale(1.1)',
@@ -628,10 +631,10 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     }}
                     transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                   >
-                    <Icon as={FaRuler} size={{ base: 16, sm: 18 }} />
+                    <Icon as={FaRuler} size={{ base: 14, sm: 16, md: 18 }} />
                   </Circle>
                   <Text 
-                    fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
+                    fontSize={{ base: "md", sm: "lg", md: "xl" }}
                     fontWeight="bold" 
                     color="gray.800"
                     mb={1}
@@ -641,7 +644,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     {property.features?.areaInSquarFoot || 0}
                   </Text>
                   <Text 
-                    fontSize={{ base: "xs", sm: "sm" }}
+                    fontSize={{ base: "2xs", sm: "xs", md: "sm" }}
                     color="gray.600" 
                     fontWeight="semibold"
                     textTransform="uppercase"
@@ -657,8 +660,8 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
               {/* Listed Date */}
               <Box
                 bg="white"
-                borderRadius={{ base: "lg", sm: "xl" }}
-                p={{ base: 3, sm: 4 }}
+                borderRadius={{ base: "md", sm: "lg", md: "xl" }}
+                p={{ base: 2, sm: 3, md: 4 }}
                 textAlign="center"
                 border="1px solid"
                 borderColor="gray.200"
@@ -686,10 +689,10 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                 
                 <Box position="relative" zIndex={1}>
                   <Circle 
-                    size="45px" 
+                    size={{ base: "35px", sm: "40px", md: "45px" }}
                     bg="linear-gradient(135deg, #9f7aea 0%, #805ad5 100%)"
                     color="white"
-                    mb={3}
+                    mb={{ base: 1, sm: 2, md: 3 }}
                     boxShadow="0 4px 16px rgba(159, 122, 234, 0.3)"
                     _hover={{
                       transform: 'rotate(-3deg) scale(1.1)',
@@ -697,10 +700,10 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     }}
                     transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                   >
-                    <Icon as={FaCalendarAlt} size={18} />
+                    <Icon as={FaCalendarAlt} size={{ base: 14, sm: 16, md: 18 }} />
                   </Circle>
                   <Text 
-                    fontSize="lg" 
+                    fontSize={{ base: "sm", sm: "md", md: "lg" }}
                     fontWeight="bold" 
                     color="gray.800"
                     mb={1}
@@ -711,7 +714,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     {property.listedDate ? formatDate(property.listedDate) : 'N/A'}
                   </Text>
                   <Text 
-                    fontSize="sm" 
+                    fontSize={{ base: "2xs", sm: "xs", md: "sm" }}
                     color="gray.600" 
                     fontWeight="semibold"
                     textTransform="uppercase"
@@ -988,12 +991,12 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                             handleDeleteImage(image);
                           }}
                           opacity={0}
-                          _hover={{ opacity: 1 }}
                           transition="opacity 0.2s"
                           zIndex={10}
                           bg="red.500"
                           color="white"
                           _hover={{
+                            opacity: 1,
                             bg: "red.600",
                             transform: "scale(1.1)"
                           }}

@@ -129,12 +129,12 @@ const NewLogin = () => {
               </div>
             </form>
 
-            <p className="text-center text-gray-500 mt-8 text-sm sm:text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
+            {/* <p className="text-center text-gray-500 mt-8 text-sm sm:text-base" style={{ fontFamily: "'Inter', sans-serif" }}>
               Don't have an account?{' '}
               <Link to="/register" className="font-bold text-purple-600 hover:text-purple-800 transition-colors">
                 Sign Up
               </Link>
-            </p>
+            </p> */}
 
             <div className="mt-4 text-center">
               <Link to="/" className="text-xs sm:text-sm font-semibold text-gray-500 hover:text-purple-700 transition-colors flex items-center justify-center">

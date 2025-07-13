@@ -1,13 +1,18 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { FaPhone, FaEnvelope, FaMapMarkerAlt, FaUser, FaRegCommentDots, FaTwitter, FaFacebook, FaInstagram } from 'react-icons/fa';
 import { FiArrowLeft, FiLogIn, FiUserPlus } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import useOnScreen from '../../hooks/useOnScreen';
 import toast from 'react-hot-toast';
 import { submitContactUs } from '../../services/homeservices/homeService';
 
 const Contact = () => {
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
   const navigate = useNavigate();
+  const location = useLocation();
   const [formRef, isFormVisible] = useOnScreen({ threshold: 0.2 });
   const [infoRef, isInfoVisible] = useOnScreen({ threshold: 0.2 });
   const [name, setName] = React.useState('');
@@ -37,6 +42,19 @@ const Contact = () => {
   return (
     <div className="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
       <div className="container mx-auto px-4 py-16 sm:px-6 lg:px-8">
+        {/* Back to Home Button - Only show if not coming from footer Quick Links */}
+        <div className="max-w-7xl mx-auto mb-8  mt-4">
+          {location.pathname !== '/' && !location.state?.fromFooter && (
+            <button
+              onClick={() => navigate('/')}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-purple-600 bg-purple-50 border border-purple-200 rounded-md hover:bg-purple-100 hover:text-purple-700 transition-all duration-300 transform hover:scale-105"
+              style={{ fontFamily: "'Inter', sans-serif" }}
+            >
+              <FiArrowLeft className="mr-2" />
+              Back to Home
+            </button>
+          )}
+        </div>
         {/* Header */}
         <div className="text-center mb-16">
           <h1
@@ -160,9 +178,9 @@ const Contact = () => {
                 <button onClick={() => navigate('/login')} className="w-full flex items-center justify-center text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 py-2 px-3 rounded-md transition-all duration-300">
                   <FiLogIn className="mr-2" /> Login
                 </button>
-                <button onClick={() => navigate('/register')} className="w-full flex items-center justify-center text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 py-2 px-3 rounded-md transition-all duration-300">
+                {/* <button onClick={() => navigate('/register')} className="w-full flex items-center justify-center text-xs font-semibold text-green-600 bg-green-50 hover:bg-green-100 py-2 px-3 rounded-md transition-all duration-300">
                   <FiUserPlus className="mr-2" /> Register
-                </button>
+                </button> */}
               </div>
             </div>
 

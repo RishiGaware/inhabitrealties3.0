@@ -133,7 +133,7 @@ const Header = () => {
           <Logo />
           <div className="hidden md:flex items-center gap-4">
             <NavLinks />
-            <Box position="relative" display="inline-block">
+            {/* <Box position="relative" display="inline-block">
               <Tooltip label="Notifications" hasArrow>
                 <IconButton
                   icon={<FiBell />}
@@ -166,7 +166,7 @@ const Header = () => {
                 </Badge>
               )}
               <NotificationBar isOpen={isOpen} onClose={onClose} notifications={notifications} />
-            </Box>
+            </Box> */}
           </div>
           <div className="md:hidden">
             <button onClick={() => setIsMobileMenuOpen(true)}>

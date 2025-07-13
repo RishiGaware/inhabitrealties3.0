@@ -5,6 +5,7 @@ import AppProvider from './providers/AppProvider';
 import NetworkStatusProvider from './components/common/NetworkStatusProvider';
 import OfflineIndicator from './components/common/OfflineIndicator';
 import NotFound from './components/common/errors/NotFound';
+import ScrollToTop from './components/ScrollToTop';
 // import AppRoutes from './routes';
 
 import Header from './components/Header/Header';
@@ -64,6 +65,8 @@ import ExpenseTracking from './pages/admin/accounting/ExpenseTracking';
 import IncomeStatement from './pages/admin/accounting/IncomeStatement';
 import UserProfile from './pages/profile/UserProfile';
 import ReferenceSource from './pages/lead/ReferenceSource';
+import Banner from './components/Banner';
+import TopDevelopers from './components/TopDevelopers';
 
 const MainLayout = ({ children }) => {
   return (
@@ -85,6 +88,7 @@ const App = () => {
       <NetworkStatusProvider>
         <HouseProvider>
           <OfflineIndicator />
+          <ScrollToTop />
           <Toaster 
             position="top-right"
             toastOptions={{

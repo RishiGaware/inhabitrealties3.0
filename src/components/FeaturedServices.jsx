@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaHome, FaSearch, FaHandshake, FaChartLine, FaShieldAlt, FaClock } from 'react-icons/fa';
+// Removed PropertySearchBar import
 
 const FeaturedServices = () => {
   const services = [
@@ -41,6 +42,8 @@ const FeaturedServices = () => {
     }
   ];
 
+  // Removed handlePropertySearch logic
+
   return (
     <section className="py-20 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -52,7 +55,7 @@ const FeaturedServices = () => {
             We provide comprehensive real estate services backed by years of experience and a commitment to excellence.
           </p>
         </div>
-
+        {/* Removed PropertySearchBar rendering */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {services.map((service, index) => (
             <div 
@@ -85,7 +88,6 @@ const FeaturedServices = () => {
             </div>
           ))}
         </div>
-
         {/* Stats Section */}
         <div className="mt-10 bg-white rounded-lg shadow p-4 border border-gray-100">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">

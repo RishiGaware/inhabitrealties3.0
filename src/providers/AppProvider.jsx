@@ -28,7 +28,7 @@ const AppProvider = ({ children }) => {
                         <DocumentTypeProvider>
                           <DocumentProvider>
                             <MeetingProvider>
-                              {children}
+                            {children}
                             </MeetingProvider>
                           </DocumentProvider>
                         </DocumentTypeProvider>

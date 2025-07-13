@@ -1,8 +1,25 @@
 import React from 'react';
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useCallback } from 'react';
 
 const Footer = () => {
+  const navigate = useNavigate();
+
+  // Helper for anchor scroll
+  const handleAnchor = useCallback((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/');
+      setTimeout(() => {
+        const el2 = document.getElementById(id);
+        if (el2) el2.scrollIntoView({ behavior: 'smooth' });
+      }, 400);
+    }
+  }, [navigate]);
+
   return (
     <footer className="bg-gray-800 text-white">
       <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8">
@@ -18,10 +35,10 @@ const Footer = () => {
           <div>
             <h3 className="text-lg font-bold mb-4">Quick Links</h3>
             <ul className="space-y-2">
-              <li><Link to="/" className="text-gray-400 hover:text-white">Home</Link></li>
-              <li><Link to="/about" className="text-gray-400 hover:text-white">About Us</Link></li>
-              <li><Link to="/contact" className="text-gray-400 hover:text-white">Contact</Link></li>
-              <li><Link to="/features" className="text-gray-400 hover:text-white">Features</Link></li>
+              <li><button onClick={() => { navigate('/'); window.scrollTo(0, 0); }} className="text-gray-400 hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer">Home</button></li>
+              <li><button onClick={() => { navigate('/about', { state: { fromFooter: true } }); window.scrollTo(0, 0); }} className="text-gray-400 hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer">About Us</button></li>
+              <li><button onClick={() => { navigate('/contact', { state: { fromFooter: true } }); window.scrollTo(0, 0); }} className="text-gray-400 hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer">Contact</button></li>
+              <li><button onClick={() => handleAnchor('features-section')} className="text-gray-400 hover:text-white bg-transparent border-none p-0 m-0 cursor-pointer">Features</button></li>
             </ul>
           </div>
           {/* Social Media */}
