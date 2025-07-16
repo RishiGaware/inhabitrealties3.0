@@ -61,6 +61,24 @@ export const editUser = async (id, userData) => {
   }
 };
 
+// Fetch user by ID
+export const fetchUserById = async (id) => {
+  try {
+    console.log('userService: Fetching user with ID:', id);
+    const response = await api.get(USER_ENDPOINTS.GET_BY_ID(id));
+    console.log('userService: Fetch user by ID response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('userService: Fetch user by ID error:', error);
+    console.error('userService: Error details:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    });
+    throw error;
+  }
+};
+
 // Delete user (soft delete)
 export const deleteUser = async (id) => {
   try {

@@ -25,8 +25,14 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     {
       title: "Property",
       icon: <FaBuilding />,
-      subMenu: ["Property Master", "Property Types"],
+      subMenu: ["Property Master", "Property Types", "Favorite Properties"],
       key: "property"
+    },
+    {
+      title: "Properties",
+      icon: <FaHome />,
+      subMenu: ["Properties", "Favorite"],
+      key: "displayProperties"
     },
     {
       title: "Lead Management",
@@ -117,7 +123,12 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     },
     'property': {
       'property-master': '/property/property-master',
-      'property-types': '/property/property-types'
+      'property-types': '/property/property-types',
+      'favorite-properties': '/property/favorite-properties'
+    },
+    'displayProperties': {
+      'properties': '/properties',
+      'favorite': '/properties/favorite-properties'
     },
     'leads': {
       'leads': '/lead/leads',
@@ -185,11 +196,32 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   useEffect(() => {
     const path = location.pathname.split('/');
     if (path[1]) {
-      // Find if this is a submenu path
-      if (path[2]) {
+      // Handle direct routes like /properties, /properties/favorite-properties, /property/favorite-properties
+      if (path[1] === 'properties') {
+        if (path[2] === 'favorite-properties') {
+          setSelectedMenu('displayProperties');
+          setSelectedSubMenu('favorite');
+          if (!subMenus.displayProperties) {
+            toggleSubMenu('displayProperties');
+          }
+        } else {
+          setSelectedMenu('displayProperties');
+          setSelectedSubMenu('properties');
+          if (!subMenus.displayProperties) {
+            toggleSubMenu('displayProperties');
+          }
+        }
+      } else if (path[1] === 'property' && path[2] === 'favorite-properties') {
+        setSelectedMenu('property');
+        setSelectedSubMenu('favorite-properties');
+        if (!subMenus.property) {
+          toggleSubMenu('property');
+        }
+      } else if (path[2]) {
+        // Handle submenu paths
         const parentMenu = findParentMenu(path[2]);
         if (parentMenu) {
-          setSelectedMenu(toKebab(parentMenu.key));
+          setSelectedMenu(parentMenu.key);
           setSelectedSubMenu(path[2]);
           // Ensure the parent menu is expanded
           if (!subMenus[parentMenu.key]) {
@@ -226,6 +258,8 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     const subMenuKey = toKebab(subMenu);
     const path = routeMap[menuKey]?.[subMenuKey];
     if (path) {
+      // Store current path before navigating
+      sessionStorage.setItem('previousPath', location.pathname);
       navigate(path);
       setSelectedMenu(menuKey);
       setSelectedSubMenu(subMenuKey);
@@ -295,12 +329,12 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
                 <div className="flex items-center justify-between gap-x-4">
                   <div className="flex items-center gap-2">
                     <span className={`transition-colors duration-200 ${isMobile ? 'text-lg' : 'text-2xl'} 
-                      ${toKebab(Menu.key) === selectedMenu ? "text-light-primary" : "text-gray-600"}`}
+                      ${Menu.key === selectedMenu ? "text-light-primary" : "text-gray-600"}`}
                     >
                       {Menu.icon}
                     </span>
                     <span className={`${!open && "hidden"} origin-left duration-300 text-sm md:text-base truncate
-                      ${toKebab(Menu.key) === selectedMenu ? "text-light-primary font-medium" : "text-gray-600"}`}
+                      ${Menu.key === selectedMenu ? "text-light-primary font-medium" : "text-gray-600"}`}
                     >
                       {Menu.title}
                     </span>
@@ -309,7 +343,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
                     <span className={`ml-auto text-sm transition-all duration-300
                       ${subMenus[Menu.key] ? "rotate-360" : ""}
                       ${!open && "hidden"}
-                      ${toKebab(Menu.key) === selectedMenu ? "text-light-primary" : "text-gray-600"}`}
+                      ${Menu.key === selectedMenu ? "text-light-primary" : "text-gray-600"}`}
                     >
                       {subMenus[Menu.key] ? <FaChevronDown /> : <FaChevronRight />}
                     </span>

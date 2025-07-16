@@ -48,6 +48,9 @@ import ClientPayments from './pages/client/Payments';
 import ClientReferrals from './pages/client/Referrals';
 import PropertyMaster from './pages/property/propertyMaster/PropertyMaster';
 import PropertyTypes from './pages/property/propertyTypes/PropertyTypes';
+import Properties from './pages/displayproperties/Properties';
+import FavoriteProperties from './pages/displayproperties/FavoriteProperties';
+import PropertyMasterDisplay from './pages/displayproperties/PropertyMasterDisplay';
 import DashboardLayout from './components/navigation/DashboardLayout';
 import Settings from './pages/Settings';
 
@@ -143,6 +146,12 @@ const App = () => {
             {/* Property Routes */}
             <Route path='/property/property-master' element={<DashboardLayout><PropertyMaster /></DashboardLayout>} />
             <Route path='/property/property-types' element={<DashboardLayout><PropertyTypes /></DashboardLayout>} />
+            
+            {/* Display Properties Routes */}
+            <Route path='/properties' element={<DashboardLayout><Properties /></DashboardLayout>} />
+            <Route path='/properties/favorite-properties' element={<DashboardLayout><FavoriteProperties /></DashboardLayout>} />
+            <Route path='/property/favorite-properties' element={<DashboardLayout><FavoriteProperties /></DashboardLayout>} />
+            <Route path='/property-master-display' element={<DashboardLayout><PropertyMasterDisplay /></DashboardLayout>} />
             
             {/* Lead Management Routes */}
             <Route path='/lead/leads' element={<DashboardLayout><Leads /></DashboardLayout>} />

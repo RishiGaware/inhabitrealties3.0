@@ -6,6 +6,7 @@ export const AUTH_ENDPOINTS = {
 export const USER_ENDPOINTS = {
   REGISTER: '/users/register',
   GET_ALL: '/users/',
+  GET_BY_ID: (id) => `/users/${id}`,
   EDIT: (id) => `/users/edit/${id}`,
   DELETE: (id) => `/users/delete/${id}`,
 };
@@ -87,4 +88,13 @@ export const DOCUMENT_ENDPOINTS = {
   DELETE: (id) => `/documents/delete/${id}`,
   GET_BY_USER: (userId) => `/documents/${userId}`,
   GET_BY_DOCUMENT_TYPE: (documentTypeId) => `/documents/type/${documentTypeId}`,
+};
+
+export const FAVORITE_PROPERTY_ENDPOINTS = {
+  CREATE: '/favoriteproperty/create',
+  GET_ALL: '/favoriteproperty/',
+  GET_BY_USER_ID: (userId) => `/favoriteproperty/user/${userId}`,
+  GET_WITH_PARAMS: '/favoriteproperty/withparams',
+  GET_BY_ID: (id) => `/favoriteproperty/${id}`,
+  DELETE: (id) => `/favoriteproperty/delete/${id}`,
 };

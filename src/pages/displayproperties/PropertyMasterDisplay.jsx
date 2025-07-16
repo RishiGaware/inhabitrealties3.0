@@ -1,32 +1,33 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlus, FaEdit, FaTrash, FaBed, FaBath, FaRuler, FaEye, FaImage, FaHeart } from 'react-icons/fa';
+import { FaPlus, FaEdit, FaTrash, FaBed, FaBath, FaRuler, FaEye, FaImage, FaHeart, FaArrowLeft } from 'react-icons/fa';
 import { MdLocationOn } from 'react-icons/md';
-import { Box, Heading, Flex, Grid, IconButton, useDisclosure, Text, Badge, Image, Skeleton, SkeletonText } from '@chakra-ui/react';
-import PropertyFormPopup from './PropertyFormPopup';
-import PropertyPreview from './PropertyPreview';
-import CommonCard from '../../../components/common/Card/CommonCard';
-import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
-import Loader from '../../../components/common/Loader';
-import { usePropertyTypeContext } from '../../../context/PropertyTypeContext';
-import { useAuth } from '../../../context/AuthContext';
+import { Box, Heading, Flex, Grid, IconButton, useDisclosure, Text, Badge, Image, Skeleton, SkeletonText, Button } from '@chakra-ui/react';
+import PropertyFormPopup from '../property/propertyMaster/PropertyFormPopup';
+import PropertyPreview from '../property/propertyMaster/PropertyPreview';
+import CommonCard from '../../components/common/Card/CommonCard';
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
+import Loader from '../../components/common/Loader';
+import { usePropertyTypeContext } from '../../context/PropertyTypeContext';
+import { useAuth } from '../../context/AuthContext';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   fetchProperties, 
   createProperty, 
   editProperty, 
   deleteProperty,
   fetchPropertiesWithParams
-} from '../../../services/propertyService';
+} from '../../services/propertyService';
 import { 
   createFavoriteProperty,
   deleteFavoriteProperty,
   getFavoritePropertiesWithParams
-} from '../../../services/favoriteproperty/favoritePropertyService';
-import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
-import CommonAddButton from '../../../components/common/Button/CommonAddButton';
-import ServerError from '../../../components/common/errors/ServerError';
-import NoInternet from '../../../components/common/errors/NoInternet';
+} from '../../services/favoriteproperty/favoritePropertyService';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import ServerError from '../../components/common/errors/ServerError';
+import NoInternet from '../../components/common/errors/NoInternet';
 
-const PropertyMaster = () => {
+const PropertyMasterDisplay = () => {
   const [selectedType, setSelectedType] = useState('ALL');
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -42,6 +43,8 @@ const PropertyMaster = () => {
   const [favoriteLoading, setFavoriteLoading] = useState({});
   
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Get property type context and auth context
   const propertyTypeContext = usePropertyTypeContext();
@@ -85,7 +88,7 @@ const PropertyMaster = () => {
     setErrorType(null);
     try {
       const response = await fetchProperties();
-      console.log('PropertyMaster: Fetch properties response:', response);
+      console.log('PropertyMasterDisplay: Fetch properties response:', response);
       setProperties(response.data || []);
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');
@@ -154,9 +157,9 @@ const PropertyMaster = () => {
         published: propertyData.published !== undefined ? propertyData.published : true
       };
 
-      console.log('PropertyMaster: Sending formatted data to backend:', formattedData);
+      console.log('PropertyMasterDisplay: Sending formatted data to backend:', formattedData);
       const response = await createProperty(formattedData);
-      console.log('PropertyMaster: Add property response:', response);
+      console.log('PropertyMasterDisplay: Add property response:', response);
       
       // Add the new property to local state
       const newProperty = {
@@ -172,7 +175,7 @@ const PropertyMaster = () => {
       const successMessage = response?.message || 'Property added successfully';
       showSuccessToast(successMessage);
     } catch (error) {
-      console.error('PropertyMaster: Add property error:', error);
+      console.error('PropertyMasterDisplay: Add property error:', error);
       let errorMessage = 'Failed to add property';
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -231,9 +234,9 @@ const PropertyMaster = () => {
         published: updatedData.published !== undefined ? updatedData.published : true
       };
 
-      console.log('PropertyMaster: Sending formatted update data to backend:', formattedData);
+      console.log('PropertyMasterDisplay: Sending formatted update data to backend:', formattedData);
       const response = await editProperty(selectedProperty._id, formattedData);
-      console.log('PropertyMaster: Update property response:', response);
+      console.log('PropertyMasterDisplay: Update property response:', response);
       
       // Update the property in local state
       setProperties(prevProperties => 
@@ -250,7 +253,7 @@ const PropertyMaster = () => {
       const successMessage = response?.message || 'Property updated successfully';
       showSuccessToast(successMessage);
     } catch (error) {
-      console.error('PropertyMaster: Update property error:', error);
+      console.error('PropertyMasterDisplay: Update property error:', error);
       let errorMessage = 'Failed to update property';
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -274,7 +277,7 @@ const PropertyMaster = () => {
       setIsApiCallInProgress(true);
       try {
         const response = await deleteProperty(propertyToDelete._id);
-        console.log('PropertyMaster: Delete property response:', response);
+        console.log('PropertyMasterDisplay: Delete property response:', response);
         
         // Remove the property from local state
         setProperties(prevProperties => 
@@ -287,7 +290,7 @@ const PropertyMaster = () => {
         const successMessage = response?.message || 'Property deleted successfully';
         showSuccessToast(successMessage);
       } catch (error) {
-        console.error('PropertyMaster: Delete property error:', error);
+        console.error('PropertyMasterDisplay: Delete property error:', error);
         showErrorToast('Failed to delete property');
       } finally {
         setIsApiCallInProgress(false);
@@ -416,7 +419,8 @@ const PropertyMaster = () => {
     <Box p={{ base: 3, md: 5 }}>
       {/* Loader at the top, non-blocking */}
       {(loading || propertyTypesLoading) && <Loader size="xl" />}
-      {/* Header Section */}
+      
+      {/* Header Section with Back Button */}
       <Flex 
         direction={{ base: 'column', sm: 'row' }}
         justify="space-between" 
@@ -424,9 +428,23 @@ const PropertyMaster = () => {
         mb={6}
         gap={{ base: 3, sm: 0 }}
       >
-        <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
-          Property Master
-        </Heading>
+        <Flex align="center" gap={4}>
+          <Button
+            leftIcon={<FaArrowLeft />}
+            variant="ghost"
+            colorScheme="brand"
+            onClick={() => {
+              sessionStorage.setItem('previousPath', location.pathname);
+              navigate('/property/favorite-properties');
+            }}
+            size="sm"
+          >
+            Back to Favorites
+          </Button>
+          <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
+            Property Master
+          </Heading>
+        </Flex>
         <CommonAddButton onClick={() => {
           setSelectedProperty(null);
           setIsModalOpen(true);
@@ -851,4 +869,4 @@ const PropertyMaster = () => {
   );
 };
 
-export default PropertyMaster; 
+export default PropertyMasterDisplay; 

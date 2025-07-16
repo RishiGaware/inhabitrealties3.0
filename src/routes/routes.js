@@ -38,6 +38,9 @@ import ClientPayments from '../pages/client/Payments';
 import ClientReferrals from '../pages/client/Referrals';
 import PropertyMaster from '../pages/property/propertyMaster/PropertyMaster';
 import PropertyTypes from '../pages/property/propertyTypes/PropertyTypes';
+import Properties from '../pages/displayproperties/Properties';
+import FavoriteProperties from '../pages/displayproperties/FavoriteProperties';
+import PropertyMasterDisplay from '../pages/displayproperties/PropertyMasterDisplay';
 import SalesList from '../pages/admin/sales/SalesList';
 import AddPayment from '../pages/admin/sales/AddPayment';
 import PendingPayments from '../pages/admin/sales/PendingPayments';
@@ -76,6 +79,12 @@ export const ROUTES = [
   // Property
   { name: 'propertyMaster', path: '/property/property-master', component: PropertyMaster, permissions: 'public' },
   { name: 'propertyTypes', path: '/property/property-types', component: PropertyTypes, permissions: 'public' },
+  
+  // Display Properties
+  { name: 'properties', path: '/properties', component: Properties, permissions: 'public' },
+  { name: 'displayFavoriteProperties', path: '/properties/favorite-properties', component: FavoriteProperties, permissions: 'public' },
+  { name: 'propertyFavoriteProperties', path: '/property/favorite-properties', component: FavoriteProperties, permissions: 'public' },
+  { name: 'propertyMasterDisplay', path: '/property-master-display', component: PropertyMasterDisplay, permissions: 'public' },
 
   // Lead
   { name: 'leadAdd', path: '/lead/add', component: AddLead, permissions: 'public' },
