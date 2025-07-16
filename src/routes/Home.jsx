@@ -12,7 +12,6 @@ import Testimonials from '../components/Testimonials';
 import Agents from '../components/Agents';
 import HowItWorks from '../components/HowItWorks';
 import PropertyFeatures from '../components/NeighborhoodGuides';
-import PropertySearchBar from '../components/Search/PropertySearchBar';
 
 const Home = () => {
   return (

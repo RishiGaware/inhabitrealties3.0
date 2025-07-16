@@ -170,14 +170,7 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch }) => {
         >
           Search
         </button>
-        {/* Collapse button for mobile */}
-        <button
-          className="block md:hidden absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl bg-white rounded-full p-1 border border-gray-200"
-          style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}
-          onClick={() => setIsCollapsed(true)}
-        >
-          &times;
-        </button>
+
       </div>
     </div>
   );
