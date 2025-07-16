@@ -35,6 +35,7 @@ const Properties = () => {
   const [errorType, setErrorType] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState([]);
+  const [favoriteRecordIds, setFavoriteRecordIds] = useState({}); // Store favorite record IDs
   const [favoriteLoading, setFavoriteLoading] = useState({});
   
   // Get property type context and auth context
@@ -101,7 +102,15 @@ const Properties = () => {
       
       const response = await getFavoritePropertiesWithParams(searchParams);
       const favoritePropertyIds = response.data.map(fav => fav.propertyId);
+      
+      // Store favorite record IDs for direct deletion
+      const recordIdsMap = {};
+      response.data.forEach(fav => {
+        recordIdsMap[fav.propertyId] = fav._id;
+      });
+      
       setFavorites(favoritePropertyIds);
+      setFavoriteRecordIds(recordIdsMap);
     } catch (error) {
       console.error('Failed to fetch user favorites:', error);
       showErrorToast('Failed to load favorites');
@@ -131,21 +140,37 @@ const Properties = () => {
       const isFavorited = favorites.includes(propertyId);
       
       if (isFavorited) {
-        // Remove from favorites
-        const favoriteRecord = await getFavoritePropertiesWithParams({
-          userId,
-          propertyId
+        // Remove from favorites using stored record ID
+        const favoriteRecordId = favoriteRecordIds[propertyId];
+        if (!favoriteRecordId) {
+          showErrorToast('Favorite record not found');
+          return;
+        }
+        
+        await deleteFavoriteProperty(favoriteRecordId);
+        setFavorites(prev => prev.filter(id => id !== propertyId));
+        
+        // Remove from favoriteRecordIds map
+        setFavoriteRecordIds(prev => {
+          const newMap = { ...prev };
+          delete newMap[propertyId];
+          return newMap;
         });
         
-        if (favoriteRecord.data && favoriteRecord.data.length > 0) {
-          await deleteFavoriteProperty(favoriteRecord.data[0]._id);
-          setFavorites(prev => prev.filter(id => id !== propertyId));
-          showSuccessToast('Property removed from favorites');
-        }
+        showSuccessToast('Property removed from favorites');
       } else {
         // Add to favorites
-        await createFavoriteProperty(userId, propertyId);
+        const response = await createFavoriteProperty(userId, propertyId);
         setFavorites(prev => [...prev, propertyId]);
+        
+        // Store the new favorite record ID
+        if (response.data && response.data._id) {
+          setFavoriteRecordIds(prev => ({
+            ...prev,
+            [propertyId]: response.data._id
+          }));
+        }
+        
         showSuccessToast('Property added to favorites');
       }
     } catch (error) {

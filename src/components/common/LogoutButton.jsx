@@ -34,6 +34,7 @@ const LogoutButton = ({ variant = 'ghost', size = 'md', ...props }) => {
 
   const handleLogout = () => {
     // Clear any stored authentication data
+    document.cookie = "AuthToken=; Max-Age=0; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     sessionStorage.clear();

@@ -32,6 +32,7 @@ const FavoriteProperties = () => {
   const [errorType, setErrorType] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState([]);
+  const [favoriteRecordIds, setFavoriteRecordIds] = useState({}); // Store favorite record IDs
   const [deleteLoading, setDeleteLoading] = useState({});
   const [clearAllLoading, setClearAllLoading] = useState(false);
   
@@ -67,7 +68,15 @@ const FavoriteProperties = () => {
       
       const response = await getFavoritePropertiesWithParams(searchParams);
       const favoritePropertyIds = response.data.map(fav => fav.propertyId);
+      
+      // Store favorite record IDs for direct deletion
+      const recordIdsMap = {};
+      response.data.forEach(fav => {
+        recordIdsMap[fav.propertyId] = fav._id;
+      });
+      
       setFavorites(favoritePropertyIds);
+      setFavoriteRecordIds(recordIdsMap);
     } catch (error) {
       console.error('Failed to fetch user favorites:', error);
       showErrorToast('Failed to load favorites');
@@ -165,17 +174,23 @@ const FavoriteProperties = () => {
     setDeleteLoading(prev => ({ ...prev, [propertyId]: true }));
 
     try {
-      const favoriteRecord = await getFavoritePropertiesWithParams({
-        userId,
-        propertyId
-      });
-      
-      if (favoriteRecord.data && favoriteRecord.data.length > 0) {
-        await deleteFavoriteProperty(favoriteRecord.data[0]._id);
-        setFavorites(prev => prev.filter(id => id !== propertyId));
-
-        showSuccessToast('Property removed from favorites');
+      const favoriteRecordId = favoriteRecordIds[propertyId];
+      if (!favoriteRecordId) {
+        showErrorToast('Favorite record not found');
+        return;
       }
+      
+      await deleteFavoriteProperty(favoriteRecordId);
+      setFavorites(prev => prev.filter(id => id !== propertyId));
+      
+      // Remove from favoriteRecordIds map
+      setFavoriteRecordIds(prev => {
+        const newMap = { ...prev };
+        delete newMap[propertyId];
+        return newMap;
+      });
+
+      showSuccessToast('Property removed from favorites');
     } catch (error) {
       console.error('Failed to remove from favorites:', error);
       const errorMessage = error.response?.data?.message || 'Failed to remove from favorites';
@@ -208,6 +223,7 @@ const FavoriteProperties = () => {
       }
       
       setFavorites([]);
+      setFavoriteRecordIds({}); // Clear the map
       showSuccessToast('All favorites cleared');
     } catch (error) {
       console.error('Failed to clear all favorites:', error);
@@ -711,7 +727,7 @@ const FavoriteProperties = () => {
 
                     {/* Action Buttons */}
                     <Flex 
-                      justify="space-between" 
+                      justify="center" 
                       gap={1}
                       pt={2}
                       borderTop="1px"
@@ -722,21 +738,13 @@ const FavoriteProperties = () => {
                         size="xs"
                         variant="ghost"
                         colorScheme="brand"
-                        onClick={() => handlePreview(property)}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            removeFromFavorites(property._id);
+                          }}
                         aria-label="View Property"
                         flex={1}
-                      />
-                      <IconButton
-                        icon={<FaTrash />}
-                        size="xs"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFromFavorites(property._id);
-                        }}
-                        aria-label="Remove from favorites"
-                        flex={1}
+                        maxW="120px"
                       />
                     </Flex>
                   </Box>

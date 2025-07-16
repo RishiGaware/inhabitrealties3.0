@@ -13,7 +13,6 @@ import {
   fetchPropertiesWithParams
 } from '../../services/propertyService';
 import { 
-  createFavoriteProperty,
   deleteFavoriteProperty,
   getFavoritePropertiesWithParams
 } from '../../services/favoriteproperty/favoritePropertyService';
@@ -30,6 +29,7 @@ const PropertyFavoriteProperties = () => {
   const [errorType, setErrorType] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState([]);
+  const [favoriteRecordIds, setFavoriteRecordIds] = useState({}); // Store favorite record IDs
   const [favoriteLoading, setFavoriteLoading] = useState({});
   const [clearAllLoading, setClearAllLoading] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -65,7 +65,15 @@ const PropertyFavoriteProperties = () => {
       
       const response = await getFavoritePropertiesWithParams(searchParams);
       const favoritePropertyIds = response.data.map(fav => fav.propertyId);
+      
+      // Store favorite record IDs for direct deletion
+      const recordIdsMap = {};
+      response.data.forEach(fav => {
+        recordIdsMap[fav.propertyId] = fav._id;
+      });
+      
       setFavorites(favoritePropertyIds);
+      setFavoriteRecordIds(recordIdsMap);
     } catch (error) {
       console.error('Failed to fetch user favorites:', error);
       showErrorToast('Failed to load favorites');
@@ -126,16 +134,23 @@ const PropertyFavoriteProperties = () => {
     setFavoriteLoading(prev => ({ ...prev, [propertyId]: true }));
 
     try {
-      const favoriteRecord = await getFavoritePropertiesWithParams({
-        userId,
-        propertyId
+      const favoriteRecordId = favoriteRecordIds[propertyId];
+      if (!favoriteRecordId) {
+        showErrorToast('Favorite record not found');
+        return;
+      }
+      
+      await deleteFavoriteProperty(favoriteRecordId);
+      setFavorites(prev => prev.filter(id => id !== propertyId));
+      
+      // Remove from favoriteRecordIds map
+      setFavoriteRecordIds(prev => {
+        const newMap = { ...prev };
+        delete newMap[propertyId];
+        return newMap;
       });
       
-      if (favoriteRecord.data && favoriteRecord.data.length > 0) {
-        await deleteFavoriteProperty(favoriteRecord.data[0]._id);
-        setFavorites(prev => prev.filter(id => id !== propertyId));
-        showSuccessToast('Property removed from favorites');
-      }
+      showSuccessToast('Property removed from favorites');
     } catch (error) {
       console.error('Failed to remove from favorites:', error);
       const errorMessage = error.response?.data?.message || 'Failed to remove from favorites';
@@ -160,20 +175,16 @@ const PropertyFavoriteProperties = () => {
     setClearAllLoading(true);
 
     try {
-      const userFavorites = await getFavoritePropertiesWithParams({
-        userId: userId,
-        propertyId: null,
-        createdByUserId: null,
-        updatedByUserId: null,
-        published: true
-      });
+      // Use the stored favorite record IDs instead of making an API call
+      const recordIds = Object.values(favoriteRecordIds);
       
-      // Delete all favorite records
-      for (const favorite of userFavorites.data) {
-        await deleteFavoriteProperty(favorite._id);
+      // Delete all favorite records using stored IDs
+      for (const recordId of recordIds) {
+        await deleteFavoriteProperty(recordId);
       }
       
       setFavorites([]);
+      setFavoriteRecordIds({}); // Clear the map
       showSuccessToast('All favorites cleared');
     } catch (error) {
       console.error('Failed to clear all favorites:', error);
@@ -581,7 +592,7 @@ const PropertyFavoriteProperties = () => {
 
                     {/* Remove from Favorites Button */}
                     <IconButton
-                      icon={<FaTrash />}
+                      icon={<FaHeart />}
                       size="xs"
                       position="absolute"
                       bottom={2}
