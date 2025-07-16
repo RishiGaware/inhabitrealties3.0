@@ -26,6 +26,7 @@ import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import ServerError from '../../components/common/errors/ServerError';
 import NoInternet from '../../components/common/errors/NoInternet';
+import { ROUTES } from '../../utils/constants';
 
 const PropertyMasterDisplay = () => {
   const [selectedType, setSelectedType] = useState('ALL');
@@ -435,7 +436,7 @@ const PropertyMasterDisplay = () => {
             colorScheme="brand"
             onClick={() => {
               sessionStorage.setItem('previousPath', location.pathname);
-              navigate('/property/favorite-properties');
+              navigate(ROUTES.PROPERTY_FAVORITES);
             }}
             size="sm"
           >

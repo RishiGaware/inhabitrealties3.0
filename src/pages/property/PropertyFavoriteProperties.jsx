@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { FaBed, FaBath, FaRuler, FaEye, FaImage, FaHeart, FaTrash } from 'react-icons/fa';
-import { MdLocationOn } from 'react-icons/md';
-import { Box, Heading, Flex, Grid, IconButton, Text, Badge, Image, Button } from '@chakra-ui/react';
 import { useNavigate } from 'react-router-dom';
-import PropertyPreview from '../property/propertyMaster/PropertyPreview';
+import { FaHeart, FaTrash, FaBed, FaBath, FaRuler, FaEye, FaImage } from 'react-icons/fa';
+import { MdLocationOn } from 'react-icons/md';
+import { Box, Heading, Flex, Grid, IconButton, Text, Badge, Image, Skeleton, SkeletonText, Button } from '@chakra-ui/react';
+import PropertyPreview from './propertyMaster/PropertyPreview';
 import CommonCard from '../../components/common/Card/CommonCard';
 import Loader from '../../components/common/Loader';
 import { usePropertyTypeContext } from '../../context/PropertyTypeContext';
@@ -13,27 +13,27 @@ import {
   fetchPropertiesWithParams
 } from '../../services/propertyService';
 import { 
-  getFavoritePropertiesByUserId,
+  createFavoriteProperty,
   deleteFavoriteProperty,
   getFavoritePropertiesWithParams
 } from '../../services/favoriteproperty/favoritePropertyService';
-import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import ServerError from '../../components/common/errors/ServerError';
 import NoInternet from '../../components/common/errors/NoInternet';
 import { ROUTES } from '../../utils/constants';
 
-const FavoriteProperties = () => {
+const PropertyFavoriteProperties = () => {
   const navigate = useNavigate();
   const [selectedType, setSelectedType] = useState('ALL');
   const [allProperties, setAllProperties] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedProperty, setSelectedProperty] = useState(null);
-  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [errorType, setErrorType] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [favorites, setFavorites] = useState([]);
-  const [deleteLoading, setDeleteLoading] = useState({});
+  const [favoriteLoading, setFavoriteLoading] = useState({});
   const [clearAllLoading, setClearAllLoading] = useState(false);
+  const [selectedProperty, setSelectedProperty] = useState(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   // Get property type context and auth context
   const propertyTypeContext = usePropertyTypeContext();
@@ -48,8 +48,6 @@ const FavoriteProperties = () => {
       fetchUserFavorites();
     }
   }, [getAllPropertyTypes, isAuthenticated]);
-
-
 
   const fetchUserFavorites = async () => {
     try {
@@ -79,7 +77,7 @@ const FavoriteProperties = () => {
     setErrorType(null);
     try {
       const response = await fetchProperties();
-      console.log('FavoriteProperties: Fetch properties response:', response);
+      console.log('PropertyFavoriteProperties: Fetch properties response:', response);
       setAllProperties(response.data || []);
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');
@@ -94,49 +92,12 @@ const FavoriteProperties = () => {
     setLoading(true);
     setErrorType(null);
     try {
-      const userId = getUserId();
-      if (!userId) {
-        showErrorToast('User not found');
-        return;
-      }
-
-      // Use the favorite property search endpoint
-      const searchParams = {
-        userId: userId,
-        propertyId: null,
-        createdByUserId: null,
-        updatedByUserId: null,
-        published: true
-      };
-
-      // If there's a search term, we'll need to filter the results
-      const response = await getFavoritePropertiesWithParams(searchParams);
-      
-      if (response.data && response.data.length > 0) {
-        // Get the property IDs from favorite records
-        const favoritePropertyIds = response.data.map(fav => fav.propertyId);
-        
-        // Fetch the actual property details for these IDs
-        const propertyParams = {};
-        if (searchTerm) propertyParams.search = searchTerm;
-        if (selectedType && selectedType !== 'ALL') propertyParams.propertyType = selectedType;
-        
-        const propertiesResponse = await fetchPropertiesWithParams(propertyParams);
-        const allPropertiesData = propertiesResponse.data || [];
-        
-        // Filter properties to only show those that are in favorites
-        const favoritePropertiesData = allPropertiesData.filter(property => 
-          favoritePropertyIds.includes(property._id)
-        );
-        
-        setAllProperties(favoritePropertiesData);
-        setFavorites(favoritePropertyIds);
-      } else {
-        setAllProperties([]);
-        setFavorites([]);
-      }
+      const params = {};
+      if (searchTerm) params.search = searchTerm;
+      if (selectedType && selectedType !== 'ALL') params.propertyType = selectedType;
+      const response = await fetchPropertiesWithParams(params);
+      setAllProperties(response.data || []);
     } catch (error) {
-      console.error('Failed to search favorite properties:', error);
       if (error.message === 'Network Error') setErrorType('network');
       else if (error.response?.status === 500) setErrorType('server');
       else setErrorType('server');
@@ -162,7 +123,7 @@ const FavoriteProperties = () => {
       return;
     }
 
-    setDeleteLoading(prev => ({ ...prev, [propertyId]: true }));
+    setFavoriteLoading(prev => ({ ...prev, [propertyId]: true }));
 
     try {
       const favoriteRecord = await getFavoritePropertiesWithParams({
@@ -173,7 +134,6 @@ const FavoriteProperties = () => {
       if (favoriteRecord.data && favoriteRecord.data.length > 0) {
         await deleteFavoriteProperty(favoriteRecord.data[0]._id);
         setFavorites(prev => prev.filter(id => id !== propertyId));
-
         showSuccessToast('Property removed from favorites');
       }
     } catch (error) {
@@ -181,7 +141,7 @@ const FavoriteProperties = () => {
       const errorMessage = error.response?.data?.message || 'Failed to remove from favorites';
       showErrorToast(errorMessage);
     } finally {
-      setDeleteLoading(prev => ({ ...prev, [propertyId]: false }));
+      setFavoriteLoading(prev => ({ ...prev, [propertyId]: false }));
     }
   };
 
@@ -200,7 +160,13 @@ const FavoriteProperties = () => {
     setClearAllLoading(true);
 
     try {
-      const userFavorites = await getFavoritePropertiesByUserId(userId);
+      const userFavorites = await getFavoritePropertiesWithParams({
+        userId: userId,
+        propertyId: null,
+        createdByUserId: null,
+        updatedByUserId: null,
+        published: true
+      });
       
       // Delete all favorite records
       for (const favorite of userFavorites.data) {
@@ -302,7 +268,7 @@ const FavoriteProperties = () => {
         gap={{ base: 3, sm: 0 }}
       >
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
-          Favorite Properties
+          Property Favorite Properties
         </Heading>
         {favorites.length > 0 && (
           <Button
@@ -353,14 +319,14 @@ const FavoriteProperties = () => {
           <Flex gap={3} justify="center">
             {/* <Button
               colorScheme="brand"
-              onClick={() => navigate(ROUTES.PROPERTY_MASTER_DISPLAY)}
+              onClick={() => navigate(ROUTES.PROPERTY_MASTER)}
             >
               Browse Properties
             </Button> */}
             <Button
               variant="outline"
               colorScheme="brand"
-              onClick={() => navigate(ROUTES.PROPERTIES)}
+              onClick={() => navigate(ROUTES.PROPERTY_MASTER)}
             >
               View All Properties
             </Button>
@@ -458,7 +424,7 @@ const FavoriteProperties = () => {
                 fontWeight="medium"
                 whiteSpace="nowrap"
               >
-                All Favorites
+                All Properties
               </CommonCard>
               {propertyTypes.map((type) => (
                 <CommonCard
@@ -516,7 +482,7 @@ const FavoriteProperties = () => {
                 </Text>
                 <Text fontSize={{ base: 'sm', md: 'md' }} color="gray.400" mt={2}>
                   {selectedType === 'ALL' 
-                    ? 'No favorite properties available' 
+                    ? 'No favorite properties match your search criteria' 
                     : `No favorite properties found for ${selectedType}`
                   }
                 </Text>
@@ -613,9 +579,9 @@ const FavoriteProperties = () => {
                       {property.propertyStatus}
                     </Badge>
 
-                    {/* Favorite Button - Red heart for favorites */}
+                    {/* Remove from Favorites Button */}
                     <IconButton
-                      icon={<FaHeart />}
+                      icon={<FaTrash />}
                       size="xs"
                       position="absolute"
                       bottom={2}
@@ -634,7 +600,7 @@ const FavoriteProperties = () => {
                         transform: "scale(1.1)"
                       }}
                       transition="all 0.2s"
-                      isLoading={deleteLoading[property._id]}
+                      isLoading={favoriteLoading[property._id]}
                     />
                   </Box>
 
@@ -723,19 +689,7 @@ const FavoriteProperties = () => {
                         variant="ghost"
                         colorScheme="brand"
                         onClick={() => handlePreview(property)}
-                        aria-label="View Property"
-                        flex={1}
-                      />
-                      <IconButton
-                        icon={<FaTrash />}
-                        size="xs"
-                        variant="ghost"
-                        colorScheme="red"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeFromFavorites(property._id);
-                        }}
-                        aria-label="Remove from favorites"
+                        aria-label="Preview Property"
                         flex={1}
                       />
                     </Flex>
@@ -762,4 +716,4 @@ const FavoriteProperties = () => {
   );
 };
 
-export default FavoriteProperties; 
+export default PropertyFavoriteProperties; 

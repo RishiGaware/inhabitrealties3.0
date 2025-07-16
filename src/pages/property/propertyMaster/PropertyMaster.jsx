@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaPlus, FaEdit, FaTrash, FaBed, FaBath, FaRuler, FaEye, FaImage, FaHeart } from 'react-icons/fa';
 import { MdLocationOn } from 'react-icons/md';
-import { Box, Heading, Flex, Grid, IconButton, useDisclosure, Text, Badge, Image, Skeleton, SkeletonText } from '@chakra-ui/react';
+import { Box, Heading, Flex, Grid, IconButton, useDisclosure, Text, Badge, Image, Skeleton, SkeletonText, Button } from '@chakra-ui/react';
 import PropertyFormPopup from './PropertyFormPopup';
 import PropertyPreview from './PropertyPreview';
 import CommonCard from '../../../components/common/Card/CommonCard';
@@ -25,6 +25,8 @@ import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
 import ServerError from '../../../components/common/errors/ServerError';
 import NoInternet from '../../../components/common/errors/NoInternet';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ROUTES } from '../../../utils/constants';
 
 const PropertyMaster = () => {
   const [selectedType, setSelectedType] = useState('ALL');
@@ -42,6 +44,8 @@ const PropertyMaster = () => {
   const [favoriteLoading, setFavoriteLoading] = useState({});
   
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   // Get property type context and auth context
   const propertyTypeContext = usePropertyTypeContext();
@@ -427,10 +431,24 @@ const PropertyMaster = () => {
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           Property Master
         </Heading>
-        <CommonAddButton onClick={() => {
-          setSelectedProperty(null);
-          setIsModalOpen(true);
-        }} />
+        <Flex gap={2}>
+          <Button
+            size="sm"
+            colorScheme="brand"
+            variant="outline"
+            leftIcon={<FaHeart />}
+            onClick={() => {
+              sessionStorage.setItem('previousPath', location.pathname);
+              navigate(ROUTES.PROPERTY_FAVORITES);
+            }}
+          >
+            Favorites
+          </Button>
+          <CommonAddButton onClick={() => {
+            setSelectedProperty(null);
+            setIsModalOpen(true);
+          }} />
+        </Flex>
       </Flex>
 
       {/* Search and Filter Section */}

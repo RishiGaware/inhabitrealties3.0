@@ -6,6 +6,7 @@ import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from "react-ic
 import logown from '../../assets/images/logown.png'
 import sbicon from '../../assets/images/sb-icon.webp'
 import { useNavigate, useLocation } from "react-router-dom";
+import { ROUTES } from '../../utils/constants';
 
 const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   const location = useLocation();
@@ -113,71 +114,71 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   ];
 
   const routeMap = {
-    'dashboard': '/dashboard',
+    'dashboard': ROUTES.DASHBOARD,
     'admin': {
-      'user-management': '/admin/user-management',
-      'role-management': '/admin/role-management',
-      'document-type-management': '/admin/document-type-management',
-      'document-management': '/admin/document-management',
-      'reports': '/admin/reports'
+      'user-management': ROUTES.ADMIN_USER_MANAGEMENT,
+      'role-management': ROUTES.ADMIN_ROLE_MANAGEMENT,
+      'document-type-management': ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT,
+      'document-management': ROUTES.ADMIN_DOCUMENT_MANAGEMENT,
+      'reports': ROUTES.ADMIN_REPORTS
     },
     'property': {
-      'property-master': '/property/property-master',
-      'property-types': '/property/property-types',
-      'favorite-properties': '/property/favorite-properties'
+      'property-master': ROUTES.PROPERTY_MASTER,
+      'property-types': ROUTES.PROPERTY_TYPES,
+      'favorite-properties': ROUTES.PROPERTY_FAVORITES
     },
     'displayProperties': {
-      'properties': '/properties',
-      'favorite': '/properties/favorite-properties'
+      'properties': ROUTES.PROPERTIES,
+      'favorite': ROUTES.DISPLAY_FAVORITES
     },
     'leads': {
-      'leads': '/lead/leads',
-      'lead-status': '/lead/status',
-      'lead-follow-up': '/lead/follow-up',
-      'reference-source': '/lead/reference-source'
+      'leads': ROUTES.LEAD_ADD,
+      'lead-status': ROUTES.LEAD_VIEW,
+      'lead-follow-up': ROUTES.LEAD_QUALIFICATION,
+      'reference-source': ROUTES.LEAD_REFERENCE_SOURCE
     },
     'customers': {
-      'customer-profiles': '/customers/profiles',
-      'documents': '/customers/documents',
-      'document-types': '/customers/document-types',
-      'meeting-scheduler': '/customers/meeting-scheduler'
+      'customer-profiles': ROUTES.CUSTOMER_PROFILES,
+      'documents': ROUTES.CUSTOMER_DOCUMENTS,
+      'document-types': ROUTES.CUSTOMER_DOCUMENT_TYPES,
+      'meeting-scheduler': ROUTES.CUSTOMER_MEETING_SCHEDULER
     },
     'sales': {
-      'sales-list': '/admin/sales/list',
-      'pending-payments': '/admin/sales/pending-payments',
-      'sales-reports': '/admin/sales/reports'
+      'sales-list': ROUTES.SALES_LIST,
+      'pending-payments': ROUTES.SALES_PENDING_PAYMENTS,
+      'sales-reports': ROUTES.SALES_REPORTS
     },
     'bookings': {
-      'inventory': '/bookings/inventory',
-      'booked-units': '/bookings/booked-units',
-      'payment-status': '/bookings/payment-status'
+      'inventory': ROUTES.BOOKINGS_INVENTORY,
+      'booked-units': ROUTES.BOOKINGS_BOOKED_UNITS,
+      'payment-status': ROUTES.BOOKINGS_PAYMENT_STATUS
     },
     'payments': {
-      'installments': '/payments/installments',
-      'payment-history': '/payments/payment-history',
-      'due-payments': '/payments/due-payments'
+      'installments': ROUTES.PAYMENTS_INSTALLMENTS,
+      'payment-history': ROUTES.PAYMENTS_HISTORY,
+      'due-payments': ROUTES.PAYMENTS_DUE
     },
     'rent': {
-      'rent-roll': '/rent/rent-roll',
-      'lease-management': '/rent/lease-management'
+      'rent-roll': ROUTES.RENT_ROLL,
+      'lease-management': ROUTES.LEASE_MANAGEMENT
     },
     'accounting': {
-      'expense-tracking': '/admin/accounting/expense-tracking',
-      'income-statement': '/admin/accounting/income-statement'
+      'expense-tracking': ROUTES.ACCOUNTING_EXPENSE_TRACKING,
+      'income-statement': ROUTES.ACCOUNTING_INCOME_STATEMENT
     },
     'postSale': {
-      'referrals': '/post-sale/referrals',
-      'rewards': '/post-sale/rewards',
-      'points': '/post-sale/points'
+      'referrals': ROUTES.POST_SALE_REFERRALS,
+      'rewards': ROUTES.POST_SALE_REWARDS,
+      'points': ROUTES.POST_SALE_POINTS
     },
     'client': {
-      'my-bookings': '/client/my-bookings',
-      'my-meetings': '/client/my-meetings',
-      'documents': '/client/documents',
-      'payments': '/client/payments',
-      'referrals': '/client/referrals'
+      'my-bookings': ROUTES.CLIENT_MY_BOOKINGS,
+      'my-meetings': ROUTES.CLIENT_MY_MEETINGS,
+      'documents': ROUTES.CLIENT_DOCUMENTS,
+      'payments': ROUTES.CLIENT_PAYMENTS,
+      'referrals': ROUTES.CLIENT_REFERRALS
     },
-    'settings': '/settings',
+    'settings': ROUTES.SETTINGS,
   };
 
   // Helper to convert to kebab-case

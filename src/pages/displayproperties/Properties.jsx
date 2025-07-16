@@ -5,6 +5,7 @@ import { Box, Heading, Flex, Grid, IconButton, Text, Badge, Image, Skeleton, Ske
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropertyPreview from '../property/propertyMaster/PropertyPreview';
 import CommonCard from '../../components/common/Card/CommonCard';
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
 import Loader from '../../components/common/Loader';
 import { usePropertyTypeContext } from '../../context/PropertyTypeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -17,9 +18,11 @@ import {
   deleteFavoriteProperty,
   getFavoritePropertiesWithParams
 } from '../../services/favoriteproperty/favoritePropertyService';
-import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
+import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import ServerError from '../../components/common/errors/ServerError';
 import NoInternet from '../../components/common/errors/NoInternet';
+import { ROUTES } from '../../utils/constants';
 
 const Properties = () => {
   const navigate = useNavigate();
@@ -244,24 +247,18 @@ const Properties = () => {
           </Text>
         </Box>
         <Flex gap={3}>
+          
           <Button
             size="sm"
             colorScheme="brand"
             variant="outline"
-            onClick={() => navigate('/property-master-display')}
-          >
-            Property Master
-          </Button>
-          <Button
-            size="sm"
-            colorScheme="brand"
-            variant="outline"
+            leftIcon={<FaHeart />}
             onClick={() => {
               sessionStorage.setItem('previousPath', location.pathname);
-              navigate('/properties/favorite-properties');
+              navigate(ROUTES.DISPLAY_FAVORITES);
             }}
           >
-            My Favorites
+            Favorites
           </Button>
         </Flex>
       </Flex>

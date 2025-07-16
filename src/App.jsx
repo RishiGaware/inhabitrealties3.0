@@ -48,6 +48,7 @@ import ClientPayments from './pages/client/Payments';
 import ClientReferrals from './pages/client/Referrals';
 import PropertyMaster from './pages/property/propertyMaster/PropertyMaster';
 import PropertyTypes from './pages/property/propertyTypes/PropertyTypes';
+import PropertyFavoriteProperties from './pages/property/PropertyFavoriteProperties';
 import Properties from './pages/displayproperties/Properties';
 import FavoriteProperties from './pages/displayproperties/FavoriteProperties';
 import PropertyMasterDisplay from './pages/displayproperties/PropertyMasterDisplay';
@@ -70,6 +71,9 @@ import UserProfile from './pages/profile/UserProfile';
 import ReferenceSource from './pages/lead/ReferenceSource';
 import Banner from './components/Banner';
 import TopDevelopers from './components/TopDevelopers';
+
+// Import route constants
+import { ROUTES } from './utils/constants';
 
 const MainLayout = ({ children }) => {
   return (
@@ -110,7 +114,7 @@ const App = () => {
           <Routes>
             {/* Auth Routes */}
             <Route
-              path="/login"
+              path={ROUTES.LOGIN}
               element={
                 <AuthLayout>
                   <NewLogin />
@@ -118,7 +122,7 @@ const App = () => {
               }
             />
             <Route
-              path="/register"
+              path={ROUTES.REGISTER}
               element={
                 <AuthLayout>
                   <NewRegister />
@@ -127,88 +131,88 @@ const App = () => {
             />
 
             {/* Main Routes */}
-            <Route path="/" element={<MainLayout><Home /></MainLayout>} />
-            <Route path="/features" element={<MainLayout><Features /></MainLayout>} />
-            <Route path="/about" element={<MainLayout><AboutUs /></MainLayout>} />
-            <Route path="/contact" element={<MainLayout><Contact /></MainLayout>} />
-            <Route path="/property-details" element={<MainLayout><PropertyDetails /></MainLayout>} />
+            <Route path={ROUTES.HOME} element={<MainLayout><Home /></MainLayout>} />
+            <Route path={ROUTES.FEATURES} element={<MainLayout><Features /></MainLayout>} />
+            <Route path={ROUTES.ABOUT} element={<MainLayout><AboutUs /></MainLayout>} />
+            <Route path={ROUTES.CONTACT} element={<MainLayout><Contact /></MainLayout>} />
+            <Route path={ROUTES.PROPERTY_DETAILS} element={<MainLayout><PropertyDetails /></MainLayout>} />
             
             {/* Dashboard Route */}
-            <Route path="/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
+            <Route path={ROUTES.DASHBOARD} element={<DashboardLayout><Dashboard /></DashboardLayout>} />
               
             {/* Admin Routes */}
-            <Route path='/admin/user-management' element={<DashboardLayout><UserManagement /></DashboardLayout>} />
-            <Route path='/admin/role-management' element={<DashboardLayout><RoleManagement /></DashboardLayout>} />
-            <Route path='/admin/document-type-management' element={<DashboardLayout><DocumentTypeManagement /></DashboardLayout>} />
-            <Route path='/admin/document-management' element={<DashboardLayout><DocumentManagement /></DashboardLayout>} />
-            <Route path='/admin/reports' element={<DashboardLayout><Reports /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_USER_MANAGEMENT} element={<DashboardLayout><UserManagement /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_ROLE_MANAGEMENT} element={<DashboardLayout><RoleManagement /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT} element={<DashboardLayout><DocumentTypeManagement /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_DOCUMENT_MANAGEMENT} element={<DashboardLayout><DocumentManagement /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_REPORTS} element={<DashboardLayout><Reports /></DashboardLayout>} />
             
             {/* Property Routes */}
-            <Route path='/property/property-master' element={<DashboardLayout><PropertyMaster /></DashboardLayout>} />
-            <Route path='/property/property-types' element={<DashboardLayout><PropertyTypes /></DashboardLayout>} />
+            <Route path={ROUTES.PROPERTY_MASTER} element={<DashboardLayout><PropertyMaster /></DashboardLayout>} />
+            <Route path={ROUTES.PROPERTY_TYPES} element={<DashboardLayout><PropertyTypes /></DashboardLayout>} />
+            <Route path={ROUTES.PROPERTY_FAVORITES} element={<DashboardLayout><PropertyFavoriteProperties /></DashboardLayout>} />
             
             {/* Display Properties Routes */}
-            <Route path='/properties' element={<DashboardLayout><Properties /></DashboardLayout>} />
-            <Route path='/properties/favorite-properties' element={<DashboardLayout><FavoriteProperties /></DashboardLayout>} />
-            <Route path='/property/favorite-properties' element={<DashboardLayout><FavoriteProperties /></DashboardLayout>} />
-            <Route path='/property-master-display' element={<DashboardLayout><PropertyMasterDisplay /></DashboardLayout>} />
+            <Route path={ROUTES.PROPERTIES} element={<DashboardLayout><Properties /></DashboardLayout>} />
+            <Route path={ROUTES.DISPLAY_FAVORITES} element={<DashboardLayout><FavoriteProperties /></DashboardLayout>} />
+            <Route path={ROUTES.PROPERTY_MASTER_DISPLAY} element={<DashboardLayout><PropertyMasterDisplay /></DashboardLayout>} />
             
             {/* Lead Management Routes */}
-            <Route path='/lead/leads' element={<DashboardLayout><Leads /></DashboardLayout>} />
-            <Route path='/lead/status' element={<DashboardLayout><LeadStatus /></DashboardLayout>} />
-            <Route path='/lead/follow-up' element={<DashboardLayout><LeadFollowUp /></DashboardLayout>} />
-            <Route path='/lead/reference-source' element={<DashboardLayout><ReferenceSource /></DashboardLayout>} />
+            <Route path={ROUTES.LEAD_ADD} element={<DashboardLayout><Leads /></DashboardLayout>} />
+            <Route path={ROUTES.LEAD_VIEW} element={<DashboardLayout><LeadStatus /></DashboardLayout>} />
+            <Route path={ROUTES.LEAD_QUALIFICATION} element={<DashboardLayout><LeadFollowUp /></DashboardLayout>} />
+            <Route path={ROUTES.LEAD_REFERENCE_SOURCE} element={<DashboardLayout><ReferenceSource /></DashboardLayout>} />
             
             {/* Customer Management Routes */}
-            <Route path='/customers/profiles' element={<DashboardLayout><CustomerProfiles /></DashboardLayout>} />
-            <Route path='/customers/documents' element={<DashboardLayout><CustomerDocuments /></DashboardLayout>} />
-            <Route path='/customers/document-types' element={<DashboardLayout><CustomerDocumentTypeManagement /></DashboardLayout>} />
-            <Route path='/customers/meeting-scheduler' element={<DashboardLayout><MeetingScheduler /></DashboardLayout>} />
+            <Route path={ROUTES.CUSTOMER_PROFILES} element={<DashboardLayout><CustomerProfiles /></DashboardLayout>} />
+            <Route path={ROUTES.CUSTOMER_DOCUMENTS} element={<DashboardLayout><CustomerDocuments /></DashboardLayout>} />
+            <Route path={ROUTES.CUSTOMER_DOCUMENT_TYPES} element={<DashboardLayout><CustomerDocumentTypeManagement /></DashboardLayout>} />
+            <Route path={ROUTES.CUSTOMER_MEETING_SCHEDULER} element={<DashboardLayout><MeetingScheduler /></DashboardLayout>} />
             
             {/* Sales Management Routes */}
-            <Route path='/sales/sales-list' element={<DashboardLayout><SalesList /></DashboardLayout>} />
-            <Route path='/sales/add-payment' element={<DashboardLayout><AddPayment /></DashboardLayout>} />
-            <Route path='/sales/pending-payments' element={<DashboardLayout><PendingPayments /></DashboardLayout>} />
-            <Route path='/sales/sales-reports' element={<DashboardLayout><SalesReports /></DashboardLayout>} />
+            <Route path={ROUTES.SALES_LIST} element={<DashboardLayout><SalesList /></DashboardLayout>} />
+            <Route path={ROUTES.SALES_ADD_PAYMENT} element={<DashboardLayout><AddPayment /></DashboardLayout>} />
+            <Route path={ROUTES.SALES_PENDING_PAYMENTS} element={<DashboardLayout><PendingPayments /></DashboardLayout>} />
+            <Route path={ROUTES.SALES_REPORTS} element={<DashboardLayout><SalesReports /></DashboardLayout>} />
             
             {/* Bookings Routes */}
-            <Route path='/bookings/inventory' element={<DashboardLayout><Inventory /></DashboardLayout>} />
-            <Route path='/bookings/booked-units' element={<DashboardLayout><BookedUnits /></DashboardLayout>} />
-            <Route path='/bookings/payment-status' element={<DashboardLayout><PaymentStatus /></DashboardLayout>} />
+            <Route path={ROUTES.BOOKINGS_INVENTORY} element={<DashboardLayout><Inventory /></DashboardLayout>} />
+            <Route path={ROUTES.BOOKINGS_BOOKED_UNITS} element={<DashboardLayout><BookedUnits /></DashboardLayout>} />
+            <Route path={ROUTES.BOOKINGS_PAYMENT_STATUS} element={<DashboardLayout><PaymentStatus /></DashboardLayout>} />
             
             {/* Payments Routes */}
-            <Route path='/payments/installments' element={<DashboardLayout><Installments /></DashboardLayout>} />
-            <Route path='/payments/payment-history' element={<DashboardLayout><PaymentHistory /></DashboardLayout>} />
-            <Route path='/payments/due-payments' element={<DashboardLayout><DuePayments /></DashboardLayout>} />
+            <Route path={ROUTES.PAYMENTS_INSTALLMENTS} element={<DashboardLayout><Installments /></DashboardLayout>} />
+            <Route path={ROUTES.PAYMENTS_HISTORY} element={<DashboardLayout><PaymentHistory /></DashboardLayout>} />
+            <Route path={ROUTES.PAYMENTS_DUE} element={<DashboardLayout><DuePayments /></DashboardLayout>} />
             
             {/* Rent Management Routes */}
-            <Route path='/rent/rent-roll' element={<DashboardLayout><RentRoll /></DashboardLayout>} />
-            <Route path='/rent/lease-management' element={<DashboardLayout><LeaseManagement /></DashboardLayout>} />
+            <Route path={ROUTES.RENT_ROLL} element={<DashboardLayout><RentRoll /></DashboardLayout>} />
+            <Route path={ROUTES.LEASE_MANAGEMENT} element={<DashboardLayout><LeaseManagement /></DashboardLayout>} />
 
             {/* Accounting Routes */}
-            <Route path='/accounting/expense-tracking' element={<DashboardLayout><ExpenseTracking /></DashboardLayout>} />
-            <Route path='/accounting/income-statement' element={<DashboardLayout><IncomeStatement /></DashboardLayout>} />
+            <Route path={ROUTES.ACCOUNTING_EXPENSE_TRACKING} element={<DashboardLayout><ExpenseTracking /></DashboardLayout>} />
+            <Route path={ROUTES.ACCOUNTING_INCOME_STATEMENT} element={<DashboardLayout><IncomeStatement /></DashboardLayout>} />
             
             {/* Post-Sale Routes */}
-            <Route path='/post-sale/referrals' element={<DashboardLayout><Referrals /></DashboardLayout>} />
-            <Route path='/post-sale/rewards' element={<DashboardLayout><Rewards /></DashboardLayout>} />
-            <Route path='/post-sale/points' element={<DashboardLayout><Points /></DashboardLayout>} />
+            <Route path={ROUTES.POST_SALE_REFERRALS} element={<DashboardLayout><Referrals /></DashboardLayout>} />
+            <Route path={ROUTES.POST_SALE_REWARDS} element={<DashboardLayout><Rewards /></DashboardLayout>} />
+            <Route path={ROUTES.POST_SALE_POINTS} element={<DashboardLayout><Points /></DashboardLayout>} />
             
             {/* Client Portal Routes */}
-            <Route path='/client/my-bookings' element={<DashboardLayout><MyBookings /></DashboardLayout>} />
-            <Route path='/client/my-meetings' element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
-            <Route path='/client/documents' element={<DashboardLayout><ClientDocuments /></DashboardLayout>} />
-            <Route path='/client/payments' element={<DashboardLayout><ClientPayments /></DashboardLayout>} />
-            <Route path='/client/referrals' element={<DashboardLayout><ClientReferrals /></DashboardLayout>} />
+            <Route path={ROUTES.CLIENT_MY_BOOKINGS} element={<DashboardLayout><MyBookings /></DashboardLayout>} />
+            <Route path={ROUTES.CLIENT_MY_MEETINGS} element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
+            <Route path={ROUTES.CLIENT_DOCUMENTS} element={<DashboardLayout><ClientDocuments /></DashboardLayout>} />
+            <Route path={ROUTES.CLIENT_PAYMENTS} element={<DashboardLayout><ClientPayments /></DashboardLayout>} />
+            <Route path={ROUTES.CLIENT_REFERRALS} element={<DashboardLayout><ClientReferrals /></DashboardLayout>} />
             
             {/* Settings Route */}
-            <Route path='/settings' element={<DashboardLayout><Settings /></DashboardLayout>} />
+            <Route path={ROUTES.SETTINGS} element={<DashboardLayout><Settings /></DashboardLayout>} />
             
             {/* Profile Route */}
-            <Route path='/profile' element={<DashboardLayout><UserProfile /></DashboardLayout>} />
+            <Route path={ROUTES.PROFILE} element={<DashboardLayout><UserProfile /></DashboardLayout>} />
 
             {/* Theme Demo Route */}
-            <Route path='/theme-demo' element={<DashboardLayout><ThemeDemo /></DashboardLayout>} />
+            <Route path={ROUTES.THEME_DEMO} element={<DashboardLayout><ThemeDemo /></DashboardLayout>} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />
