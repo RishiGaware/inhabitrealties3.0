@@ -281,28 +281,7 @@ const PropertyFavoriteProperties = () => {
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           Property Favorite Properties
         </Heading>
-        {favorites.length > 0 && (
-          <Button
-            size="sm"
-            colorScheme="red"
-            variant="outline"
-            onClick={clearAllFavorites}
-            leftIcon={<FaTrash />}
-            isLoading={clearAllLoading}
-            loadingText="Clearing..."
-            disabled={clearAllLoading}
-            _hover={{
-              bg: clearAllLoading ? "red.50" : "red.50",
-              borderColor: "red.400",
-              transform: clearAllLoading ? "none" : "translateY(-1px)",
-              boxShadow: clearAllLoading ? "none" : "md"
-            }}
-            transition="all 0.2s"
-            opacity={clearAllLoading ? 0.7 : 1}
-          >
-            Clear All Favorites
-          </Button>
-        )}
+        
       </Flex>
 
       {/* Empty State */}
@@ -463,6 +442,30 @@ const PropertyFavoriteProperties = () => {
               ))}
             </Flex>
           </Box>
+
+          
+          {favorites.length > 0 && (
+          <Button
+            size="sm"
+            colorScheme="red"
+            variant="outline"
+            onClick={clearAllFavorites}
+            leftIcon={<FaHeart />}
+            isLoading={clearAllLoading}
+            loadingText="Clearing..."
+            disabled={clearAllLoading}
+            _hover={{
+              bg: clearAllLoading ? "red.50" : "red.50",
+              borderColor: "red.400",
+              transform: clearAllLoading ? "none" : "translateY(-1px)",
+              boxShadow: clearAllLoading ? "none" : "md"
+            }}
+            transition="all 0.2s"
+            opacity={clearAllLoading ? 0.7 : 1}
+          >
+            Clear All
+          </Button>
+        )}
 
           {/* Properties Count */}
           <Text 
