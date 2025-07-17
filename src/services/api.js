@@ -4,7 +4,8 @@ import { Cookie } from 'lucide-react';
 
 // const API_URL = 'http://localhost:8080/api';
 // const API_URL = 'https://insightwaveit-backend-p0cl.onrender.com/api';
-const API_URL = 'https://backend-hyoy.onrender.com/api';
+// const API_URL = 'https://backend-hyoy.onrender.com/api';
+const API_URL = 'https://updatedbackend-bqg8.onrender.com';
 
 const api = axios.create({
   baseURL: API_URL,
