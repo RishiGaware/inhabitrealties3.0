@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import logo from '../../assets/images/logo.png';
-import { FaUser, FaLock } from 'react-icons/fa';
+import { FaUser, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
@@ -10,6 +10,7 @@ import { AUTH_IMAGES } from '../../config/images';
 const NewLogin = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -53,6 +54,10 @@ const NewLogin = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   return (
@@ -105,15 +110,23 @@ const NewLogin = () => {
                 <div className="flex items-center bg-gray-100 border border-gray-200 rounded-lg p-2.5 sm:p-3 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 transition-all duration-300">
                   <FaLock className="text-gray-400 mx-2" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     id="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-transparent border-none outline-none text-gray-700 text-sm sm:text-base"
+                    className="w-full bg-transparent border-none outline-none text-gray-700 text-sm sm:text-base pr-10"
                     style={{ fontFamily: "'Inter', sans-serif" }}
                     disabled={loading}
                   />
+                  <button
+                    type="button"
+                    onClick={togglePasswordVisibility}
+                    className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-1"
+                    disabled={loading}
+                  >
+                    {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+                  </button>
                 </div>
               </div>
 
