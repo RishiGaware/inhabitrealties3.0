@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -27,6 +27,10 @@ import CommonCard from '../../components/common/Card/CommonCard';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
+import Loader from '../../components/common/Loader';
+import { getMyMeetings, formatMeetingDataForFrontend } from '../../services/meetings/meetingScheduleService';
+import { useAuth } from '../../context/AuthContext';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 
 const MyMeetings = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -35,6 +39,16 @@ const MyMeetings = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+  const [loading, setLoading] = useState(false);
+  const [meetings, setMeetings] = useState([]);
+  const [counts, setCounts] = useState({
+    totalMeetings: 0,
+    totalScheduled: 0,
+    totalCompleted: 0,
+    totalCancelled: 0
+  });
+
+  const { getUserId } = useAuth();
 
   // Color mode values
   const textColor = useColorModeValue('gray.800', 'white');
@@ -42,84 +56,45 @@ const MyMeetings = () => {
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
-  // Static data for client meetings - this would be filtered by current user ID
-  const [meetings] = useState([
-    {
-      _id: '1',
-      propertyName: 'Rishi Villa',
-      propertyLocation: 'Ahmedabad, Gujarat',
-      scheduledDate: '2024-01-15',
-      scheduledTime: '10:00',
-      duration: 60,
-      status: 'Scheduled',
-      salesPersonName: 'John Smith',
-      salesPersonEmail: 'john@example.com',
-      salesPersonPhone: '9876543210',
-      notes: 'Customer interested in 3BHK apartment',
-      createdAt: '2024-01-10T10:00:00Z',
-      updatedAt: '2024-01-10T10:00:00Z'
-    },
-    {
-      _id: '2',
-      propertyName: 'Luxury Apartment',
-      propertyLocation: 'Mumbai, Maharashtra',
-      scheduledDate: '2024-01-16',
-      scheduledTime: '14:00',
-      duration: 90,
-      status: 'Completed',
-      salesPersonName: 'Jane Doe',
-      salesPersonEmail: 'jane@example.com',
-      salesPersonPhone: '9876543211',
-      notes: 'Site visit completed successfully. Customer showed interest in 2BHK unit.',
-      createdAt: '2024-01-10T11:00:00Z',
-      updatedAt: '2024-01-16T15:00:00Z'
-    },
-    {
-      _id: '3',
-      propertyName: 'Green Valley',
-      propertyLocation: 'Pune, Maharashtra',
-      scheduledDate: '2024-01-17',
-      scheduledTime: '16:00',
-      duration: 60,
-      status: 'Cancelled',
-      salesPersonName: 'John Smith',
-      salesPersonEmail: 'john@example.com',
-      salesPersonPhone: '9876543210',
-      notes: 'Customer requested cancellation due to personal emergency',
-      createdAt: '2024-01-10T12:00:00Z',
-      updatedAt: '2024-01-16T09:00:00Z'
-    },
-    {
-      _id: '4',
-      propertyName: 'Sunset Heights',
-      propertyLocation: 'Bangalore, Karnataka',
-      scheduledDate: '2024-01-18',
-      scheduledTime: '11:00',
-      duration: 75,
-      status: 'Scheduled',
-      salesPersonName: 'Jane Doe',
-      salesPersonEmail: 'jane@example.com',
-      salesPersonPhone: '9876543211',
-      notes: 'Customer looking for 2BHK with parking',
-      createdAt: '2024-01-10T13:00:00Z',
-      updatedAt: '2024-01-10T13:00:00Z'
-    },
-    {
-      _id: '5',
-      propertyName: 'Ocean View',
-      propertyLocation: 'Chennai, Tamil Nadu',
-      scheduledDate: '2024-01-19',
-      scheduledTime: '15:30',
-      duration: 60,
-      status: 'Rescheduled',
-      salesPersonName: 'John Smith',
-      salesPersonEmail: 'john@example.com',
-      salesPersonPhone: '9876543210',
-      notes: 'Meeting rescheduled to 2024-01-20 at 10:00 AM',
-      createdAt: '2024-01-10T14:00:00Z',
-      updatedAt: '2024-01-18T10:00:00Z'
+  // Fetch meetings on component mount
+  useEffect(() => {
+    fetchMyMeetings();
+  }, []);
+
+  const fetchMyMeetings = async () => {
+    setLoading(true);
+    try {
+      const userId = getUserId();
+      if (!userId) {
+        showErrorToast('User not found');
+        return;
+      }
+
+      const response = await getMyMeetings(userId);
+      if (response.data) {
+        const formattedMeetings = response.data.map(formatMeetingDataForFrontend);
+        setMeetings(formattedMeetings);
+        
+        // Calculate counts
+        const totalMeetings = formattedMeetings.length;
+        const totalScheduled = formattedMeetings.filter(m => m.status === 'Scheduled').length;
+        const totalCompleted = formattedMeetings.filter(m => m.status === 'Completed').length;
+        const totalCancelled = formattedMeetings.filter(m => m.status === 'Cancelled').length;
+        
+        setCounts({
+          totalMeetings,
+          totalScheduled,
+          totalCompleted,
+          totalCancelled
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch meetings:', error);
+      showErrorToast('Failed to load meetings');
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -158,10 +133,12 @@ const MyMeetings = () => {
   }, [meetings, searchTerm, statusFilter]);
 
   // Reset page when filtered results change
-  const maxPage = Math.ceil(filteredMeetings.length / pageSize);
-  if (currentPage > maxPage && maxPage > 0) {
-    setCurrentPage(1);
-  }
+  useEffect(() => {
+    const maxPage = Math.ceil(filteredMeetings.length / pageSize);
+    if (currentPage > maxPage && maxPage > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredMeetings.length, pageSize, currentPage]);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -242,11 +219,13 @@ const MyMeetings = () => {
     </HStack>
   );
 
-  // Calculate summary statistics
-  const totalMeetings = meetings.length;
-  const scheduledMeetings = meetings.filter(m => m.status === 'Scheduled').length;
-  const completedMeetings = meetings.filter(m => m.status === 'Completed').length;
-  const cancelledMeetings = meetings.filter(m => m.status === 'Cancelled').length;
+  if (loading) {
+    return (
+      <Box p={5}>
+        <Loader size="xl" />
+      </Box>
+    );
+  }
 
   return (
     <Box p={5}>
@@ -265,7 +244,7 @@ const MyMeetings = () => {
             </Box>
             <Box>
               <Text fontSize="sm" color="gray.600">Total Meetings</Text>
-              <Text fontSize="lg" fontWeight="bold" color="blue.600">{totalMeetings}</Text>
+              <Text fontSize="lg" fontWeight="bold" color="blue.600">{counts.totalMeetings}</Text>
             </Box>
           </Flex>
         </CommonCard>
@@ -277,7 +256,7 @@ const MyMeetings = () => {
             </Box>
             <Box>
               <Text fontSize="sm" color="gray.600">Scheduled</Text>
-              <Text fontSize="lg" fontWeight="bold" color="blue.600">{scheduledMeetings}</Text>
+              <Text fontSize="lg" fontWeight="bold" color="blue.600">{counts.totalScheduled}</Text>
             </Box>
           </Flex>
         </CommonCard>
@@ -289,7 +268,7 @@ const MyMeetings = () => {
             </Box>
             <Box>
               <Text fontSize="sm" color="gray.600">Completed</Text>
-              <Text fontSize="lg" fontWeight="bold" color="green.600">{completedMeetings}</Text>
+              <Text fontSize="lg" fontWeight="bold" color="green.600">{counts.totalCompleted}</Text>
             </Box>
           </Flex>
         </CommonCard>
@@ -301,7 +280,7 @@ const MyMeetings = () => {
             </Box>
             <Box>
               <Text fontSize="sm" color="gray.600">Cancelled</Text>
-              <Text fontSize="lg" fontWeight="bold" color="red.600">{cancelledMeetings}</Text>
+              <Text fontSize="lg" fontWeight="bold" color="red.600">{counts.totalCancelled}</Text>
             </Box>
           </Flex>
         </CommonCard>

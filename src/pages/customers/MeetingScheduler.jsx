@@ -38,13 +38,25 @@ import SearchableSelect from '../../components/common/SearchableSelect';
 import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import { 
+  fetchAllMeetingSchedules, 
+  createMeetingSchedule, 
+  updateMeetingSchedule, 
+  deleteMeetingSchedule,
+  formatMeetingDataForAPI,
+  formatMeetingDataForFrontend
+} from '../../services/meetings/meetingScheduleService';
+import { useAuth } from '../../context/AuthContext';
+import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 
 const MeetingScheduler = () => {
   const toast = useToast();
+  const { getUserId } = useAuth();
   const [selectedMeeting, setSelectedMeeting] = useState(null);
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -52,6 +64,7 @@ const MeetingScheduler = () => {
   const [customerFilter, setCustomerFilter] = useState('');
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
+  const [meetings, setMeetings] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
@@ -69,102 +82,6 @@ const MeetingScheduler = () => {
   // Color mode values
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.300');
-
-  // Static data implementation - no API calls needed
-  
-  // Static data for meetings
-  const [meetings, setMeetings] = useState([
-    {
-      _id: '1',
-      customerId: 'customer1',
-      customerName: 'Ravi Patel',
-      customerEmail: 'ravi@example.com',
-      customerPhone: '9876543210',
-      propertyName: 'Rishi Villa',
-      propertyLocation: 'Ahmedabad, Gujarat',
-      scheduledDate: '2024-01-15',
-      scheduledTime: '10:00',
-      duration: 60,
-      status: 'Scheduled',
-      salesPersonId: 'sales1',
-      salesPersonName: 'John Smith',
-      notes: 'Customer interested in 3BHK apartment',
-      createdAt: '2024-01-10T10:00:00Z',
-      updatedAt: '2024-01-10T10:00:00Z'
-    },
-    {
-      _id: '2',
-      customerId: 'customer2',
-      customerName: 'Sneha Shah',
-      customerEmail: 'sneha@example.com',
-      customerPhone: '9876543211',
-      propertyName: 'Luxury Apartment',
-      propertyLocation: 'Mumbai, Maharashtra',
-      scheduledDate: '2024-01-16',
-      scheduledTime: '14:00',
-      duration: 90,
-      status: 'Completed',
-      salesPersonId: 'sales2',
-      salesPersonName: 'Jane Doe',
-      notes: 'Site visit completed successfully',
-      createdAt: '2024-01-10T11:00:00Z',
-      updatedAt: '2024-01-16T15:00:00Z'
-    },
-    {
-      _id: '3',
-      customerId: 'customer3',
-      customerName: 'Amit Kumar',
-      customerEmail: 'amit@example.com',
-      customerPhone: '9876543212',
-      propertyName: 'Green Valley',
-      propertyLocation: 'Pune, Maharashtra',
-      scheduledDate: '2024-01-17',
-      scheduledTime: '16:00',
-      duration: 60,
-      status: 'Cancelled',
-      salesPersonId: 'sales1',
-      salesPersonName: 'John Smith',
-      notes: 'Customer requested cancellation',
-      createdAt: '2024-01-10T12:00:00Z',
-      updatedAt: '2024-01-16T09:00:00Z'
-    },
-    {
-      _id: '4',
-      customerId: 'customer4',
-      customerName: 'Priya Sharma',
-      customerEmail: 'priya@example.com',
-      customerPhone: '9876543213',
-      propertyName: 'Sunset Heights',
-      propertyLocation: 'Bangalore, Karnataka',
-      scheduledDate: '2024-01-18',
-      scheduledTime: '11:00',
-      duration: 75,
-      status: 'Scheduled',
-      salesPersonId: 'sales2',
-      salesPersonName: 'Jane Doe',
-      notes: 'Customer looking for 2BHK with parking',
-      createdAt: '2024-01-10T13:00:00Z',
-      updatedAt: '2024-01-10T13:00:00Z'
-    },
-    {
-      _id: '5',
-      customerId: 'customer5',
-      customerName: 'Rajesh Verma',
-      customerEmail: 'rajesh@example.com',
-      customerPhone: '9876543214',
-      propertyName: 'Ocean View',
-      propertyLocation: 'Chennai, Tamil Nadu',
-      scheduledDate: '2024-01-19',
-      scheduledTime: '15:30',
-      duration: 60,
-      status: 'Rescheduled',
-      salesPersonId: 'sales1',
-      salesPersonName: 'John Smith',
-      notes: 'Meeting rescheduled due to customer request',
-      createdAt: '2024-01-10T14:00:00Z',
-      updatedAt: '2024-01-18T10:00:00Z'
-    }
-  ]);
 
   // Static customer and sales person options for dropdown
   const customerOptions = useMemo(() => [
@@ -184,6 +101,27 @@ const MeetingScheduler = () => {
     { value: 'sales3', label: 'Mike Johnson (mike@example.com)' },
     { value: 'sales4', label: 'Sarah Wilson (sarah@example.com)' }
   ], []);
+
+  // Fetch meetings on component mount
+  useEffect(() => {
+    fetchMeetings();
+  }, []);
+
+  const fetchMeetings = async () => {
+    setLoading(true);
+    try {
+      const response = await fetchAllMeetingSchedules();
+      if (response.data) {
+        const formattedMeetings = response.data.map(formatMeetingDataForFrontend);
+        setMeetings(formattedMeetings);
+      }
+    } catch (error) {
+      console.error('Failed to fetch meetings:', error);
+      showErrorToast('Failed to load meetings');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Helper functions
   const getCustomerLabel = (customerId) => {
@@ -234,8 +172,6 @@ const MeetingScheduler = () => {
     }
     return filtered;
   }, [meetings, searchTerm, statusFilter, customerFilter]);
-
-  // No need to fetch data since we're using static data
 
   // Reset page when filtered results change
   useEffect(() => {
@@ -311,25 +247,14 @@ const MeetingScheduler = () => {
     if (meetingToDelete && !isApiCallInProgress) {
       setIsApiCallInProgress(true);
       try {
-        setMeetings(prev => prev.filter(m => m._id !== meetingToDelete._id));
-        toast({
-          title: 'Meeting deleted',
-          description: 'Meeting has been deleted successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
+        await deleteMeetingSchedule(meetingToDelete._id);
+        showSuccessToast('Meeting deleted successfully');
+        fetchMeetings(); // Refresh the list
         onDeleteClose();
         setMeetingToDelete(null);
       } catch (error) {
         console.error('Delete error:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to delete meeting',
-          status: 'error',
-          duration: 3000,
-          isClosable: true,
-        });
+        showErrorToast('Failed to delete meeting');
       } finally {
         setIsApiCallInProgress(false);
       }
@@ -374,46 +299,19 @@ const MeetingScheduler = () => {
     setIsApiCallInProgress(true);
 
     try {
-      const meetingData = {
-        ...formData,
-        customerName: getCustomerLabel(formData.customerId),
-        salesPersonName: getSalesPersonLabel(formData.salesPersonId),
-        createdAt: selectedMeeting ? selectedMeeting.createdAt : new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
+      const apiData = formatMeetingDataForAPI(formData);
 
       if (selectedMeeting) {
         // Update existing meeting
-        setMeetings(prev => prev.map(m => 
-          m._id === selectedMeeting._id 
-            ? { ...m, ...meetingData, updatedAt: new Date().toISOString() }
-            : m
-        ));
-        toast({
-          title: 'Meeting updated',
-          description: 'Meeting has been updated successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
+        await updateMeetingSchedule(selectedMeeting._id, apiData);
+        showSuccessToast('Meeting updated successfully');
       } else {
         // Add new meeting
-        const newMeeting = {
-          _id: Date.now().toString(),
-          ...meetingData,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-        setMeetings(prev => [...prev, newMeeting]);
-        toast({
-          title: 'Meeting scheduled',
-          description: 'Meeting has been scheduled successfully',
-          status: 'success',
-          duration: 3000,
-          isClosable: true,
-        });
+        await createMeetingSchedule(apiData);
+        showSuccessToast('Meeting scheduled successfully');
       }
       
+      fetchMeetings(); // Refresh the list
       setIsSubmitting(false);
       setIsApiCallInProgress(false);
       setSelectedMeeting(null);
@@ -423,13 +321,7 @@ const MeetingScheduler = () => {
       console.error('Form submission error:', error);
       setIsSubmitting(false);
       setIsApiCallInProgress(false);
-      toast({
-        title: 'Error',
-        description: 'Failed to save meeting',
-        status: 'error',
-        duration: 3000,
-        isClosable: true,
-      });
+      showErrorToast('Failed to save meeting');
     }
   };
 
@@ -552,6 +444,14 @@ const MeetingScheduler = () => {
       />
     </HStack>
   );
+
+  if (loading) {
+    return (
+      <Box p={5}>
+        <Loader size="xl" />
+      </Box>
+    );
+  }
 
   return (
     <Box p={5}>

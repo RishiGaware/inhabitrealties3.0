@@ -98,3 +98,13 @@ export const FAVORITE_PROPERTY_ENDPOINTS = {
   GET_BY_ID: (id) => `/favoriteproperty/${id}`,
   DELETE: (id) => `/favoriteproperty/delete/${id}`,
 };
+
+export const MEETING_SCHEDULE_ENDPOINTS = {
+  GET_ALL: '/meetingschedule',
+  GET_BY_ID: (id) => `/meetingschedule/${id}`,
+  CREATE: '/meetingschedule/create',
+  UPDATE: (id) => `/meetingschedule/edit/${id}`,
+  DELETE: (id) => `/meetingschedule/delete/${id}`,
+  GET_MY_MEETINGS: (id) => `/meetingschedule/my-meetings/${id}`,
+  GET_NOT_PUBLISHED: '/meetingschedule/notpublished',
+};
