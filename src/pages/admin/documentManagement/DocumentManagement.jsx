@@ -80,6 +80,7 @@ const DocumentManagement = () => {
     onClose: onViewClose,
   } = useDisclosure();
   const [documentToDelete, setDocumentToDelete] = useState(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [documentToView, setDocumentToView] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
 
@@ -276,8 +277,9 @@ const DocumentManagement = () => {
   };
 
   const confirmDelete = async () => {
-    if (documentToDelete && !isApiCallInProgress) {
+    if (documentToDelete && !isApiCallInProgress && !isDeleteLoading) {
       setIsApiCallInProgress(true);
+      setIsDeleteLoading(true);
       try {
         await removeDocument(documentToDelete._id);
         onDeleteClose();
@@ -286,6 +288,7 @@ const DocumentManagement = () => {
         console.error('Delete error:', error);
       } finally {
         setIsApiCallInProgress(false);
+        setIsDeleteLoading(false);
       }
     }
   };
@@ -787,6 +790,8 @@ const DocumentManagement = () => {
         onConfirm={confirmDelete}
         title="Delete Document"
         message={`Are you sure you want to delete the document "${documentToDelete?.fileName}"?`}
+        isLoading={isDeleteLoading}
+        loadingText="Deleting..."
       />
 
       {/* Document View Modal */}

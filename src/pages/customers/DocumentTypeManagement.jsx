@@ -41,6 +41,7 @@ const DocumentTypeManagement = () => {
     onClose: onDeleteClose,
   } = useDisclosure();
   const [documentTypeToDelete, setDocumentTypeToDelete] = useState(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
 
   // Get document type context
@@ -141,8 +142,9 @@ const DocumentTypeManagement = () => {
   };
 
   const confirmDelete = async () => {
-    if (documentTypeToDelete && !isApiCallInProgress) {
+    if (documentTypeToDelete && !isApiCallInProgress && !isDeleteLoading) {
       setIsApiCallInProgress(true);
+      setIsDeleteLoading(true);
       try {
         await removeDocumentType(documentTypeToDelete._id);
         onDeleteClose();
@@ -151,6 +153,7 @@ const DocumentTypeManagement = () => {
         console.error('Delete error:', error);
       } finally {
         setIsApiCallInProgress(false);
+        setIsDeleteLoading(false);
       }
     }
   };
@@ -334,6 +337,8 @@ const DocumentTypeManagement = () => {
         onConfirm={confirmDelete}
         title="Delete Document Type"
         message={`Are you sure you want to delete the document type "${documentTypeToDelete?.name}"?`}
+        isLoading={isDeleteLoading}
+        loadingText="Deleting..."
       />
     </Box>
   );

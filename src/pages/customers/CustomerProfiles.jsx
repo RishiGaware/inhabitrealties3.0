@@ -50,6 +50,7 @@ const CustomerProfiles = () => {
     onClose: onDeleteClose,
   } = useDisclosure();
   const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
   const toast = useToast();
   const [loading, setLoading] = useState(false);
@@ -174,16 +175,18 @@ const CustomerProfiles = () => {
   };
 
   const confirmDelete = async () => {
-    if (userToDelete && !isApiCallInProgress) {
+    if (userToDelete && !isApiCallInProgress && !isDeleteLoading) {
       setIsApiCallInProgress(true);
+      setIsDeleteLoading(true);
       try {
         await removeUser(userToDelete._id);
-      onDeleteClose();
-      setUserToDelete(null);
+        onDeleteClose();
+        setUserToDelete(null);
       } catch (error) {
         console.error('Delete error:', error);
       } finally {
         setIsApiCallInProgress(false);
+        setIsDeleteLoading(false);
       }
     }
   };
@@ -621,6 +624,8 @@ const CustomerProfiles = () => {
         onConfirm={confirmDelete}
         title="Delete User"
         message={`Are you sure you want to delete ${userToDelete?.firstName} ${userToDelete?.lastName}?`}
+        isLoading={isDeleteLoading}
+        loadingText="Deleting..."
       />
     </Box>
   );

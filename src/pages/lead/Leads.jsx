@@ -22,6 +22,7 @@ const Leads = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [leadToDelete, setLeadToDelete] = useState(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredLeads, setFilteredLeads] = useState([]);
   const [errorType, setErrorType] = useState(null);
@@ -279,10 +280,18 @@ const Leads = () => {
 
   const confirmDelete = async () => {
     if (leadToDelete) {
-      await removeLead(leadToDelete._id);
-      setIsDeleteOpen(false);
-      setLeadToDelete(null);
-      getAllLeads();
+      setIsDeleteLoading(true);
+      try {
+        await removeLead(leadToDelete._id);
+        setIsDeleteOpen(false);
+        setLeadToDelete(null);
+        getAllLeads();
+      } catch (error) {
+        console.error('Delete error:', error);
+        // Optionally show an error message in the modal
+      } finally {
+        setIsDeleteLoading(false);
+      }
     }
   };
 
@@ -1243,6 +1252,8 @@ const Leads = () => {
         onConfirm={confirmDelete}
         title="Delete Lead"
         message={`Are you sure you want to delete the lead "${leadToDelete?.userId?.firstName} ${leadToDelete?.userId?.lastName}"?`}
+        isLoading={isDeleteLoading}
+        loadingText="Deleting..."
       />
 
      

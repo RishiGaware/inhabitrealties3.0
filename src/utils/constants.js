@@ -21,6 +21,7 @@ export const ROUTES = {
   ADMIN_ROLE_MANAGEMENT: '/admin/role-management',
   ADMIN_DOCUMENT_TYPE_MANAGEMENT: '/admin/document-type-management',
   ADMIN_DOCUMENT_MANAGEMENT: '/admin/document-management',
+  ADMIN_MEETING_STATUS_MANAGEMENT: '/admin/meeting-status-management',
   ADMIN_REPORTS: '/admin/reports',
 
   // Property Routes
@@ -98,6 +99,7 @@ export const ROUTE_GROUPS = {
     ROUTES.ADMIN_ROLE_MANAGEMENT,
     ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT,
     ROUTES.ADMIN_DOCUMENT_MANAGEMENT,
+    ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT,
     ROUTES.ADMIN_REPORTS
   ],
   PROPERTY: [

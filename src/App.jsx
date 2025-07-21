@@ -24,6 +24,7 @@ import UserManagement from './pages/admin/userManagement/UserManagement';
 import RoleManagement from './pages/admin/roleManagement/RoleManagement';
 import DocumentTypeManagement from './pages/admin/documentTypeManagement/DocumentTypeManagement';
 import DocumentManagement from './pages/admin/documentManagement/DocumentManagement';
+import MeetingStatusManagement from './pages/admin/meetingStatusManagement/MeetingStatusManagement';
 import Reports from './pages/admin/Reports';
 import Leads from './pages/lead/Leads';
 import LeadStatus from './pages/lead/LeadStatus';
@@ -145,6 +146,7 @@ const App = () => {
             <Route path={ROUTES.ADMIN_ROLE_MANAGEMENT} element={<DashboardLayout><RoleManagement /></DashboardLayout>} />
             <Route path={ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT} element={<DashboardLayout><DocumentTypeManagement /></DashboardLayout>} />
             <Route path={ROUTES.ADMIN_DOCUMENT_MANAGEMENT} element={<DashboardLayout><DocumentManagement /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT} element={<DashboardLayout><MeetingStatusManagement /></DashboardLayout>} />
             <Route path={ROUTES.ADMIN_REPORTS} element={<DashboardLayout><Reports /></DashboardLayout>} />
             
             {/* Property Routes */}

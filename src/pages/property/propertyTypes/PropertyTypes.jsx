@@ -47,6 +47,7 @@ const PropertyTypes = () => {
     onClose: onDeleteClose,
   } = useDisclosure();
   const [propertyTypeToDelete, setPropertyTypeToDelete] = useState(null);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [errorType] = useState(null);
   const [originalFormData, setOriginalFormData] = useState(null);
 
@@ -153,8 +154,9 @@ const PropertyTypes = () => {
   };
 
   const confirmDelete = async () => {
-    if (propertyTypeToDelete && !isApiCallInProgress) {
+    if (propertyTypeToDelete && !isApiCallInProgress && !isDeleteLoading) {
       setIsApiCallInProgress(true);
+      setIsDeleteLoading(true);
       try {
         await removePropertyType(propertyTypeToDelete._id);
         onDeleteClose();
@@ -163,6 +165,7 @@ const PropertyTypes = () => {
         console.error('Delete error:', error);
       } finally {
         setIsApiCallInProgress(false);
+        setIsDeleteLoading(false);
       }
     }
   };
@@ -383,6 +386,8 @@ const PropertyTypes = () => {
         onConfirm={confirmDelete}
         title="Delete Property Type"
         message={`Are you sure you want to delete the property type "${propertyTypeToDelete?.typeName}"?`}
+        isLoading={isDeleteLoading}
+        loadingText="Deleting..."
       />
     </Box>
   );

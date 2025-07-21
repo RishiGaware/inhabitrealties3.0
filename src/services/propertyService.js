@@ -48,6 +48,19 @@ export const fetchPropertyImages = async (propertyId) => {
   return response.data;
 };
 
+// Get property by ID
+export const getPropertyById = async (id) => {
+  try {
+    console.log('propertyService: Fetching property by ID:', id);
+    const response = await api.get(`/property/${id}`);
+    console.log('propertyService: Get property by ID response:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('propertyService: Get property by ID error:', error);
+    throw error;
+  }
+};
+
 // Delete property image by image ID
 export const deletePropertyImage = async (imageId) => {
   const response = await api.delete(PROPERTY_ENDPOINTS.DELETE_IMAGE(imageId));

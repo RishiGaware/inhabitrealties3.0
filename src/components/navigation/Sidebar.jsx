@@ -20,7 +20,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       title: "Admin",
       icon: <FaUsers />, 
       gap: true,
-      subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Reports"],
+      subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Meeting Status Management", "Reports"],
       key: "admin"
     },
     {
@@ -120,6 +120,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'role-management': ROUTES.ADMIN_ROLE_MANAGEMENT,
       'document-type-management': ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT,
       'document-management': ROUTES.ADMIN_DOCUMENT_MANAGEMENT,
+      'meeting-status-management': ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT,
       'reports': ROUTES.ADMIN_REPORTS
     },
     'property': {

@@ -95,46 +95,60 @@ export const getNotPublishedMeetingSchedules = async () => {
 
 // Helper function to format meeting data for API
 export const formatMeetingDataForAPI = (formData) => {
-  return {
-    title: formData.title || formData.propertyName,
+  // For both create and edit, send only the required fields
+  const apiData = {
+    title: formData.title,
     description: formData.description || '',
-    meetingDate: formData.meetingDate || formData.scheduledDate,
-    startTime: formData.startTime || formData.scheduledTime,
+    meetingDate: formData.meetingDate,
+    startTime: formData.startTime,
     endTime: formData.endTime || null,
     duration: formData.duration || 60,
-    location: formData.location || formData.propertyLocation,
-    status: formData.status || 'Scheduled',
+    location: formData.location,
+    status: formData.status,
     customerId: formData.customerId,
     propertyId: formData.propertyId || null,
     notes: formData.notes || ''
   };
+
+  console.log('API data being sent:', apiData);
+  return apiData;
 };
 
-// Helper function to format API response for frontend
-export const formatMeetingDataForFrontend = (apiData) => {
+// Helper function to format meeting data for frontend display
+export const formatMeetingDataForFrontend = (meeting) => {
   return {
-    _id: apiData._id,
-    title: apiData.title,
-    propertyName: apiData.title, // For backward compatibility
-    propertyLocation: apiData.location,
-    scheduledDate: apiData.meetingDate,
-    scheduledTime: apiData.startTime,
-    duration: apiData.duration,
-    status: apiData.status?.name || apiData.status,
-    customerId: apiData.customerId?._id || apiData.customerId,
-    customerName: apiData.customerId?.firstName && apiData.customerId?.lastName 
-      ? `${apiData.customerId.firstName} ${apiData.customerId.lastName}`
-      : apiData.customerId?.firstName || 'Unknown',
-    customerEmail: apiData.customerId?.email || '',
-    customerPhone: apiData.customerId?.phoneNumber || '',
-    propertyId: apiData.propertyId?._id || apiData.propertyId,
-    salesPersonId: apiData.scheduledByUserId?._id || apiData.scheduledByUserId,
-    salesPersonName: apiData.scheduledByUserId?.firstName && apiData.scheduledByUserId?.lastName
-      ? `${apiData.scheduledByUserId.firstName} ${apiData.scheduledByUserId.lastName}`
-      : apiData.scheduledByUserId?.firstName || 'Unknown',
-    salesPersonEmail: apiData.scheduledByUserId?.email || '',
-    notes: apiData.notes || '',
-    createdAt: apiData.createdAt,
-    updatedAt: apiData.updatedAt
+    _id: meeting._id,
+    title: meeting.title,
+    description: meeting.description,
+    meetingDate: meeting.meetingDate,
+    startTime: meeting.startTime,
+    endTime: meeting.endTime,
+    duration: meeting.duration,
+    location: meeting.location,
+    status: meeting.status?._id || meeting.status, // Handle both populated object and ObjectId
+    statusName: meeting.status?.name || 'Unknown', // Add status name for display
+    customerId: meeting.customerId?._id || meeting.customerId, // Handle both populated object and ObjectId
+    customerName: meeting.customerId?.firstName && meeting.customerId?.lastName 
+      ? `${meeting.customerId.firstName} ${meeting.customerId.lastName}` 
+      : 'Unknown Customer',
+    customerEmail: meeting.customerId?.email || '',
+    customerPhone: meeting.customerId?.phoneNumber || '',
+    propertyId: meeting.propertyId?._id || meeting.propertyId, // Handle both populated object and ObjectId
+    propertyData: meeting.propertyId, // Store the full property object for display
+    propertyName: meeting.propertyId?.name || 'Unknown Property',
+    salesPersonId: meeting.scheduledByUserId?._id || meeting.scheduledByUserId, // Handle both populated object and ObjectId
+    salesPersonName: meeting.scheduledByUserId?.firstName && meeting.scheduledByUserId?.lastName 
+      ? `${meeting.scheduledByUserId.firstName} ${meeting.scheduledByUserId.lastName}` 
+      : 'Unknown Sales Person',
+    salesPersonEmail: meeting.scheduledByUserId?.email || '',
+    salesPersonPhone: meeting.scheduledByUserId?.phoneNumber || '',
+    scheduledDate: meeting.meetingDate,
+    scheduledTime: meeting.startTime,
+    notes: meeting.notes,
+    createdByUserId: meeting.createdByUserId?._id || meeting.createdByUserId,
+    updatedByUserId: meeting.updatedByUserId?._id || meeting.updatedByUserId,
+    published: meeting.published,
+    createdAt: meeting.createdAt,
+    updatedAt: meeting.updatedAt
   };
 };

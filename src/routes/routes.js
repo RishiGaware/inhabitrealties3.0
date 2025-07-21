@@ -22,6 +22,7 @@ import CustomerProfiles from '../pages/customers/CustomerProfiles';
 import CustomerDocuments from '../pages/customers/Documents';
 import CustomerDocumentTypeManagement from '../pages/customers/DocumentTypeManagement';
 import MeetingScheduler from '../pages/customers/MeetingScheduler';
+import MeetingStatusManagement from '../pages/admin/meetingStatusManagement/MeetingStatusManagement';
 import Inventory from '../pages/bookings/Inventory';
 import BookedUnits from '../pages/bookings/BookedUnits';
 import PaymentStatus from '../pages/bookings/PaymentStatus';
@@ -75,6 +76,7 @@ export const ROUTES = [
   { name: 'adminDocumentTypeManagement', path: '/admin/document-type-management', component: DocumentTypeManagement, permissions: 'public' },
   { name: 'adminDocumentManagement', path: '/admin/document-management', component: DocumentManagement, permissions: 'public' },
   { name: 'adminReports', path: '/admin/reports', component: Reports, permissions: 'public' },
+  { name: 'adminMeetingStatusManagement', path: '/admin/meeting-status-management', component: MeetingStatusManagement, permissions: 'public' },
 
   // Property
   { name: 'propertyMaster', path: '/property/property-master', component: PropertyMaster, permissions: 'public' },

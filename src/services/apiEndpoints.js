@@ -108,3 +108,11 @@ export const MEETING_SCHEDULE_ENDPOINTS = {
   GET_MY_MEETINGS: (id) => `/meetingschedule/my-meetings/${id}`,
   GET_NOT_PUBLISHED: '/meetingschedule/notpublished',
 };
+
+export const MEETING_SCHEDULE_STATUS_ENDPOINTS = {
+  GET_ALL: '/meetingschedulestatus',
+  GET_BY_ID: (id) => `/meetingschedulestatus/${id}`,
+  CREATE: '/meetingschedulestatus/create',
+  UPDATE: (id) => `/meetingschedulestatus/edit/${id}`,
+  DELETE: (id) => `/meetingschedulestatus/delete/${id}`,
+};
