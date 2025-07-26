@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BiUser, BiUserPlus } from "react-icons/bi";
-import { FaChevronDown, FaChevronRight, FaCog, FaUsers, FaMoneyBillWave, FaHandshake, FaBuilding, FaHome, FaChartBar } from "react-icons/fa";
+import { FaChevronDown, FaChevronRight, FaCog, FaUsers, FaMoneyBillWave, FaHandshake, FaBuilding, FaHome, FaChartBar, FaCalendarAlt } from "react-icons/fa";
 import { MdSpaceDashboard, MdInventory, MdPerson } from "react-icons/md";
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from "react-icons/tb";
 import logown from '../../assets/images/logown.png'
@@ -44,10 +44,15 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     {
       title: "Customer Management",
       icon: <BiUser />,
-      subMenu: ["Customer Profiles", "Meeting Scheduler"],
+      subMenu: ["Customer Profiles"],
       key: "customers"
     },
-    
+    {
+      title: "Schedule Meetings",
+      icon: <FaCalendarAlt />,
+      subMenu: ["Admin Meetings", "Sales Meetings", "My Meetings"],
+      key: "scheduleMeetings"
+    },
     // Sales Module
     {
       title: "Sales Management",
@@ -142,7 +147,12 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'customer-profiles': ROUTES.CUSTOMER_PROFILES,
       'documents': ROUTES.CUSTOMER_DOCUMENTS,
       'document-types': ROUTES.CUSTOMER_DOCUMENT_TYPES,
-      'meeting-scheduler': ROUTES.CUSTOMER_MEETING_SCHEDULER
+
+    },
+    'scheduleMeetings': {
+      'admin-meetings': ROUTES.ADMIN_MEETINGS,
+      'sales-meetings': ROUTES.SALES_MEETINGS,
+      'my-meetings': ROUTES.MY_MEETINGS
     },
     'sales': {
       'sales-list': ROUTES.SALES_LIST,
@@ -182,6 +192,11 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'settings': ROUTES.SETTINGS,
   };
 
+  console.log('RouteMap for scheduleMeetings:', routeMap.scheduleMeetings);
+  console.log('ROUTES.ADMIN_MEETINGS:', ROUTES.ADMIN_MEETINGS);
+  console.log('ROUTES.SALES_MEETINGS:', ROUTES.SALES_MEETINGS);
+  console.log('ROUTES.MY_MEETINGS:', ROUTES.MY_MEETINGS);
+
   // Helper to convert to kebab-case
   const toKebab = str => str && str.toLowerCase().replace(/ /g, '-');
 
@@ -197,6 +212,8 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   // Update selected states based on current route
   useEffect(() => {
     const path = location.pathname.split('/');
+    console.log('Current path:', location.pathname, 'Path array:', path);
+    
     if (path[1]) {
       // Handle direct routes like /properties, /properties/favorite-properties, /property/favorite-properties
       if (path[1] === 'properties') {
@@ -219,6 +236,24 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         if (!subMenus.property) {
           toggleSubMenu('property');
         }
+      } else if (path[1] === 'admin-meetings') {
+        setSelectedMenu('scheduleMeetings');
+        setSelectedSubMenu('admin-meetings');
+        if (!subMenus.scheduleMeetings) {
+          toggleSubMenu('scheduleMeetings');
+        }
+      } else if (path[1] === 'sales-meetings') {
+        setSelectedMenu('scheduleMeetings');
+        setSelectedSubMenu('sales-meetings');
+        if (!subMenus.scheduleMeetings) {
+          toggleSubMenu('scheduleMeetings');
+        }
+      } else if (path[1] === 'my-meetings') {
+        setSelectedMenu('scheduleMeetings');
+        setSelectedSubMenu('my-meetings');
+        if (!subMenus.scheduleMeetings) {
+          toggleSubMenu('scheduleMeetings');
+        }
       } else if (path[2]) {
         // Handle submenu paths
         const parentMenu = findParentMenu(path[2]);
@@ -238,6 +273,8 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       setSelectedMenu('dashboard');
       setSelectedSubMenu('');
     }
+    
+    console.log('Selected menu:', selectedMenu, 'Selected submenu:', selectedSubMenu);
   }, [location, toggleSubMenu, subMenus]);
 
   const handleMenuClick = (menu) => {
@@ -259,16 +296,27 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     const menuKey = menu.key;
     const subMenuKey = toKebab(subMenu);
     const path = routeMap[menuKey]?.[subMenuKey];
+    
+    console.log('SubMenu Click Debug:', {
+      menuKey,
+      subMenu,
+      subMenuKey,
+      path,
+      routeMap: routeMap[menuKey]
+    });
+    
     if (path) {
       // Store current path before navigating
       sessionStorage.setItem('previousPath', location.pathname);
       navigate(path);
       setSelectedMenu(menuKey);
       setSelectedSubMenu(subMenuKey);
+    } else {
+      console.error('No route found for:', { menuKey, subMenuKey });
     }
   };
 
-    return (
+  return (
     <>
       {/* Overlay for mobile */}
       {isMobile && open && (
@@ -327,7 +375,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
                   ${Menu.gap ? "mt-9" : "mt-2"}
                   hover:bg-gray-50/50`}
                 onClick={() => handleMenuClick(Menu)}
-    >
+              >
                 <div className="flex items-center justify-between gap-x-4">
                   <div className="flex items-center gap-2">
                     <span className={`transition-colors duration-200 ${isMobile ? 'text-lg' : 'text-2xl'} 

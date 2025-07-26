@@ -1,7 +1,7 @@
 import api from '../api';
 import { MEETING_SCHEDULE_ENDPOINTS } from '../apiEndpoints';
 
-// Fetch all meeting schedules (admin only)
+// Fetch all meeting schedules (admin, executive only)
 export const fetchAllMeetingSchedules = async () => {
   try {
     console.log('meetingScheduleService: Fetching all meeting schedules');
@@ -27,15 +27,15 @@ export const getMyMeetings = async (userId) => {
   }
 };
 
-// Get meeting schedule by ID
-export const getMeetingScheduleById = async (id) => {
+// Get meeting schedule by ID (scheduled by user ID)
+export const getMeetingScheduleById = async (userId) => {
   try {
-    console.log('meetingScheduleService: Fetching meeting schedule by ID:', id);
-    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_BY_ID(id));
-    console.log('meetingScheduleService: Get by ID response:', response.data);
+    console.log('meetingScheduleService: Fetching meeting schedule by user ID:', userId);
+    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_BY_SCHEDULED_USER_ID(userId));
+    console.log('meetingScheduleService: Get by scheduled user ID response:', response.data);
     return response.data;
   } catch (error) {
-    console.error('meetingScheduleService: Get by ID error:', error);
+    console.error('meetingScheduleService: Get by scheduled user ID error:', error);
     throw error;
   }
 };
@@ -95,60 +95,86 @@ export const getNotPublishedMeetingSchedules = async () => {
 
 // Helper function to format meeting data for API
 export const formatMeetingDataForAPI = (formData) => {
-  // For both create and edit, send only the required fields
-  const apiData = {
+  // Extract customerId from customerIds array or use customerId directly
+  const customerId = formData.customerIds && formData.customerIds.length > 0 
+    ? formData.customerIds[0] 
+    : formData.customerId;
+  
+  return {
     title: formData.title,
-    description: formData.description || '',
+    description: formData.description || "",
     meetingDate: formData.meetingDate,
     startTime: formData.startTime,
     endTime: formData.endTime || null,
-    duration: formData.duration || 60,
-    location: formData.location,
+    duration: formData.duration || null,
     status: formData.status,
-    customerId: formData.customerId,
+    customerId: customerId,
     propertyId: formData.propertyId || null,
-    notes: formData.notes || ''
+    notes: formData.notes || ""
   };
-
-  console.log('API data being sent:', apiData);
-  return apiData;
 };
 
-// Helper function to format meeting data for frontend display
+// Helper function to format meeting data for frontend
 export const formatMeetingDataForFrontend = (meeting) => {
   return {
-    _id: meeting._id,
+    id: meeting._id,
     title: meeting.title,
     description: meeting.description,
     meetingDate: meeting.meetingDate,
     startTime: meeting.startTime,
     endTime: meeting.endTime,
     duration: meeting.duration,
-    location: meeting.location,
-    status: meeting.status?._id || meeting.status, // Handle both populated object and ObjectId
-    statusName: meeting.status?.name || 'Unknown', // Add status name for display
-    customerId: meeting.customerId?._id || meeting.customerId, // Handle both populated object and ObjectId
-    customerName: meeting.customerId?.firstName && meeting.customerId?.lastName 
-      ? `${meeting.customerId.firstName} ${meeting.customerId.lastName}` 
-      : 'Unknown Customer',
-    customerEmail: meeting.customerId?.email || '',
-    customerPhone: meeting.customerId?.phoneNumber || '',
-    propertyId: meeting.propertyId?._id || meeting.propertyId, // Handle both populated object and ObjectId
-    propertyData: meeting.propertyId, // Store the full property object for display
-    propertyName: meeting.propertyId?.name || 'Unknown Property',
-    salesPersonId: meeting.scheduledByUserId?._id || meeting.scheduledByUserId, // Handle both populated object and ObjectId
-    salesPersonName: meeting.scheduledByUserId?.firstName && meeting.scheduledByUserId?.lastName 
-      ? `${meeting.scheduledByUserId.firstName} ${meeting.scheduledByUserId.lastName}` 
-      : 'Unknown Sales Person',
-    salesPersonEmail: meeting.scheduledByUserId?.email || '',
-    salesPersonPhone: meeting.scheduledByUserId?.phoneNumber || '',
-    scheduledDate: meeting.meetingDate,
-    scheduledTime: meeting.startTime,
+    status: meeting.status,
+    scheduledByUserId: meeting.scheduledByUserId,
+    customerId: meeting.customerId,
+    propertyId: meeting.propertyId,
     notes: meeting.notes,
-    createdByUserId: meeting.createdByUserId?._id || meeting.createdByUserId,
-    updatedByUserId: meeting.updatedByUserId?._id || meeting.updatedByUserId,
+    createdByUserId: meeting.createdByUserId,
+    updatedByUserId: meeting.updatedByUserId,
     published: meeting.published,
     createdAt: meeting.createdAt,
     updatedAt: meeting.updatedAt
   };
 };
+
+// Helper function to calculate duration between start and end time
+export const calculateDuration = (startTime, endTime) => {
+  if (!startTime || !endTime) return 'No duration';
+  
+  const start = new Date(`2000-01-01T${startTime}`);
+  const end = new Date(`2000-01-01T${endTime}`);
+  
+  const diffMs = end - start;
+  const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+  const diffMins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (diffHrs > 0 && diffMins > 0) {
+    return `${diffHrs}h ${diffMins}m`;
+  } else if (diffHrs > 0) {
+    return `${diffHrs}h`;
+  } else if (diffMins > 0) {
+    return `${diffMins}m`;
+  } else {
+    return '0m';
+  }
+};
+
+// Helper function to get status color
+export const getStatusColor = (statusName) => {
+  const status = statusName?.toLowerCase();
+  if (status?.includes('scheduled')) return 'blue';
+  if (status?.includes('completed')) return 'green';
+  if (status?.includes('cancelled') || status?.includes('canceled')) return 'red';
+  if (status?.includes('rescheduled')) return 'orange';
+  return 'gray';
+};
+
+// Helper function to get status icon
+export const getStatusIcon = (statusName) => {
+  const status = statusName?.toLowerCase();
+  if (status?.includes('scheduled')) return '📅';
+  if (status?.includes('completed')) return '✅';
+  if (status?.includes('cancelled') || status?.includes('canceled')) return '❌';
+  if (status?.includes('rescheduled')) return '🔄';
+  return '📋';
+}; 

@@ -21,7 +21,7 @@ import LeadQualification from '../pages/lead/LeadQualification';
 import CustomerProfiles from '../pages/customers/CustomerProfiles';
 import CustomerDocuments from '../pages/customers/Documents';
 import CustomerDocumentTypeManagement from '../pages/customers/DocumentTypeManagement';
-import MeetingScheduler from '../pages/customers/MeetingScheduler';
+
 import MeetingStatusManagement from '../pages/admin/meetingStatusManagement/MeetingStatusManagement';
 import Inventory from '../pages/bookings/Inventory';
 import BookedUnits from '../pages/bookings/BookedUnits';
@@ -54,6 +54,8 @@ import IncomeStatement from '../pages/admin/accounting/IncomeStatement';
 import UserProfile from '../pages/profile/UserProfile';
 import Settings from '../pages/Settings';
 import ReferenceSource from '../pages/lead/ReferenceSource';
+import AdminMeetings from '../pages/admin/AdminMeetings';
+import SalesMeetings from '../pages/sales/SalesMeetings';
 
 export const ROUTES = [
   // Auth
@@ -98,7 +100,7 @@ export const ROUTES = [
   { name: 'customerProfiles', path: '/customers/profiles', component: CustomerProfiles, permissions: 'public' },
   { name: 'customerDocuments', path: '/customers/documents', component: CustomerDocuments, permissions: 'public' },
   { name: 'customerDocumentTypes', path: '/customers/document-types', component: CustomerDocumentTypeManagement, permissions: 'public' },
-  { name: 'customerMeetingScheduler', path: '/customers/meeting-scheduler', component: MeetingScheduler, permissions: 'public' },
+
 
   // Sales
   { name: 'salesList', path: '/sales/sales-list', component: SalesList, permissions: 'public' },
@@ -129,9 +131,16 @@ export const ROUTES = [
   { name: 'postSaleRewards', path: '/post-sale/rewards', component: Rewards, permissions: 'public' },
   { name: 'postSalePoints', path: '/post-sale/points', component: Points, permissions: 'public' },
 
+  // Schedule Meetings Routes
+  { name: 'adminMeetings', path: '/admin-meetings', component: AdminMeetings, permissions: 'admin' },
+  { name: 'salesMeetings', path: '/sales-meetings', component: SalesMeetings, permissions: 'sales,executive' },
+  { name: 'myMeetings', path: '/my-meetings', component: MyMeetings, permissions: 'public' },
+
+  // My Meetings (Standalone)
+  { name: 'myMeetings', path: '/my-meetings', component: MyMeetings, permissions: 'public' },
+
   // Client
   { name: 'clientMyBookings', path: '/client/my-bookings', component: MyBookings, permissions: 'public' },
-  { name: 'clientMyMeetings', path: '/client/my-meetings', component: MyMeetings, permissions: 'public' },
   { name: 'clientDocuments', path: '/client/documents', component: ClientDocuments, permissions: 'public' },
   { name: 'clientPayments', path: '/client/payments', component: ClientPayments, permissions: 'public' },
   { name: 'clientReferrals', path: '/client/referrals', component: ClientReferrals, permissions: 'public' },

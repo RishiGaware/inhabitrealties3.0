@@ -102,6 +102,7 @@ export const FAVORITE_PROPERTY_ENDPOINTS = {
 export const MEETING_SCHEDULE_ENDPOINTS = {
   GET_ALL: '/meetingschedule',
   GET_BY_ID: (id) => `/meetingschedule/${id}`,
+  GET_BY_SCHEDULED_USER_ID: (id) => `/meetingschedule/scheduledByUserId/${id}`,
   CREATE: '/meetingschedule/create',
   UPDATE: (id) => `/meetingschedule/edit/${id}`,
   DELETE: (id) => `/meetingschedule/delete/${id}`,

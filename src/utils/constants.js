@@ -16,6 +16,14 @@ export const ROUTES = {
   // Dashboard
   DASHBOARD: '/dashboard',
 
+  // My Meetings (Standalone)
+  MY_MEETINGS: '/my-meetings',
+
+  // Schedule Meetings Routes
+  ADMIN_MEETINGS: '/admin-meetings',
+  SALES_MEETINGS: '/sales-meetings',
+  CLIENT_MY_MEETINGS: '/client/my-meetings',
+
   // Admin Routes
   ADMIN_USER_MANAGEMENT: '/admin/user-management',
   ADMIN_ROLE_MANAGEMENT: '/admin/role-management',
@@ -44,7 +52,7 @@ export const ROUTES = {
   CUSTOMER_PROFILES: '/customers/profiles',
   CUSTOMER_DOCUMENTS: '/customers/documents',
   CUSTOMER_DOCUMENT_TYPES: '/customers/document-types',
-  CUSTOMER_MEETING_SCHEDULER: '/customers/meeting-scheduler',
+
 
   // Sales Management Routes
   SALES_LIST: '/sales/sales-list',
@@ -77,7 +85,6 @@ export const ROUTES = {
 
   // Client Portal Routes
   CLIENT_MY_BOOKINGS: '/client/my-bookings',
-  CLIENT_MY_MEETINGS: '/client/my-meetings',
   CLIENT_DOCUMENTS: '/client/documents',
   CLIENT_PAYMENTS: '/client/payments',
   CLIENT_REFERRALS: '/client/referrals',
@@ -122,7 +129,7 @@ export const ROUTE_GROUPS = {
     ROUTES.CUSTOMER_PROFILES,
     ROUTES.CUSTOMER_DOCUMENTS,
     ROUTES.CUSTOMER_DOCUMENT_TYPES,
-    ROUTES.CUSTOMER_MEETING_SCHEDULER
+
   ],
   SALES: [
     ROUTES.SALES_LIST,
@@ -161,6 +168,11 @@ export const ROUTE_GROUPS = {
     ROUTES.CLIENT_REFERRALS
   ]
 };
+
+// Schedule Meetings Routes
+export const ADMIN_MEETINGS = '/admin-meetings';
+export const SALES_MEETINGS = '/sales-meetings';
+export const MY_MEETINGS = '/my-meetings';
 
 // Helper function to get route by name
 export const getRoute = (routeName) => {

@@ -32,7 +32,7 @@ import LeadFollowUp from './pages/lead/LeadFollowUp';
 import CustomerProfiles from './pages/customers/CustomerProfiles';
 import CustomerDocuments from './pages/customers/Documents';
 import CustomerDocumentTypeManagement from './pages/customers/DocumentTypeManagement';
-import MeetingScheduler from './pages/customers/MeetingScheduler';
+
 import Inventory from './pages/bookings/Inventory';
 import BookedUnits from './pages/bookings/BookedUnits';
 import PaymentStatus from './pages/bookings/PaymentStatus';
@@ -75,6 +75,8 @@ import TopDevelopers from './components/TopDevelopers';
 
 // Import route constants
 import { ROUTES } from './utils/constants';
+import AdminMeetings from './pages/admin/AdminMeetings';
+import SalesMeetings from './pages/sales/SalesMeetings';
 
 const MainLayout = ({ children }) => {
   return (
@@ -169,7 +171,7 @@ const App = () => {
             <Route path={ROUTES.CUSTOMER_PROFILES} element={<DashboardLayout><CustomerProfiles /></DashboardLayout>} />
             <Route path={ROUTES.CUSTOMER_DOCUMENTS} element={<DashboardLayout><CustomerDocuments /></DashboardLayout>} />
             <Route path={ROUTES.CUSTOMER_DOCUMENT_TYPES} element={<DashboardLayout><CustomerDocumentTypeManagement /></DashboardLayout>} />
-            <Route path={ROUTES.CUSTOMER_MEETING_SCHEDULER} element={<DashboardLayout><MeetingScheduler /></DashboardLayout>} />
+    
             
             {/* Sales Management Routes */}
             <Route path={ROUTES.SALES_LIST} element={<DashboardLayout><SalesList /></DashboardLayout>} />
@@ -200,9 +202,13 @@ const App = () => {
             <Route path={ROUTES.POST_SALE_REWARDS} element={<DashboardLayout><Rewards /></DashboardLayout>} />
             <Route path={ROUTES.POST_SALE_POINTS} element={<DashboardLayout><Points /></DashboardLayout>} />
             
+            {/* Schedule Meetings Routes */}
+            <Route path={ROUTES.ADMIN_MEETINGS} element={<DashboardLayout><AdminMeetings /></DashboardLayout>} />
+            <Route path={ROUTES.SALES_MEETINGS} element={<DashboardLayout><SalesMeetings /></DashboardLayout>} />
+            <Route path={ROUTES.MY_MEETINGS} element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
+            
             {/* Client Portal Routes */}
             <Route path={ROUTES.CLIENT_MY_BOOKINGS} element={<DashboardLayout><MyBookings /></DashboardLayout>} />
-            <Route path={ROUTES.CLIENT_MY_MEETINGS} element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
             <Route path={ROUTES.CLIENT_DOCUMENTS} element={<DashboardLayout><ClientDocuments /></DashboardLayout>} />
             <Route path={ROUTES.CLIENT_PAYMENTS} element={<DashboardLayout><ClientPayments /></DashboardLayout>} />
             <Route path={ROUTES.CLIENT_REFERRALS} element={<DashboardLayout><ClientReferrals /></DashboardLayout>} />

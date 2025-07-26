@@ -5,7 +5,7 @@ import {
   Flex,
   Text,
   Badge,
-  Button,
+  IconButton,
   Grid,
   useColorModeValue,
   Modal,
@@ -21,186 +21,143 @@ import {
   InputLeftElement,
   Input,
   Select,
+  Button,
 } from '@chakra-ui/react';
-import { FaEye, FaCalendar, FaMapMarkerAlt, FaClock, FaUser, FaSearch, FaHome, FaEnvelope, FaStickyNote, FaUsers } from 'react-icons/fa';
+import { FaEye, FaCalendar, FaMapMarkerAlt, FaClock, FaUser, FaSearch, FaHome, FaEnvelope, FaPhone, FaStickyNote, FaPlus } from 'react-icons/fa';
+import CommonCard from '../../components/common/Card/CommonCard';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
+import CommonAddButton from '../../components/common/Button/CommonAddButton';
 
-const MyMeetings = () => {
-  const [activeView, setActiveView] = useState('my'); // 'my' or 'scheduled'
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
+const SalesMeetings = () => {
+  const {
+    isOpen: isViewOpen,
+    onOpen: onViewOpen,
+    onClose: onViewClose,
+  } = useDisclosure();
+  const [meetingToView, setMeetingToView] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [selectedMeeting, setSelectedMeeting] = useState(null);
-  const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onClose: onViewModalClose } = useDisclosure();
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  // Static data for my meetings (personal view) - matches AdminMeetings format
-  const myMeetings = [
+  // Static data for sales meetings
+  const staticMeetings = [
     {
       id: 1,
-      title: 'Client Consultation',
-      description: 'Initial property discussion for first-time buyer',
-      customerName: 'Emma Davis',
-      customerEmail: 'emma.d@email.com',
-      propertyName: 'Downtown Apartments',
-      propertyLocation: 'Andheri West, Mumbai',
-      propertyPrice: '₹1.5 Cr',
-      meetingDate: '2024-01-18',
-      startTime: '15:00',
-      endTime: '16:00',
-      status: 'Scheduled',
-      salesPersonName: 'Emma Sales',
-      salesPersonEmail: 'emma@inhabit.com',
-      location: 'Andheri West, Mumbai',
-      notes: 'First time buyer, needs guidance on home loan process'
+      title: "Property Viewing - 2BHK Apartment",
+      description: "Young couple looking for their first home",
+      customerName: "Rahul & Priya Sharma",
+      customerEmail: "rahul.priya@email.com",
+      propertyName: "Green Valley Apartments",
+      propertyLocation: "Thane West, Mumbai",
+      propertyPrice: "₹1.2 Cr",
+      meetingDate: "2024-01-15",
+      startTime: "11:00",
+      endTime: "12:00",
+      status: "Scheduled",
+      salesPersonName: "Neha Singh",
+      salesPersonEmail: "neha.singh@inhabit.com",
+      salesPersonPhone: "+91 98765 43212",
+      location: "Property Site - Thane West",
+      notes: "First-time buyers. Show them the amenities and explain the loan process."
     },
     {
       id: 2,
-      title: 'Property Tour',
-      description: 'Show multiple properties to interested client',
-      customerName: 'David Brown',
-      customerEmail: 'david.b@email.com',
-      propertyName: 'Garden Heights',
-      propertyLocation: 'Powai, Mumbai',
-      propertyPrice: '₹2.1 Cr',
-      meetingDate: '2024-01-19',
-      startTime: '10:00',
-      endTime: '12:30',
-      status: 'Completed',
-      salesPersonName: 'Emma Sales',
-      salesPersonEmail: 'emma@inhabit.com',
-      location: 'Powai, Mumbai',
-      notes: 'Client liked the amenities and green surroundings'
+      title: "Investment Property Discussion",
+      description: "Business owner looking for rental property",
+      customerName: "Vikram Mehta",
+      customerEmail: "vikram.mehta@email.com",
+      propertyName: "Commercial Complex",
+      propertyLocation: "Andheri East, Mumbai",
+      propertyPrice: "₹3.5 Cr",
+      meetingDate: "2024-01-16",
+      startTime: "15:00",
+      endTime: "16:30",
+      status: "Completed",
+      salesPersonName: "Arjun Reddy",
+      salesPersonEmail: "arjun.reddy@inhabit.com",
+      salesPersonPhone: "+91 98765 43214",
+      location: "Office - Andheri Branch",
+      notes: "Client interested in rental yield. Prepare ROI analysis and rental agreements."
     },
     {
       id: 3,
-      title: 'Investment Discussion',
-      description: 'Portfolio review meeting for high-value client',
-      customerName: 'Sarah Johnson',
-      customerEmail: 'sarah.j@email.com',
-      propertyName: 'Premium Apartments',
-      propertyLocation: 'Worli, Mumbai',
-      propertyPrice: '₹1.8 Cr',
-      meetingDate: '2024-01-20',
-      startTime: '14:00',
-      endTime: '15:30',
-      status: 'Rescheduled',
-      salesPersonName: 'Emma Sales',
-      salesPersonEmail: 'emma@inhabit.com',
-      location: 'Worli, Mumbai',
-      notes: 'Client wants to reschedule due to personal commitments'
-    }
-  ];
-
-  // Static data for scheduled meetings (view-only for clients)
-  const scheduledMeetings = [
+      title: "Luxury Villa Tour",
+      description: "High net worth individual",
+      customerName: "Raj Malhotra",
+      customerEmail: "raj.malhotra@email.com",
+      propertyName: "Luxury Villa Complex",
+      propertyLocation: "Bandra West, Mumbai",
+      propertyPrice: "₹4.8 Cr",
+      meetingDate: "2024-01-17",
+      startTime: "14:00",
+      endTime: "15:30",
+      status: "Rescheduled",
+      salesPersonName: "Sarah Johnson",
+      salesPersonEmail: "sarah.johnson@inhabit.com",
+      salesPersonPhone: "+91 98765 43210",
+      location: "Property Site - Bandra West",
+      notes: "Rescheduled due to client's travel plans. New time confirmed for next week."
+    },
     {
       id: 4,
-      title: 'Property Viewing - Luxury Villa',
-      description: 'Client interested in 3BHK villa with garden view',
-      customerName: 'John Smith',
-      customerEmail: 'john.smith@email.com',
-      propertyName: 'Luxury Villa Complex',
-      propertyLocation: 'Bandra West, Mumbai',
-      propertyPrice: '₹2.5 Cr',
-      meetingDate: '2024-01-21',
-      startTime: '10:00',
-      endTime: '12:00',
-      status: 'Scheduled',
-      salesPersonName: 'John Admin',
-      salesPersonEmail: 'admin@inhabit.com',
-      location: 'Bandra West, Mumbai',
-      notes: 'Client wants to see the garden area and parking facilities'
+      title: "Office Space Discussion",
+      description: "Startup looking for office space",
+      customerName: "Amit & Meera Patel",
+      customerEmail: "amit.meera@email.com",
+      propertyName: "Business Park",
+      propertyLocation: "BKC, Mumbai",
+      propertyPrice: "₹2.1 Cr",
+      meetingDate: "2024-01-18",
+      startTime: "10:00",
+      endTime: "11:00",
+      status: "Scheduled",
+      salesPersonName: "Rahul Sharma",
+      salesPersonEmail: "rahul.sharma@inhabit.com",
+      salesPersonPhone: "+91 98765 43211",
+      location: "Office - BKC Branch",
+      notes: "Startup with 15 employees. Need flexible lease terms and parking space."
     },
     {
       id: 5,
-      title: 'Property Inspection',
-      description: 'Pre-purchase inspection for potential buyer',
-      customerName: 'Mike Wilson',
-      customerEmail: 'mike.w@email.com',
-      propertyName: 'Sea View Residences',
-      propertyLocation: 'Juhu, Mumbai',
-      propertyPrice: '₹3.2 Cr',
-      meetingDate: '2024-01-22',
-      startTime: '11:30',
-      endTime: '12:30',
-      status: 'Scheduled',
-      salesPersonName: 'John Admin',
-      salesPersonEmail: 'admin@inhabit.com',
-      location: 'Juhu, Mumbai',
-      notes: 'Check for water damage and structural integrity'
+      title: "Residential Plot Discussion",
+      description: "Family planning to build their dream home",
+      customerName: "Sunil & Rekha Iyer",
+      customerEmail: "sunil.rekha@email.com",
+      propertyName: "Residential Plots",
+      propertyLocation: "Navi Mumbai",
+      propertyPrice: "₹1.8 Cr",
+      meetingDate: "2024-01-19",
+      startTime: "16:00",
+      endTime: "17:00",
+      status: "Cancelled",
+      salesPersonName: "Vikram Mehta",
+      salesPersonEmail: "vikram.mehta@inhabit.com",
+      salesPersonPhone: "+91 98765 43213",
+      location: "Property Site - Navi Mumbai",
+      notes: "Cancelled due to client's personal emergency. Will reschedule when convenient."
     }
   ];
 
-  const getCurrentMeetings = () => {
-    const currentMeetings = activeView === 'scheduled' ? scheduledMeetings : myMeetings;
-    console.log('Current meetings:', currentMeetings);
-    console.log('Active view:', activeView);
-    return currentMeetings;
+  // Calculate counts
+  const counts = {
+    totalMeetings: staticMeetings.length,
+    totalScheduled: staticMeetings.filter(m => m.status === 'Scheduled').length,
+    totalRescheduled: staticMeetings.filter(m => m.status === 'Rescheduled').length,
+    totalCompleted: staticMeetings.filter(m => m.status === 'Completed').length,
+    totalCancelled: staticMeetings.filter(m => m.status === 'Cancelled').length
   };
 
-  const meetings = getCurrentMeetings();
-
-  // Calculate counts based on current meetings
-  const counts = useMemo(() => {
-    const totalMeetings = meetings.length;
-    const totalScheduled = meetings.filter(m => m.status === 'Scheduled').length;
-    const totalRescheduled = meetings.filter(m => m.status === 'Rescheduled').length;
-    const totalCompleted = meetings.filter(m => m.status === 'Completed').length;
-    const totalCancelled = meetings.filter(m => m.status === 'Cancelled').length;
-
-    console.log('Counts:', { totalMeetings, totalScheduled, totalRescheduled, totalCompleted, totalCancelled });
-
-    return {
-          totalMeetings,
-          totalScheduled,
-      totalRescheduled,
-          totalCompleted,
-          totalCancelled
-    };
-  }, [meetings]);
-
-  // Filter meetings based on search and status
-  const filteredMeetings = useMemo(() => {
-    const filtered = meetings.filter(meeting => {
-      const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           meeting.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           (meeting.propertyName && meeting.propertyName.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesStatus = !statusFilter || meeting.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-    console.log('Filtered meetings:', filtered);
-    return filtered;
-  }, [meetings, searchTerm, statusFilter]);
-
-  // Pagination
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  
-  console.log('Paginated meetings:', filteredMeetings.slice(startIndex, startIndex + itemsPerPage));
-
-  const handleViewMeeting = (meeting) => {
-    setSelectedMeeting(meeting);
-    onViewModalOpen();
-  };
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handlePageSizeChange = (size) => {
-    setItemsPerPage(size);
-    setCurrentPage(1); // Reset to first page when page size changes
-  };
-
+  // Color mode values
   const textColor = useColorModeValue('gray.800', 'white');
   const subTextColor = useColorModeValue('gray.600', 'gray.300');
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Scheduled': return 'green';
-      case 'Completed': return 'blue';
+      case 'Scheduled': return 'blue';
+      case 'Completed': return 'green';
       case 'Cancelled': return 'red';
       case 'Rescheduled': return 'orange';
       default: return 'gray';
@@ -217,19 +174,77 @@ const MyMeetings = () => {
     }
   };
 
+  // Calculate duration from start and end time
   const calculateDuration = (startTime, endTime) => {
-    if (!startTime || !endTime) return 'No duration';
+    if (!startTime || !endTime) return '1 hour';
     
-    const start = new Date(`2000-01-01T${startTime}:00`);
-    const end = new Date(`2000-01-01T${endTime}:00`);
-    const diffMs = end - start;
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+    const [startHour, startMinute] = startTime.split(':').map(Number);
+    const [endHour, endMinute] = endTime.split(':').map(Number);
     
-    if (diffHours > 0) {
-      return `${diffHours}h ${diffMinutes}m`;
+    let startMinutes = startHour * 60 + startMinute;
+    let endMinutes = endHour * 60 + endMinute;
+    
+    if (endMinutes < startMinutes) {
+      endMinutes += 24 * 60;
     }
-    return `${diffMinutes}m`;
+    
+    const totalMinutes = endMinutes - startMinutes;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    
+    if (hours === 0) {
+      return `${minutes} minutes`;
+    } else if (minutes === 0) {
+      return `${hours} hour${hours > 1 ? 's' : ''}`;
+    } else {
+      return `${hours} hour${hours > 1 ? 's' : ''} ${minutes} minutes`;
+    }
+  };
+
+  // Memoize filtered meetings
+  const filteredMeetings = useMemo(() => {
+    let filtered = staticMeetings;
+    if (searchTerm) {
+      filtered = filtered.filter(meeting =>
+        meeting.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        meeting.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        meeting.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        meeting.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        meeting.location?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    if (statusFilter) {
+      filtered = filtered.filter(meeting => meeting.status === statusFilter);
+    }
+    return filtered;
+  }, [searchTerm, statusFilter]);
+
+  // Reset page when filtered results change
+  React.useEffect(() => {
+    const maxPage = Math.ceil(filteredMeetings.length / pageSize);
+    if (currentPage > maxPage && maxPage > 0) {
+      setCurrentPage(1);
+    }
+  }, [filteredMeetings.length, pageSize, currentPage]);
+
+  const handleSearch = (event) => {
+    setSearchTerm(event.target.value);
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= Math.ceil(filteredMeetings.length / pageSize)) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
+  const handleViewDetails = (meeting) => {
+    setMeetingToView(meeting);
+    onViewOpen();
   };
 
   const columns = [
@@ -285,7 +300,7 @@ const MyMeetings = () => {
     {
       key: 'status',
       label: 'Status',
-      render: (status) => (
+      render: (status, meeting) => (
         <Badge colorScheme={getStatusColor(status)} variant="solid">
           {getStatusIcon(status)} {status}
         </Badge>
@@ -293,244 +308,202 @@ const MyMeetings = () => {
     }
   ];
 
-  const rowActions = (meeting) => (
+  const renderRowActions = (meeting) => (
     <HStack spacing={2}>
-      <Button
+      <IconButton
+        icon={<FaEye />}
         size="sm"
-        colorScheme="blue"
         variant="ghost"
-        onClick={() => handleViewMeeting(meeting)}
-      >
-        <FaEye />
-      </Button>
+        colorScheme="blue"
+        onClick={() => handleViewDetails(meeting)}
+        aria-label="View meeting"
+      />
     </HStack>
   );
 
-  const SummaryCards = () => (
-    <Grid 
-      templateColumns={{ 
-        base: 'repeat(2, 1fr)', 
-        sm: 'repeat(3, 1fr)', 
-        md: 'repeat(4, 1fr)', 
-        lg: 'repeat(5, 1fr)' 
-      }} 
-      gap={{ base: 2, sm: 3, md: 4 }} 
-      mb={6}
-      w="full"
-      maxW="full"
-      overflow="hidden"
-    >
-      {/* Total Meetings Card */}
-      <Box
-        bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-        p={{ base: 3, sm: 4 }}
-        borderRadius="xl"
-        boxShadow="lg"
-        _hover={{
-          transform: "translateY(-2px)",
-          boxShadow: "xl",
-          transition: "all 0.2s ease"
-        }}
-        transition="all 0.2s ease"
-        minW="0"
-        flex="1"
-      >
-        <VStack spacing={2} align="center">
-          <Box
-            p={2}
-            bg="rgba(255, 255, 255, 0.2)"
-            borderRadius="lg"
-          >
-            <FaCalendar size={14} color="white" />
-      </Box>
-          <Text color="white" fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium" textAlign="center" noOfLines={1}>
-            TOTAL MEETINGS
-          </Text>
-          <Text color="white" fontSize={{ base: "lg", sm: "xl" }} fontWeight="bold" textAlign="center">
-            {counts.totalMeetings}
-          </Text>
-        </VStack>
-      </Box>
-
-            {/* Scheduled Card */}
-      <Box
-        bg="linear-gradient(135deg, #11998e 0%, #38ef7d 100%)"
-        p={{ base: 3, sm: 4 }}
-        borderRadius="xl"
-        boxShadow="lg"
-        _hover={{
-          transform: "translateY(-2px)",
-          boxShadow: "xl",
-          transition: "all 0.2s ease"
-        }}
-        transition="all 0.2s ease"
-        minW="0"
-        flex="1"
-      >
-        <VStack spacing={2} align="center">
-          <Box
-            p={2}
-            bg="rgba(255, 255, 255, 0.2)"
-            borderRadius="lg"
-          >
-            <FaCalendar size={14} color="white" />
-            </Box>
-          <Text color="white" fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium" textAlign="center" noOfLines={1}>
-            SCHEDULED
-          </Text>
-          <Text color="white" fontSize={{ base: "lg", sm: "xl" }} fontWeight="bold" textAlign="center">
-            {counts.totalScheduled}
-          </Text>
-        </VStack>
-            </Box>
-
-      {/* Rescheduled Card */}
-      <Box
-        bg="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-        p={{ base: 3, sm: 4 }}
-        borderRadius="xl"
-        boxShadow="lg"
-        _hover={{
-          transform: "translateY(-2px)",
-          boxShadow: "xl",
-          transition: "all 0.2s ease"
-        }}
-        transition="all 0.2s ease"
-        minW="0"
-        flex="1"
-      >
-        <VStack spacing={2} align="center">
-          <Box
-            p={2}
-            bg="rgba(255, 255, 255, 0.2)"
-            borderRadius="lg"
-          >
-            <FaCalendar size={14} color="white" />
-            </Box>
-          <Text color="white" fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium" textAlign="center" noOfLines={1}>
-            RESCHEDULED
-          </Text>
-          <Text color="white" fontSize={{ base: "lg", sm: "xl" }} fontWeight="bold" textAlign="center">
-            {counts.totalRescheduled}
-          </Text>
-        </VStack>
-            </Box>
-
-      {/* Completed Card */}
-      <Box
-        bg="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-        p={{ base: 3, sm: 4 }}
-        borderRadius="xl"
-        boxShadow="lg"
-        _hover={{
-          transform: "translateY(-2px)",
-          boxShadow: "xl",
-          transition: "all 0.2s ease"
-        }}
-        transition="all 0.2s ease"
-        minW="0"
-        flex="1"
-      >
-        <VStack spacing={2} align="center">
-          <Box
-            p={2}
-            bg="rgba(255, 255, 255, 0.2)"
-            borderRadius="lg"
-          >
-            <FaCalendar size={14} color="white" />
-            </Box>
-          <Text color="white" fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium" textAlign="center" noOfLines={1}>
-            COMPLETED
-          </Text>
-          <Text color="white" fontSize={{ base: "lg", sm: "xl" }} fontWeight="bold" textAlign="center">
-            {counts.totalCompleted}
-          </Text>
-        </VStack>
-            </Box>
-
-      {/* Cancelled Card */}
-      <Box
-        bg="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
-        p={{ base: 3, sm: 4 }}
-        borderRadius="xl"
-        boxShadow="lg"
-        _hover={{
-          transform: "translateY(-2px)",
-          boxShadow: "xl",
-          transition: "all 0.2s ease"
-        }}
-        transition="all 0.2s ease"
-        minW="0"
-        flex="1"
-      >
-        <VStack spacing={2} align="center">
-          <Box
-            p={2}
-            bg="rgba(255, 255, 255, 0.2)"
-            borderRadius="lg"
-          >
-            <FaCalendar size={14} color="white" />
-            </Box>
-          <Text color="white" fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium" textAlign="center" noOfLines={1}>
-            CANCELLED
-          </Text>
-          <Text color="white" fontSize={{ base: "lg", sm: "xl" }} fontWeight="bold" textAlign="center">
-            {counts.totalCancelled}
-          </Text>
-        </VStack>
-            </Box>
-      </Grid>
-  );
-
   return (
-    <Box p={{ base: 3, sm: 4, md: 6 }}>
-      {/* Header */}
-      <HStack justify="space-between" align="center" mb={6} flexWrap="wrap">
-        <Heading as="h1" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold">
-          My Meetings
+    <Box p={5}>
+      <Flex justify="space-between" align="center" mb={6}>
+        <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
+          Sales Meetings
         </Heading>
-      </HStack>
-
-      {/* Segmented Buttons */}
-      <Flex 
-        direction="row" 
-        gap={0} 
-        mb={6}
-        bg="gray.100"
-        p={1}
-        borderRadius="lg"
-        maxW="fit-content"
-      >
-        <Button
-          size={{ base: "sm", sm: "md" }}
-          fontSize={{ base: "xs", sm: "sm" }}
-          px={{ base: 3, sm: 4 }}
-          minW={{ base: "auto", sm: "auto" }}
-          whiteSpace="nowrap"
-          variant={activeView === 'my' ? 'solid' : 'ghost'}
-          colorScheme="purple"
-          onClick={() => setActiveView('my')}
-          leftIcon={<FaUser />}
-        >
-          My Meetings
-        </Button>
-        <Button
-          size={{ base: "sm", sm: "md" }}
-          fontSize={{ base: "xs", sm: "sm" }}
-          px={{ base: 3, sm: 4 }}
-          minW={{ base: "auto", sm: "auto" }}
-          whiteSpace="nowrap"
-          variant={activeView === 'scheduled' ? 'solid' : 'ghost'}
-          colorScheme="purple"
-          onClick={() => setActiveView('scheduled')}
-          leftIcon={<FaUsers />}
-        >
-          Scheduled
-        </Button>
+        <CommonAddButton onClick={() => console.log('Add new meeting')} />
       </Flex>
 
       {/* Summary Cards */}
-      <SummaryCards />
+      <Grid 
+        templateColumns={{ 
+          base: 'repeat(2, 1fr)', 
+          sm: 'repeat(3, 1fr)', 
+          md: 'repeat(4, 1fr)', 
+          lg: 'repeat(5, 1fr)' 
+        }} 
+        gap={{ base: 2, sm: 3, md: 4 }} 
+        mb={6}
+        w="full"
+        maxW="full"
+        overflow="hidden"
+      >
+        {/* Total Meetings Card */}
+        <Box
+          bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+          p={{ base: 3, sm: 4 }}
+          borderRadius="xl"
+          boxShadow="lg"
+          _hover={{
+            transform: "translateY(-2px)",
+            boxShadow: "xl",
+            transition: "all 0.2s ease"
+          }}
+          transition="all 0.2s ease"
+          minW="0"
+          flex="1"
+        >
+          <VStack spacing={2} align="center">
+            <Box
+              p={2}
+              bg="rgba(255, 255, 255, 0.2)"
+              borderRadius="lg"
+            >
+              <FaCalendar size={14} color="white" />
+            </Box>
+            <Text color="white" fontSize={{ base: "xs", sm: "sm" }} fontWeight="medium" textAlign="center" noOfLines={1}>
+              TOTAL MEETINGS
+            </Text>
+            <Text color="white" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold" textAlign="center">
+              {counts.totalMeetings}
+            </Text>
+          </VStack>
+        </Box>
+
+        {/* Scheduled Card */}
+        <Box
+          bg="linear-gradient(135deg, #11998e 0%, #38ef7d 100%)"
+          p={{ base: 3, sm: 4 }}
+          borderRadius="xl"
+          boxShadow="lg"
+          _hover={{
+            transform: "translateY(-2px)",
+            boxShadow: "xl",
+            transition: "all 0.2s ease"
+          }}
+          transition="all 0.2s ease"
+          minW="0"
+          flex="1"
+        >
+          <VStack spacing={2} align="center">
+            <Box
+              p={2}
+              bg="rgba(255, 255, 255, 0.2)"
+              borderRadius="lg"
+            >
+              <FaCalendar size={14} color="white" />
+            </Box>
+            <Text color="white" fontSize={{ base: "xs", sm: "sm" }} fontWeight="medium" textAlign="center" noOfLines={1}>
+              SCHEDULED
+            </Text>
+            <Text color="white" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold" textAlign="center">
+              {counts.totalScheduled}
+            </Text>
+          </VStack>
+        </Box>
+
+        {/* Rescheduled Card */}
+        <Box
+          bg="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
+          p={{ base: 3, sm: 4 }}
+          borderRadius="xl"
+          boxShadow="lg"
+          _hover={{
+            transform: "translateY(-2px)",
+            boxShadow: "xl",
+            transition: "all 0.2s ease"
+          }}
+          transition="all 0.2s ease"
+          minW="0"
+          flex="1"
+        >
+          <VStack spacing={2} align="center">
+            <Box
+              p={2}
+              bg="rgba(255, 255, 255, 0.2)"
+              borderRadius="lg"
+            >
+              <FaCalendar size={14} color="white" />
+            </Box>
+            <Text color="white" fontSize={{ base: "xs", sm: "sm" }} fontWeight="medium" textAlign="center" noOfLines={1}>
+              RESCHEDULED
+            </Text>
+            <Text color="white" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold" textAlign="center">
+              {counts.totalRescheduled}
+            </Text>
+          </VStack>
+        </Box>
+
+        {/* Completed Card */}
+        <Box
+          bg="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
+          p={{ base: 3, sm: 4 }}
+          borderRadius="xl"
+          boxShadow="lg"
+          _hover={{
+            transform: "translateY(-2px)",
+            boxShadow: "xl",
+            transition: "all 0.2s ease"
+          }}
+          transition="all 0.2s ease"
+          minW="0"
+          flex="1"
+        >
+          <VStack spacing={2} align="center">
+            <Box
+              p={2}
+              bg="rgba(255, 255, 255, 0.2)"
+              borderRadius="lg"
+            >
+              <FaCalendar size={14} color="white" />
+            </Box>
+            <Text color="white" fontSize={{ base: "xs", sm: "sm" }} fontWeight="medium" textAlign="center" noOfLines={1}>
+              COMPLETED
+            </Text>
+            <Text color="white" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold" textAlign="center">
+              {counts.totalCompleted}
+            </Text>
+          </VStack>
+        </Box>
+
+        {/* Cancelled Card */}
+        <Box
+          bg="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
+          p={{ base: 3, sm: 4 }}
+          borderRadius="xl"
+          boxShadow="lg"
+          _hover={{
+            transform: "translateY(-2px)",
+            boxShadow: "xl",
+            transition: "all 0.2s ease"
+          }}
+          transition="all 0.2s ease"
+          minW="0"
+          flex="1"
+        >
+          <VStack spacing={2} align="center">
+            <Box
+              p={2}
+              bg="rgba(255, 255, 255, 0.2)"
+              borderRadius="lg"
+            >
+              <FaCalendar size={14} color="white" />
+            </Box>
+            <Text color="white" fontSize={{ base: "xs", sm: "sm" }} fontWeight="medium" textAlign="center" noOfLines={1}>
+              CANCELLED
+            </Text>
+            <Text color="white" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold" textAlign="center">
+              {counts.totalCancelled}
+            </Text>
+          </VStack>
+        </Box>
+      </Grid>
 
       {/* Search and Filter */}
       <Box 
@@ -544,13 +517,13 @@ const MyMeetings = () => {
       >
         <HStack spacing={4} align="center">
           <InputGroup maxW={{ base: "full", sm: "400px" }}>
-          <InputLeftElement pointerEvents="none">
+            <InputLeftElement pointerEvents="none">
               <FaSearch color="gray.400" />
-          </InputLeftElement>
-          <Input 
-            placeholder="Search meetings..." 
-            value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)}
+            </InputLeftElement>
+            <Input 
+              placeholder="Search meetings..." 
+              value={searchTerm} 
+              onChange={handleSearch}
               borderRadius="lg"
               border="1px solid"
               borderColor="gray.200"
@@ -561,13 +534,13 @@ const MyMeetings = () => {
               _hover={{
                 borderColor: "gray.300"
               }}
-          />
-        </InputGroup>
-        <Select
+            />
+          </InputGroup>
+          <Select
             maxW={{ base: "full", sm: "200px" }}
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          placeholder="Filter by status"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            placeholder="Filter by status"
             borderRadius="lg"
             border="1px solid"
             borderColor="gray.200"
@@ -578,35 +551,38 @@ const MyMeetings = () => {
             _hover={{
               borderColor: "gray.300"
             }}
-        >
-          <option value="Scheduled">Scheduled</option>
-          <option value="Completed">Completed</option>
-          <option value="Cancelled">Cancelled</option>
-          <option value="Rescheduled">Rescheduled</option>
-        </Select>
-      </HStack>
+          >
+            <option value="Scheduled">Scheduled</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+            <option value="Rescheduled">Rescheduled</option>
+          </Select>
+        </HStack>
       </Box>
 
       {/* Table */}
       <TableContainer>
         <CommonTable
           columns={columns}
-          data={filteredMeetings.slice(startIndex, startIndex + itemsPerPage)}
-          rowActions={rowActions}
+          data={filteredMeetings.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
+          )}
+          rowActions={renderRowActions}
           emptyStateMessage="No meetings found."
         />
         <CommonPagination
           currentPage={currentPage}
-          totalPages={Math.ceil(filteredMeetings.length / itemsPerPage)}
+          totalPages={Math.ceil(filteredMeetings.length / pageSize)}
           onPageChange={handlePageChange}
-          pageSize={itemsPerPage}
+          pageSize={pageSize}
           onPageSizeChange={handlePageSizeChange}
           totalItems={filteredMeetings.length}
         />
       </TableContainer>
 
-      {/* View Meeting Modal */}
-      <Modal isOpen={isViewModalOpen} onClose={onViewModalClose} size="4xl" isCentered>
+      {/* Meeting Details Modal */}
+      <Modal isOpen={isViewOpen} onClose={onViewClose} size="4xl" isCentered>
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(4px)" />
         <ModalContent
           borderRadius={{ base: "0", md: "2xl" }}
@@ -649,27 +625,27 @@ const MyMeetings = () => {
               <Flex justify="space-between" align="start" w="full">
                 <VStack align="start" spacing={2} flex={1}>
                   <Text color="white" fontSize={{ base: "lg", md: "2xl", lg: "3xl" }} fontWeight="bold">
-                  Meeting Details
-                </Text>
+                    Meeting Details
+                  </Text>
                   <Text color="white" opacity="0.9" fontSize={{ base: "xs", md: "sm", lg: "md" }}>
-                    My Meeting Management
-                </Text>
-              </VStack>
-              <Box
+                    Sales Meeting Management
+                  </Text>
+                </VStack>
+                <Box
                   p={4}
-                bg="white"
-                borderRadius="full"
-                opacity="0.2"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-              >
+                  bg="white"
+                  borderRadius="full"
+                  opacity="0.2"
+                  display="flex"
+                  alignItems="center"
+                  justifyContent="center"
+                >
                   <FaCalendar size={28} color="white" />
-              </Box>
-            </Flex>
-              {selectedMeeting && (
+                </Box>
+              </Flex>
+              {meetingToView && (
                 <Badge
-                  colorScheme={getStatusColor(selectedMeeting.status)}
+                  colorScheme={getStatusColor(meetingToView.status)}
                   variant="solid"
                   fontSize={{ base: "xs", md: "sm" }}
                   px={4}
@@ -681,7 +657,7 @@ const MyMeetings = () => {
                   alignSelf="flex-start"
                   mt={2}
                 >
-                  {getStatusIcon(selectedMeeting.status)} {selectedMeeting.status}
+                  {getStatusIcon(meetingToView.status)} {meetingToView.status}
                 </Badge>
               )}
             </VStack>
@@ -697,7 +673,7 @@ const MyMeetings = () => {
             zIndex={{ base: 9999, md: 1 }}
           />
           <ModalBody p={0} overflowY="auto" maxH={{ base: "calc(100vh - 180px)", md: "calc(90vh - 180px)" }}>
-            {selectedMeeting && (
+            {meetingToView && (
               <Grid templateColumns={{ base: "1fr", lg: "1fr 1fr" }} gap={0}>
                 {/* Left Column - Property & Schedule */}
                 <VStack spacing={0} align="stretch">
@@ -720,30 +696,30 @@ const MyMeetings = () => {
                           Property Details
                         </Text>
                         <Text color="gray.600" fontSize={{ base: "xs", md: "sm", lg: "md" }} mt={1}>
-                          {selectedMeeting.propertyName}
+                          {meetingToView.propertyName}
                         </Text>
                       </Box>
                     </Flex>
                     <VStack spacing={3} align="stretch">
                       <HStack spacing={3} align="center" p={3} bg="gray.50" borderRadius="xl">
-                      <Box
-                        p={2}
+                        <Box
+                          p={2}
                           bg="white"
-                        borderRadius="lg"
+                          borderRadius="lg"
                           color="blue.600"
                           boxShadow="sm"
-                      >
+                        >
                           <FaMapMarkerAlt size={14} />
-                      </Box>
+                        </Box>
                         <Box flex={1}>
                           <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
                             Location
                           </Text>
                           <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                        {selectedMeeting.propertyLocation}
-                      </Text>
+                            {meetingToView.propertyLocation}
+                          </Text>
                         </Box>
-                    </HStack>
+                      </HStack>
                       <HStack spacing={3} align="center" p={3} bg="green.50" borderRadius="xl">
                         <Box
                           p={2}
@@ -759,7 +735,7 @@ const MyMeetings = () => {
                             Price
                           </Text>
                           <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                            {selectedMeeting.propertyPrice}
+                            {meetingToView.propertyPrice}
                           </Text>
                         </Box>
                       </HStack>
@@ -785,7 +761,7 @@ const MyMeetings = () => {
                           Schedule
                         </Text>
                         <Text color="gray.600" fontSize={{ base: "xs", md: "sm", lg: "md" }} mt={1}>
-                          {new Date(selectedMeeting.meetingDate).toLocaleDateString('en-US', {
+                          {new Date(meetingToView.meetingDate).toLocaleDateString('en-US', {
                             weekday: 'long',
                             year: 'numeric',
                             month: 'long',
@@ -796,75 +772,75 @@ const MyMeetings = () => {
                     </Flex>
                     <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={3}>
                       <Box p={3} bg="blue.50" borderRadius="xl">
-                      <HStack spacing={3} align="center">
-                        <Box
-                          p={2}
+                        <HStack spacing={3} align="center">
+                          <Box
+                            p={2}
                             bg="white"
-                          borderRadius="lg"
-                          color="blue.600"
+                            borderRadius="lg"
+                            color="blue.600"
                             boxShadow="sm"
-                        >
+                          >
                             <FaCalendar size={12} />
-                        </Box>
-                        <Box>
+                          </Box>
+                          <Box>
                             <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
-                            Date
-                          </Text>
+                              Date
+                            </Text>
                             <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                              {new Date(selectedMeeting.meetingDate).toLocaleDateString()}
-                          </Text>
-                        </Box>
-                      </HStack>
+                              {new Date(meetingToView.meetingDate).toLocaleDateString()}
+                            </Text>
+                          </Box>
+                        </HStack>
                       </Box>
                       <Box p={3} bg="purple.50" borderRadius="xl">
-                      <HStack spacing={3} align="center">
-                        <Box
-                          p={2}
+                        <HStack spacing={3} align="center">
+                          <Box
+                            p={2}
                             bg="white"
-                          borderRadius="lg"
-                          color="purple.600"
+                            borderRadius="lg"
+                            color="purple.600"
                             boxShadow="sm"
-                        >
+                          >
                             <FaClock size={12} />
-                        </Box>
-                        <Box>
+                          </Box>
+                          <Box>
                             <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
-                            Time
-                          </Text>
+                              Time
+                            </Text>
                             <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                              {selectedMeeting.startTime} - {selectedMeeting.endTime || 'No end time'}
-                          </Text>
-                        </Box>
-                      </HStack>
+                              {meetingToView.startTime} - {meetingToView.endTime || 'No end time'}
+                            </Text>
+                          </Box>
+                        </HStack>
                       </Box>
                     </Grid>
                     <Box p={3} bg="orange.50" borderRadius="xl" mt={3}>
                       <HStack spacing={3} align="center">
-                      <Box
-                        p={2}
+                        <Box
+                          p={2}
                           bg="white"
-                        borderRadius="lg"
-                        color="orange.600"
+                          borderRadius="lg"
+                          color="orange.600"
                           boxShadow="sm"
-                      >
+                        >
                           <FaClock size={12} />
-                      </Box>
-                      <Box>
+                        </Box>
+                        <Box>
                           <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
-                          Duration
-                        </Text>
+                            Duration
+                          </Text>
                           <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                            {calculateDuration(selectedMeeting.startTime, selectedMeeting.endTime)}
-                        </Text>
-                      </Box>
-                    </HStack>
+                            {calculateDuration(meetingToView.startTime, meetingToView.endTime)}
+                          </Text>
+                        </Box>
+                      </HStack>
                     </Box>
                   </Box>
                 </VStack>
 
-                {/* Right Column - Customer, Status & Notes */}
+                {/* Right Column - Sales Person, Status & Notes */}
                 <VStack spacing={0} align="stretch">
-                  {/* Customer Section */}
+                  {/* Sales Person Section */}
                   <Box p={{ base: 4, md: 6 }} borderBottom="1px solid" borderColor="gray.100">
                     <Flex align="center" gap={4} mb={4}>
                       <Box
@@ -880,10 +856,10 @@ const MyMeetings = () => {
                       </Box>
                       <Box flex={1}>
                         <Text fontWeight="bold" fontSize={{ base: "sm", md: "md", lg: "lg" }} color="gray.800">
-                          Customer
+                          Sales Person
                         </Text>
                         <Text color="gray.600" fontSize={{ base: "xs", md: "sm", lg: "md" }} mt={1}>
-                          Meeting participant
+                          Assigned representative
                         </Text>
                       </Box>
                     </Flex>
@@ -903,7 +879,7 @@ const MyMeetings = () => {
                             Name
                           </Text>
                           <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                            {selectedMeeting.customerName}
+                            {meetingToView.salesPersonName}
                           </Text>
                         </Box>
                       </HStack>
@@ -922,7 +898,26 @@ const MyMeetings = () => {
                             Email
                           </Text>
                           <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                            {selectedMeeting.customerEmail}
+                            {meetingToView.salesPersonEmail}
+                          </Text>
+                        </Box>
+                      </HStack>
+                      <HStack spacing={3} align="center" p={3} bg="gray.50" borderRadius="xl">
+                        <Box
+                          p={2}
+                          bg="white"
+                          borderRadius="lg"
+                          color="gray.600"
+                          boxShadow="sm"
+                        >
+                          <FaPhone size={14} />
+                        </Box>
+                        <Box flex={1}>
+                          <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
+                            Phone
+                          </Text>
+                          <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
+                            {meetingToView.salesPersonPhone}
                           </Text>
                         </Box>
                       </HStack>
@@ -934,14 +929,14 @@ const MyMeetings = () => {
                     <Flex align="center" gap={4} mb={4}>
                       <Box
                         p={3}
-                        bg={`${getStatusColor(selectedMeeting.status)}.50`}
+                        bg={`${getStatusColor(meetingToView.status)}.50`}
                         borderRadius="2xl"
-                        color={`${getStatusColor(selectedMeeting.status)}.600`}
+                        color={`${getStatusColor(meetingToView.status)}.600`}
                         display="flex"
                         alignItems="center"
                         justifyContent="center"
                       >
-                        {getStatusIcon(selectedMeeting.status)}
+                        {getStatusIcon(meetingToView.status)}
                       </Box>
                       <Box flex={1}>
                         <Text fontWeight="bold" fontSize={{ base: "sm", md: "md", lg: "lg" }} color="gray.800">
@@ -952,23 +947,23 @@ const MyMeetings = () => {
                         </Text>
                       </Box>
                     </Flex>
-                    <Box p={3} bg={`${getStatusColor(selectedMeeting.status)}.50`} borderRadius="xl">
+                    <Box p={3} bg={`${getStatusColor(meetingToView.status)}.50`} borderRadius="xl">
                       <HStack spacing={3} align="center">
                         <Box
                           p={2}
                           bg="white"
                           borderRadius="lg"
-                          color={`${getStatusColor(selectedMeeting.status)}.600`}
+                          color={`${getStatusColor(meetingToView.status)}.600`}
                           boxShadow="sm"
                         >
-                          {getStatusIcon(selectedMeeting.status)}
+                          {getStatusIcon(meetingToView.status)}
                         </Box>
                         <Box flex={1}>
                           <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
                             Status
                           </Text>
                           <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                            {selectedMeeting.status}
+                            {meetingToView.status}
                           </Text>
                         </Box>
                       </HStack>
@@ -976,7 +971,7 @@ const MyMeetings = () => {
                   </Box>
 
                   {/* Notes Section */}
-                  {selectedMeeting.notes && (
+                  {meetingToView.notes && (
                     <Box p={{ base: 4, md: 6 }}>
                       <Flex align="center" gap={4} mb={4}>
                         <Box
@@ -1007,7 +1002,7 @@ const MyMeetings = () => {
                         borderColor="yellow.200"
                       >
                         <Text color="gray.700" fontSize={{ base: "xs", md: "sm" }} lineHeight="1.6">
-                          {selectedMeeting.notes}
+                          {meetingToView.notes}
                         </Text>
                       </Box>
                     </Box>
@@ -1022,4 +1017,4 @@ const MyMeetings = () => {
   );
 };
 
-export default MyMeetings; 
+export default SalesMeetings; 

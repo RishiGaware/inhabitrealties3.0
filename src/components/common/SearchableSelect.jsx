@@ -119,9 +119,9 @@ const SearchableSelect = ({
   const currentSize = sizeConfig[size];
 
   return (
-    <Box position="relative" ref={containerRef}>
+    <Box position="relative" ref={containerRef} w="full">
       {label && (
-        <Text 
+        <Box 
           fontSize="sm" 
           fontWeight="600" 
           color="gray.700" 
@@ -129,8 +129,8 @@ const SearchableSelect = ({
           letterSpacing="0.025em"
         >
           {label}
-          {isRequired && <Text as="span" color="red.500" ml={1}>*</Text>}
-        </Text>
+          {isRequired && <Box as="span" color="red.500" ml={1}>*</Box>}
+        </Box>
       )}
       
       <Popover
@@ -145,58 +145,59 @@ const SearchableSelect = ({
         matchWidth={true}
       >
         <PopoverTrigger>
-          <Button
-            ref={popoverRef}
-            w="full"
-            justifyContent="space-between"
-            variant={variant}
-            onClick={handleToggle}
-            isDisabled={isDisabled}
-            borderColor={error ? 'red.300' : isOpen ? '#015958' : 'gray.300'}
-            borderWidth="1px"
-            borderRadius="lg"
-            _hover={{ 
-              borderColor: error ? 'red.400' : isOpen ? '#015958' : 'gray.400',
-              bg: isDisabled ? 'gray.50' : 'white',
-              transform: 'translateY(-1px)',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-            }}
-            _focus={{ 
-              borderColor: error ? 'red.500' : '#015958', 
-              boxShadow: error 
-                ? '0 0 0 3px rgba(235, 84, 99, 0.1)' 
-                : '0 0 0 3px rgba(1, 89, 88, 0.1)',
-              bg: 'white',
-              transform: 'translateY(-1px)',
-            }}
-            _active={{
-              bg: 'gray.50',
-              transform: 'translateY(0px)',
-            }}
-            _disabled={{
-              bg: 'gray.50',
-              color: 'gray.400',
-              cursor: 'not-allowed',
-              transform: 'none',
-              boxShadow: 'none',
-            }}
-            transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
-            h={currentSize.height}
-            fontSize={currentSize.fontSize}
-            fontWeight="500"
-            position="relative"
-            overflow="hidden"
-            _before={{
-              content: '""',
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              background: 'linear-gradient(135deg, rgba(1, 89, 88, 0.02) 0%, rgba(0, 168, 150, 0.02) 100%)',
-              opacity: isOpen ? 1 : 0,
-              transition: 'opacity 0.2s ease',
-            }}
+          <Box w="full">
+            <Button
+              ref={popoverRef}
+              w="full"
+              justifyContent="space-between"
+              variant={variant}
+              onClick={handleToggle}
+              isDisabled={isDisabled}
+              borderColor={error ? 'red.300' : isOpen ? '#015958' : 'gray.300'}
+              borderWidth="1px"
+              borderRadius="lg"
+              _hover={{ 
+                borderColor: error ? 'red.400' : isOpen ? '#015958' : 'gray.400',
+                bg: isDisabled ? 'gray.50' : 'white',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+              }}
+              _focus={{ 
+                borderColor: error ? 'red.500' : '#015958', 
+                boxShadow: error 
+                  ? '0 0 0 3px rgba(235, 84, 99, 0.1)' 
+                  : '0 0 0 3px rgba(1, 89, 88, 0.1)',
+                bg: 'white',
+                transform: 'translateY(-1px)',
+              }}
+              _active={{
+                bg: 'gray.50',
+                transform: 'translateY(0px)',
+              }}
+              _disabled={{
+                bg: 'gray.50',
+                color: 'gray.400',
+                cursor: 'not-allowed',
+                transform: 'none',
+                boxShadow: 'none',
+              }}
+              transition="all 0.2s cubic-bezier(0.4, 0, 0.2, 1)"
+              h={currentSize.height}
+              fontSize={currentSize.fontSize}
+              fontWeight="500"
+              position="relative"
+              overflow="hidden"
+              _before={{
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                background: 'linear-gradient(135deg, rgba(1, 89, 88, 0.02) 0%, rgba(0, 168, 150, 0.02) 100%)',
+                opacity: isOpen ? 1 : 0,
+                transition: 'opacity 0.2s ease',
+              }}
           >
             <HStack spacing={2} flex={1} justify="flex-start">
               <Text
@@ -268,6 +269,7 @@ const SearchableSelect = ({
               />
             </HStack>
           </Button>
+          </Box>
         </PopoverTrigger>
         
         <PopoverContent 
