@@ -21,9 +21,11 @@ import {
   Badge,
   Divider,
   useColorModeValue,
-  Heading
+  Heading,
+  IconButton
 } from '@chakra-ui/react';
-import { FaCalendar, FaSearch, FaPlus, FaUsers, FaUser, FaEye, FaEdit, FaTrash, FaMapMarkerAlt, FaClock, FaUserTie, FaBuilding, FaHome, FaEnvelope, FaStickyNote } from 'react-icons/fa';
+import { FaCalendar, FaSearch, FaPlus, FaUsers, FaUser, FaEye, FaMapMarkerAlt, FaClock, FaUserTie, FaBuilding, FaHome, FaEnvelope, FaStickyNote, FaMap } from 'react-icons/fa';
+import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
@@ -120,17 +122,36 @@ const SalesMeetings = () => {
 
   // Helper function to get property details by ID
   const getPropertyDetails = (propertyId) => {
-    
     const property = properties.find(prop => prop._id === propertyId);
     
-    return property ? {
+    if (!property) {
+      return {
+        name: 'No property',
+        location: 'No location',
+        price: 'Price not set'
+      };
+    }
+
+    // Build full address from propertyAddress
+    let location = 'No location';
+    if (property.propertyAddress) {
+      const addr = property.propertyAddress;
+      const addressParts = [];
+      
+      if (addr.street) addressParts.push(addr.street);
+      if (addr.area) addressParts.push(addr.area);
+      if (addr.city) addressParts.push(addr.city);
+      if (addr.state) addressParts.push(addr.state);
+      if (addr.zipOrPinCode) addressParts.push(addr.zipOrPinCode);
+      if (addr.country) addressParts.push(addr.country);
+      
+      location = addressParts.length > 0 ? addressParts.join(', ') : 'No location';
+    }
+    
+    return {
       name: property.name || 'No name',
-      location: property.propertyAddress?.area ? `${property.propertyAddress.area}, ${property.propertyAddress.city}` : 'No location',
+      location: location,
       price: property.price ? `₹${property.price.toLocaleString()}` : 'Price not set'
-    } : {
-      name: 'No property',
-      location: 'No location',
-      price: 'Price not set'
     };
   };
 
@@ -478,6 +499,14 @@ const SalesMeetings = () => {
     onViewModalOpen();
   };
 
+  const handleMapRedirect = (location) => {
+    if (location && location !== 'No location') {
+      const encodedLocation = encodeURIComponent(location);
+      const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+      window.open(googleMapsUrl, '_blank');
+    }
+  };
+
   const handleDeleteMeeting = (meeting) => {
     setSelectedMeeting(meeting);
     setIsDeleteModalOpen(true);
@@ -698,32 +727,65 @@ const SalesMeetings = () => {
 
   const rowActions = (meeting) => (
     <HStack spacing={2}>
-      <Button
+      <IconButton
+        aria-label="View meeting"
+        icon={<FaEye />}
         size="sm"
-        colorScheme="blue"
-        variant="ghost"
         onClick={() => handleViewMeeting(meeting)}
-      >
-        <FaEye />
-      </Button>
+        colorScheme="blue"
+        variant="outline"
+        _hover={{
+          bg: "blue.50",
+          borderColor: "blue.400",
+          transform: "translateY(-1px)",
+          boxShadow: "0 4px 8px rgba(59, 130, 246, 0.3)"
+        }}
+        _active={{
+          bg: "blue.100",
+          transform: "translateY(0px)"
+        }}
+        transition="all 0.2s ease"
+      />
       {activeView === 'scheduled' && (
         <>
-          <Button
+          <IconButton
+            aria-label="Edit meeting"
+            icon={<EditIcon />}
             size="sm"
-            colorScheme="green"
-            variant="ghost"
             onClick={() => handleEditMeeting(meeting)}
-          >
-            <FaEdit />
-          </Button>
-          <Button
+            colorScheme="brand"
+            variant="outline"
+            _hover={{
+              bg: "purple.50",
+              borderColor: "purple.400",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 8px rgba(147, 51, 234, 0.3)"
+            }}
+            _active={{
+              bg: "purple.100",
+              transform: "translateY(0px)"
+            }}
+            transition="all 0.2s ease"
+          />
+          <IconButton
+            aria-label="Delete meeting"
+            icon={<DeleteIcon />}
             size="sm"
-            colorScheme="red"
-            variant="ghost"
             onClick={() => handleDeleteMeeting(meeting)}
-          >
-            <FaTrash />
-          </Button>
+            colorScheme="red"
+            variant="outline"
+            _hover={{
+              bg: "red.50",
+              borderColor: "red.400",
+              transform: "translateY(-1px)",
+              boxShadow: "0 4px 8px rgba(239, 68, 68, 0.3)"
+            }}
+            _active={{
+              bg: "red.100",
+              transform: "translateY(0px)"
+            }}
+            transition="all 0.2s ease"
+          />
         </>
       )}
     </HStack>
@@ -1215,6 +1277,27 @@ const SalesMeetings = () => {
                             {selectedMeeting.propertyLocation}
                           </Text>
                         </Box>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleMapRedirect(selectedMeeting.propertyLocation)}
+                          isDisabled={!selectedMeeting.propertyLocation || selectedMeeting.propertyLocation === 'No location'}
+                          leftIcon={<FaMap size={12} />}
+                          fontSize="xs"
+                          fontWeight="medium"
+                          px={3}
+                          py={1}
+                          borderRadius="md"
+                          border="2px solid"
+                          borderColor="transparent"
+                          background="linear-gradient(white, white) padding-box, linear-gradient(45deg, #4285F4 0%, #34A853 25%, #FBBC05 50%, #EA4335 75%, #4285F4 100%) border-box"
+                          _hover={{
+                            background: "linear-gradient(gray.50, gray.50) padding-box, linear-gradient(45deg, #4285F4 0%, #34A853 25%, #FBBC05 50%, #EA4335 75%, #4285F4 100%) border-box"
+                          }}
+                          color="gray.700"
+                        >
+                          Map
+                        </Button>
                       </HStack>
                       <HStack spacing={3} align="center" p={3} bg="green.50" borderRadius="xl">
                         <Box

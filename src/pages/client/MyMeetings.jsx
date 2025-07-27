@@ -21,6 +21,7 @@ import {
   InputLeftElement,
   Input,
   Select,
+  IconButton,
 } from '@chakra-ui/react';
 import { FaEye, FaCalendar, FaMapMarkerAlt, FaClock, FaUser, FaSearch, FaHome, FaEnvelope, FaStickyNote, FaUsers, FaMap } from 'react-icons/fa';
 import CommonTable from '../../components/common/Table/CommonTable';
@@ -93,19 +94,35 @@ const MyMeetings = () => {
     
     const property = properties.find(prop => prop._id === propertyId);
     
-    if (property) {
-    return {
-        name: property.name,
-        location: property.location,
-        price: property.price
-      };
-    } else {
+    if (!property) {
       return {
         name: `Property ID: ${propertyId}`,
         location: 'Property not found',
         price: 'Price not available'
       };
     }
+
+    // Build full address from propertyAddress
+    let location = 'No location';
+    if (property.propertyAddress) {
+      const addr = property.propertyAddress;
+      const addressParts = [];
+      
+      if (addr.street) addressParts.push(addr.street);
+      if (addr.area) addressParts.push(addr.area);
+      if (addr.city) addressParts.push(addr.city);
+      if (addr.state) addressParts.push(addr.state);
+      if (addr.zipOrPinCode) addressParts.push(addr.zipOrPinCode);
+      if (addr.country) addressParts.push(addr.country);
+      
+      location = addressParts.length > 0 ? addressParts.join(', ') : 'No location';
+    }
+    
+    return {
+      name: property.name || 'No name',
+      location: location,
+      price: property.price ? `₹${property.price.toLocaleString()}` : 'Price not set'
+    };
   };
 
   // Fetch my meetings data
@@ -443,14 +460,25 @@ const MyMeetings = () => {
 
   const rowActions = (meeting) => (
     <HStack spacing={2}>
-      <Button
+      <IconButton
+        aria-label="View meeting"
+        icon={<FaEye />}
         size="sm"
-        colorScheme="blue"
-        variant="ghost"
         onClick={() => handleViewMeeting(meeting)}
-      >
-        <FaEye />
-      </Button>
+        colorScheme="blue"
+        variant="outline"
+        _hover={{
+          bg: "blue.50",
+          borderColor: "blue.400",
+          transform: "translateY(-1px)",
+          boxShadow: "0 4px 8px rgba(59, 130, 246, 0.3)"
+        }}
+        _active={{
+          bg: "blue.100",
+          transform: "translateY(0px)"
+        }}
+        transition="all 0.2s ease"
+      />
     </HStack>
   );
 
@@ -859,16 +887,27 @@ const MyMeetings = () => {
                         {selectedMeeting.propertyLocation}
                       </Text>
                         </Box>
-                        <Button
-                          size="sm"
-                          colorScheme="blue"
-                          variant="ghost"
-                          onClick={() => handleMapRedirect(selectedMeeting.propertyLocation)}
-                          isDisabled={!selectedMeeting.propertyLocation || selectedMeeting.propertyLocation === 'No location'}
-                          _hover={{ bg: "blue.100" }}
-                        >
-                          <FaMap size={14} />
-                        </Button>
+                                     <Button
+               size="sm"
+               variant="outline"
+               onClick={() => handleMapRedirect(selectedMeeting.propertyLocation)}
+               isDisabled={!selectedMeeting.propertyLocation || selectedMeeting.propertyLocation === 'No location'}
+               leftIcon={<FaMap size={12} />}
+               fontSize="xs"
+               fontWeight="medium"
+               px={3}
+               py={1}
+               borderRadius="md"
+               border="2px solid"
+               borderColor="transparent"
+               background="linear-gradient(white, white) padding-box, linear-gradient(45deg, #4285F4 0%, #34A853 25%, #FBBC05 50%, #EA4335 75%, #4285F4 100%) border-box"
+               _hover={{
+                 background: "linear-gradient(gray.50, gray.50) padding-box, linear-gradient(45deg, #4285F4 0%, #34A853 25%, #FBBC05 50%, #EA4335 75%, #4285F4 100%) border-box"
+               }}
+               color="gray.700"
+             >
+               Map
+             </Button>
                     </HStack>
                       <HStack spacing={3} align="center" p={3} bg="green.50" borderRadius="xl">
                         <Box
@@ -1057,27 +1096,7 @@ const MyMeetings = () => {
 
                   {/* Status Section */}
                   <Box p={{ base: 4, md: 6 }} borderBottom="1px solid" borderColor="gray.100">
-                    <Flex align="center" gap={4} mb={4}>
-                      <Box
-                        p={3}
-                        bg={`${getStatusColor(selectedMeeting.status)}.50`}
-                        borderRadius="2xl"
-                        color={`${getStatusColor(selectedMeeting.status)}.600`}
-                        display="flex"
-                        alignItems="center"
-                        justifyContent="center"
-                      >
-                        {getStatusIcon(selectedMeeting.status)}
-                      </Box>
-                      <Box flex={1}>
-                        <Text fontWeight="bold" fontSize={{ base: "sm", md: "md", lg: "lg" }} color="gray.800">
-                          Status
-                        </Text>
-                        <Text color="gray.600" fontSize={{ base: "xs", md: "sm", lg: "md" }} mt={1}>
-                          Current meeting status
-                        </Text>
-                      </Box>
-                    </Flex>
+                    
                     <Box p={3} bg={`${getStatusColor(selectedMeeting.status)}.50`} borderRadius="xl">
                       <HStack spacing={3} align="center">
                         <Box
