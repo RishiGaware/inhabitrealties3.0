@@ -119,7 +119,6 @@ const Points = () => {
         size="sm"
         variant="ghost"
         colorScheme="brand"
-        onClick={() => console.log('View points details:', point._id)}
       />
       <IconButton
         icon={<FaEdit />}

@@ -24,9 +24,7 @@ const RoleAPITest = () => {
 
   const testCreateRole = async () => {
     try {
-      console.log('Testing create role with data:', testData);
       const response = await createRole(testData);
-      console.log('Create role response:', response);
       addResult('CREATE', response);
       toast({
         title: 'Create Role Success',
@@ -61,9 +59,7 @@ const RoleAPITest = () => {
     }
 
     try {
-      console.log('Testing edit role with ID:', roleId);
       const response = await editRole(roleId, testData);
-      console.log('Edit role response:', response);
       addResult('EDIT', response);
       toast({
         title: 'Edit Role Success',
@@ -87,9 +83,7 @@ const RoleAPITest = () => {
 
   const testFetchRoles = async () => {
     try {
-      console.log('Testing fetch roles');
       const response = await fetchRoles();
-      console.log('Fetch roles response:', response);
       addResult('FETCH', response);
       toast({
         title: 'Fetch Roles Success',
@@ -124,9 +118,7 @@ const RoleAPITest = () => {
     }
 
     try {
-      console.log('Testing delete role with ID:', roleId);
       const response = await deleteRole(roleId);
-      console.log('Delete role response:', response);
       addResult('DELETE', response);
       toast({
         title: 'Delete Role Success',

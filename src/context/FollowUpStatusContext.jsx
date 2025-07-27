@@ -23,7 +23,6 @@ export const FollowUpStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchFollowUpStatuses();
-      console.log('FollowUpStatusContext: Fetch followup statuses response:', res);
       // Backend returns: { message: 'Follow up statuses retrieved successfully', count: 3, data: [...] }
       setFollowUpStatuses(res.data || []);
     } catch (err) {
@@ -60,7 +59,6 @@ export const FollowUpStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await fetchFollowUpStatusById(id);
-      console.log('FollowUpStatusContext: Get followup status by ID response:', response);
       return response.data || response;
     } catch (err) {
       console.error('FollowUpStatusContext: Get followup status by ID error:', err);
@@ -92,8 +90,6 @@ export const FollowUpStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createFollowUpStatus(followUpStatusData);
-      console.log('FollowUpStatusContext: Add followup status response:', response);
-      
       // Add the new followup status to local state directly
       // Backend returns: { message: 'Follow up status created successfully', data: followUpStatus }
       const newFollowUpStatus = {
@@ -143,12 +139,8 @@ export const FollowUpStatusProvider = ({ children }) => {
   const updateFollowUpStatus = async (id, followUpStatusData) => {
     setLoading(true);
     try {
-      console.log('FollowUpStatusContext: Updating followup status with ID:', id);
-      console.log('FollowUpStatusContext: Update data:', followUpStatusData);
       
       const response = await editFollowUpStatus(id, followUpStatusData);
-      console.log('FollowUpStatusContext: Update response:', response);
-      
       // Update the local state directly instead of fetching all followup statuses again
       // Backend returns: { message: 'Status updated successfully', data: followUpStatus }
       setFollowUpStatuses(prevFollowUpStatuses => 
@@ -218,8 +210,6 @@ export const FollowUpStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deleteFollowUpStatus(id);
-      console.log('FollowUpStatusContext: Delete followup status response:', response);
-      
       // Remove the followup status from local state directly (soft delete)
       // Backend returns: { message: 'Status deleted successfully', data: { _id: '...', published: false } }
       setFollowUpStatuses(prevFollowUpStatuses => prevFollowUpStatuses.filter(followUpStatus => followUpStatus._id !== id));

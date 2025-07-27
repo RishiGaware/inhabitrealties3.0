@@ -12,7 +12,6 @@ export const ReferenceSourceProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchReferenceSources();
-      console.log('ReferenceSourceContext: API response:', res);
       // Backend returns: { message: 'all reference sources', count: 2, data: [...] }
       setReferenceSources(res.data || []);
     } catch (err) {
@@ -28,8 +27,6 @@ export const ReferenceSourceProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await createReferenceSource(data);
-      console.log('ReferenceSourceContext: Add response:', res);
-      
       // Add the new reference source to local state directly
       // Backend returns: { message: 'reference source added successfully', data: referenceSource }
       const newReferenceSource = {
@@ -54,11 +51,7 @@ export const ReferenceSourceProvider = ({ children }) => {
   const updateReferenceSource = async (id, data) => {
     setLoading(true);
     try {
-      console.log('ReferenceSourceContext: Updating reference source with ID:', id);
-      console.log('ReferenceSourceContext: Update data:', data);
-      
       const res = await editReferenceSource(id, data);
-      console.log('ReferenceSourceContext: Update response:', res);
       
       // Update the local state directly instead of fetching all reference sources again
       // Backend returns: { message: 'reference source updated successfully' } - no data
@@ -86,11 +79,7 @@ export const ReferenceSourceProvider = ({ children }) => {
   const removeReferenceSource = async (id) => {
     setLoading(true);
     try {
-      console.log('ReferenceSourceContext: Deleting reference source with ID:', id);
-      
       const res = await deleteReferenceSource(id);
-      console.log('ReferenceSourceContext: Delete response:', res);
-      
       // Remove from local state directly
       setReferenceSources(prev => prev.filter(src => src._id !== id));
       showSuccessToast(res.message || 'Reference source deleted successfully');

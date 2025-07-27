@@ -192,11 +192,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'settings': ROUTES.SETTINGS,
   };
 
-  console.log('RouteMap for scheduleMeetings:', routeMap.scheduleMeetings);
-  console.log('ROUTES.ADMIN_MEETINGS:', ROUTES.ADMIN_MEETINGS);
-  console.log('ROUTES.SALES_MEETINGS:', ROUTES.SALES_MEETINGS);
-  console.log('ROUTES.MY_MEETINGS:', ROUTES.MY_MEETINGS);
-
   // Helper to convert to kebab-case
   const toKebab = str => str && str.toLowerCase().replace(/ /g, '-');
 
@@ -212,8 +207,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   // Update selected states based on current route
   useEffect(() => {
     const path = location.pathname.split('/');
-    console.log('Current path:', location.pathname, 'Path array:', path);
-    
     if (path[1]) {
       // Handle direct routes like /properties, /properties/favorite-properties, /property/favorite-properties
       if (path[1] === 'properties') {
@@ -273,8 +266,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       setSelectedMenu('dashboard');
       setSelectedSubMenu('');
     }
-    
-    console.log('Selected menu:', selectedMenu, 'Selected submenu:', selectedSubMenu);
   }, [location, toggleSubMenu, subMenus]);
 
   const handleMenuClick = (menu) => {
@@ -296,14 +287,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     const menuKey = menu.key;
     const subMenuKey = toKebab(subMenu);
     const path = routeMap[menuKey]?.[subMenuKey];
-    
-    console.log('SubMenu Click Debug:', {
-      menuKey,
-      subMenu,
-      subMenuKey,
-      path,
-      routeMap: routeMap[menuKey]
-    });
     
     if (path) {
       // Store current path before navigating

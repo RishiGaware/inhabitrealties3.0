@@ -22,7 +22,6 @@ export const PropertyTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchPropertyTypes();
-      console.log('PropertyTypeContext: Fetch property types response:', res);
       // Backend returns: { message: 'all property types', count: 2, data: [...] }
       setPropertyTypes(res.data || []);
     } catch (err) {
@@ -59,8 +58,6 @@ export const PropertyTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createPropertyType(propertyTypeData);
-      console.log('PropertyTypeContext: Add property type response:', response);
-      
       // Add the new property type to local state directly
       // Backend returns: { message: 'property type added successfully', data: propertyType }
       const newPropertyType = {
@@ -110,12 +107,7 @@ export const PropertyTypeProvider = ({ children }) => {
   const updatePropertyType = async (id, propertyTypeData) => {
     setLoading(true);
     try {
-      console.log('PropertyTypeContext: Updating property type with ID:', id);
-      console.log('PropertyTypeContext: Update data:', propertyTypeData);
-      
       const response = await editPropertyType(id, propertyTypeData);
-      console.log('PropertyTypeContext: Update response:', response);
-      
       // Update the local state directly instead of fetching all property types again
       // Backend returns: { message: 'property type updated successfully' } - no data
       setPropertyTypes(prevPropertyTypes => 
@@ -184,8 +176,6 @@ export const PropertyTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deletePropertyType(id);
-      console.log('PropertyTypeContext: Delete property type response:', response);
-      
       // Remove the property type from local state directly (soft delete)
       // Backend returns: { message: 'property type deleted successfully' } - no data
       setPropertyTypes(prevPropertyTypes => prevPropertyTypes.filter(propertyType => propertyType._id !== id));

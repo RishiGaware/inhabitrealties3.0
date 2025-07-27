@@ -22,7 +22,6 @@ export const RoleProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchRoles();
-      console.log('RoleContext: Fetch roles response:', res);
       // Backend returns: { message: 'all roles', count: 2, data: [...] }
       setRoles(res.data || []);
     } catch (err) {
@@ -59,8 +58,6 @@ export const RoleProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createRole(roleData);
-      console.log('RoleContext: Add role response:', response);
-      
       // Add the new role to local state directly
       // Backend returns: { message: 'role added successfully', data: role }
       const newRole = {
@@ -110,12 +107,7 @@ export const RoleProvider = ({ children }) => {
   const updateRole = async (id, roleData) => {
     setLoading(true);
     try {
-      console.log('RoleContext: Updating role with ID:', id);
-      console.log('RoleContext: Update data:', roleData);
-      
       const response = await editRole(id, roleData);
-      console.log('RoleContext: Update response:', response);
-      
       // Update the local state directly instead of fetching all roles again
       // Backend returns: { message: 'role updated successfully' } - no data
       setRoles(prevRoles => 
@@ -184,8 +176,6 @@ export const RoleProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deleteRole(id);
-      console.log('RoleContext: Delete role response:', response);
-      
       // Remove the role from local state directly (soft delete)
       // Backend returns: { message: 'role deleted successfully' } - no data
       setRoles(prevRoles => prevRoles.filter(role => role._id !== id));

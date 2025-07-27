@@ -23,7 +23,6 @@ export const LeadStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchLeadStatuses();
-      console.log('LeadStatusContext: Fetch lead statuses response:', res);
       // Backend returns: { message: 'all lead statuses', count: 2, data: [...] }
       setLeadStatuses(res.data || []);
     } catch (err) {
@@ -60,7 +59,6 @@ export const LeadStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await fetchLeadStatusById(id);
-      console.log('LeadStatusContext: Get lead status by ID response:', response);
       return response.data || response;
     } catch (err) {
       console.error('LeadStatusContext: Get lead status by ID error:', err);
@@ -92,7 +90,6 @@ export const LeadStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createLeadStatus(leadStatusData);
-      console.log('LeadStatusContext: Add lead status response:', response);
       
       // Add the new lead status to local state directly
       // Backend returns: { message: 'lead status added successfully', data: leadStatus }
@@ -143,11 +140,7 @@ export const LeadStatusProvider = ({ children }) => {
   const updateLeadStatus = async (id, leadStatusData) => {
     setLoading(true);
     try {
-      console.log('LeadStatusContext: Updating lead status with ID:', id);
-      console.log('LeadStatusContext: Update data:', leadStatusData);
-      
       const response = await editLeadStatus(id, leadStatusData);
-      console.log('LeadStatusContext: Update response:', response);
       
       // Update the local state directly instead of fetching all lead statuses again
       // Backend returns: { message: 'lead status updated successfully' } - no data
@@ -218,7 +211,6 @@ export const LeadStatusProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deleteLeadStatus(id);
-      console.log('LeadStatusContext: Delete lead status response:', response);
       
       // Remove the lead status from local state directly (soft delete)
       // Backend returns: { message: 'lead status deleted successfully' } - no data

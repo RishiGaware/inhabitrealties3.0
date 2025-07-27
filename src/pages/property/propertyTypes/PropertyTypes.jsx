@@ -175,7 +175,6 @@ const PropertyTypes = () => {
     
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     
@@ -192,7 +191,6 @@ const PropertyTypes = () => {
           description: formData.description,
         };
         
-        console.log('Editing property type:', selectedPropertyType._id, 'with data:', editData);
         await updatePropertyType(selectedPropertyType._id, editData);
       } else {
         // Prepare add data
@@ -201,7 +199,6 @@ const PropertyTypes = () => {
           description: formData.description,
         };
         
-        console.log('Adding new property type with data:', addData);
         await addPropertyType(addData);
       }
       

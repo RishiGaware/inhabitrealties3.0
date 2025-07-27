@@ -37,7 +37,6 @@ import { FiPlus, FiEye, FiDownload, FiFilter } from "react-icons/fi";
 
 // Placeholder for API call
 const fetchLeaseData = async () => {
-  console.log("Fetching lease data...");
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([

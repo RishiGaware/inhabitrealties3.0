@@ -42,7 +42,6 @@ const PaymentStatus = () => {
   ]);
 
   const handleViewDetails = (payment) => {
-    console.log('View payment details:', payment._id);
   };
 
   const columns = [

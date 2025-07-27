@@ -177,7 +177,6 @@ const LeadFollowUp = () => {
     
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     
@@ -195,7 +194,6 @@ const LeadFollowUp = () => {
           published: formData.published,
         };
         
-        console.log('Editing followup status:', selectedFollowUpStatus._id, 'with data:', editData);
         await updateFollowUpStatus(selectedFollowUpStatus._id, editData);
       } else {
         // Prepare add data
@@ -204,7 +202,6 @@ const LeadFollowUp = () => {
           description: formData.description,
         };
         
-        console.log('Adding new followup status with data:', addData);
         await addFollowUpStatus(addData);
       }
       

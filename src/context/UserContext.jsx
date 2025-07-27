@@ -22,8 +22,6 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await fetchUsers();
-      console.log('UserContext: Fetch users response:', response);
-      
       // Handle the new response format: { message, count, data }
       const usersData = response.data || response;
       setUsers(usersData);
@@ -62,8 +60,6 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await registerUser(userData);
-      console.log('UserContext: Add user response:', response);
-      
       // Handle the new response format
       const newUser = response.data || {
         ...userData,
@@ -110,11 +106,7 @@ export const UserProvider = ({ children }) => {
   const updateUser = async (id, userData) => {
     setLoading(true);
     try {
-      console.log('UserContext: Updating user with ID:', id);
-      console.log('UserContext: Update data:', userData);
-      
       const response = await editUser(id, userData);
-      console.log('UserContext: Update response:', response);
       
       // Update the local state directly instead of fetching all users again
       setUsers(prevUsers => 
@@ -178,8 +170,6 @@ export const UserProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deleteUser(id);
-      console.log('UserContext: Delete user response:', response);
-      
       // Remove the user from local state directly
       setUsers(prevUsers => prevUsers.filter(user => user._id !== id));
       

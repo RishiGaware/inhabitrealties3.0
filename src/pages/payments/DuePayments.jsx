@@ -179,7 +179,6 @@ const DuePayments = () => {
   };
 
   const sendReminder = (paymentId) => {
-    console.log(`Sending reminder for payment ${paymentId}`);
     // Here you would typically make an API call to send a reminder
   };
 

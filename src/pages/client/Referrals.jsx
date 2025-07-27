@@ -84,7 +84,6 @@ const Referrals = () => {
         size="sm"
         variant="ghost"
         colorScheme="brand"
-        onClick={() => console.log('View referral details:', referral._id)}
       />
     </Flex>
   );

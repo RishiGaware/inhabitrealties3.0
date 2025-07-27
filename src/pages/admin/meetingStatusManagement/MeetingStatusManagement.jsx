@@ -77,7 +77,6 @@ const MeetingStatusManagement = () => {
     setLoading(true);
     try {
       const response = await fetchAllMeetingScheduleStatuses();
-      console.log('MeetingStatusManagement: Statuses response:', response);
       setStatuses(response.data || []);
     } catch (error) {
       console.error('Failed to fetch statuses:', error);
@@ -216,7 +215,6 @@ const MeetingStatusManagement = () => {
     e.preventDefault();
     
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     

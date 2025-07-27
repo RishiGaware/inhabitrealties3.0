@@ -33,7 +33,6 @@ const MyBookings = () => {
   ]);
 
   const handleViewDetails = (booking) => {
-    console.log('View booking details:', booking._id);
   };
 
   const columns = [

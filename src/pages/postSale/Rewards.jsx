@@ -106,7 +106,6 @@ const Rewards = () => {
         size="sm"
         variant="ghost"
         colorScheme="brand"
-        onClick={() => console.log('Redeem reward:', reward._id)}
       />
       <IconButton
         icon={<FaEdit />}

@@ -160,7 +160,6 @@ const RoleManagement = () => {
     
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     
@@ -177,7 +176,6 @@ const RoleManagement = () => {
           description: formData.description,
         };
         
-        console.log('Editing role:', selectedRole._id, 'with data:', editData);
         await updateRole(selectedRole._id, editData);
       } else {
         // Prepare add data - backend will convert name to uppercase
@@ -186,7 +184,6 @@ const RoleManagement = () => {
           description: formData.description,
         };
         
-        console.log('Adding new role with data:', addData);
         await addRole(addData);
       }
       

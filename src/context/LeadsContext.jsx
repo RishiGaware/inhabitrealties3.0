@@ -24,7 +24,6 @@ export const LeadsProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchLeads();
-      console.log('LeadsContext: Fetch leads response:', res);
       setLeads(res.data || []);
     } catch (err) {
       console.error('LeadsContext: Fetch leads error:', err);
@@ -60,7 +59,6 @@ export const LeadsProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await fetchLeadById(id);
-      console.log('LeadsContext: Get lead by ID response:', response);
       return response.data || response;
     } catch (err) {
       console.error('LeadsContext: Get lead by ID error:', err);
@@ -92,8 +90,6 @@ export const LeadsProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createLead(leadData);
-      console.log('LeadsContext: Add lead response:', response);
-      
       // Add the new lead to local state directly
       const newLead = {
         ...leadData,
@@ -140,12 +136,7 @@ export const LeadsProvider = ({ children }) => {
   const updateLead = async (id, leadData) => {
     setLoading(true);
     try {
-      console.log('LeadsContext: Updating lead with ID:', id);
-      console.log('LeadsContext: Update data:', leadData);
-      
       const response = await editLead(id, leadData);
-      console.log('LeadsContext: Update response:', response);
-      
       // Update the local state directly instead of fetching all leads again
       setLeads(prevLeads => 
         prevLeads.map(lead => 
@@ -212,8 +203,6 @@ export const LeadsProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deleteLead(id);
-      console.log('LeadsContext: Delete lead response:', response);
-      
       // Remove the lead from local state directly (soft delete)
       setLeads(prevLeads => prevLeads.filter(lead => lead._id !== id));
       
@@ -252,7 +241,6 @@ export const LeadsProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchLeadsWithParams(params);
-      console.log('LeadsContext: Fetch leads with params response:', res);
       setLeads(res.data || []);
     } catch (err) {
       console.error('LeadsContext: Fetch leads with params error:', err);

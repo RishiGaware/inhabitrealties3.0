@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
+  Heading,
   Box,
   VStack,
   HStack,
@@ -9,7 +10,7 @@ import {
   InputLeftElement,
   Input,
   Select,
-  Button,
+  Button,  
   Flex,
   Modal,
   ModalOverlay,
@@ -37,7 +38,8 @@ import {
   createMeetingSchedule, 
   updateMeetingSchedule, 
   deleteMeetingSchedule,
-  formatMeetingDataForAPI 
+  formatMeetingDataForAPI,
+  getMyMeetings
 } from '../../services/meetings/meetingScheduleService';
 import { fetchAllMeetingScheduleStatuses } from '../../services/meetings/meetingScheduleStatusService';
 import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
@@ -85,21 +87,15 @@ const AdminMeetings = () => {
   const userContext = useUserContext();
   const { getAllUsers } = userContext;
   
-  console.log('AdminMeetings: User context:', userContext);
-  console.log('AdminMeetings: getAllUsers function:', getAllUsers);
 
   // Helper function to get customer details by ID
   const getCustomerDetails = (customerId) => {
-    console.log('AdminMeetings: Looking for customer with ID:', customerId);
-    console.log('AdminMeetings: Available user IDs:', users.map(u => u._id));
     
     if (!customerId) {
-      console.log('AdminMeetings: No customer ID provided');
       return { name: 'No Customer', email: 'No email' };
     }
     
     const customer = users.find(user => user._id === customerId);
-    console.log('AdminMeetings: Found customer:', customer);
     
     if (customer) {
       return {
@@ -107,7 +103,6 @@ const AdminMeetings = () => {
         email: customer.email
       };
     } else {
-      console.log('AdminMeetings: Customer not found in users array');
       return {
         name: `Customer ID: ${customerId}`,
         email: 'Customer not found'
@@ -117,11 +112,7 @@ const AdminMeetings = () => {
 
   // Helper function to get property details by ID
   const getPropertyDetails = (propertyId) => {
-    console.log('AdminMeetings: Looking for property with ID:', propertyId);
-    console.log('AdminMeetings: Available property IDs:', properties.map(p => p._id));
-    
     const property = properties.find(prop => prop._id === propertyId);
-    console.log('AdminMeetings: Found property:', property);
     
     return property ? {
       name: property.name || 'No name',
@@ -134,35 +125,27 @@ const AdminMeetings = () => {
     };
   };
 
-  // Store raw meetings data
+  // Store raw meetings data for both views
   const [rawMeetings, setRawMeetings] = useState([]);
+  const [rawMyMeetings, setRawMyMeetings] = useState([]);
 
   // Fetch all data from APIs
   const fetchAllData = async () => {
     setLoading(true);
     try {
-              // Fetch meetings, users, properties, and statuses in parallel
-        const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse] = await Promise.all([
-          fetchAllMeetingSchedules(),
-          fetchUsers(),
-          fetchProperties(),
-          fetchAllMeetingScheduleStatuses()
-        ]);
+      // Fetch meetings, users, properties, and statuses in parallel
+      const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse] = await Promise.all([
+        fetchAllMeetingSchedules(),
+        fetchUsers(),
+        fetchProperties(),
+        fetchAllMeetingScheduleStatuses()
+      ]);
 
-              console.log('AdminMeetings: Meetings response:', meetingsResponse);
-        console.log('AdminMeetings: Users response:', usersResponse);
-        console.log('AdminMeetings: Properties response:', propertiesResponse);
-        console.log('AdminMeetings: Statuses response:', statusesResponse);
-      
-              // Set users and properties
-        if (usersResponse && usersResponse.data) {
-          console.log('AdminMeetings: Setting users data:', usersResponse.data.length, 'users');
-          console.log('AdminMeetings: Sample user:', usersResponse.data[0]);
-          setUsers(usersResponse.data);
-        } else {
-          console.log('AdminMeetings: No users data in response:', usersResponse);
-        }
-      
+      // Set users and properties
+      if (usersResponse && usersResponse.data) {
+        setUsers(usersResponse.data);
+      } 
+    
       if (propertiesResponse && propertiesResponse.data) {
         setProperties(propertiesResponse.data);
       }
@@ -171,22 +154,122 @@ const AdminMeetings = () => {
         setStatuses(statusesResponse.data);
       }
       
-              // Store raw meetings data
-        if (meetingsResponse && meetingsResponse.data) {
-          console.log('AdminMeetings: Setting raw meetings data:', meetingsResponse.data.length, 'meetings');
-          console.log('AdminMeetings: Sample meeting data:', meetingsResponse.data[0]);
-          setRawMeetings(meetingsResponse.data);
-          
-          // Set counts from API response
-          if (meetingsResponse.counts) {
-            setCounts(meetingsResponse.counts);
-          }
-        } else {
-          console.log('AdminMeetings: No meetings data in response:', meetingsResponse);
+      // Store raw meetings data
+      if (meetingsResponse && meetingsResponse.data) {
+        setRawMeetings(meetingsResponse.data);
+        
+        // Set counts from API response
+        if (meetingsResponse.counts) {
+          setCounts(meetingsResponse.counts);
         }
+      }
     } catch (error) {
       console.error('AdminMeetings: Error fetching data:', error);
       showErrorToast('Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch my meetings data
+  const fetchMyMeetingsData = async () => {
+    setLoading(true);
+    try {
+      // Get current user ID from context or localStorage
+      const auth = JSON.parse(localStorage.getItem("auth"));
+      const currentUserId = auth?.data?._id;
+      
+      if (!currentUserId) {
+        console.error('AdminMeetings: No current user ID found');
+        showErrorToast('User not authenticated');
+        setRawMyMeetings([]);
+        return;
+      }
+
+      // Try to fetch from my-meetings endpoint first
+      try {
+        const myMeetingsResponse = await getMyMeetings(currentUserId);
+        
+        if (myMeetingsResponse && myMeetingsResponse.data) {
+          setRawMyMeetings(myMeetingsResponse.data);
+          
+          // Set counts for my meetings (if available)
+          if (myMeetingsResponse.counts) {
+            setCounts(myMeetingsResponse.counts);
+          } else {
+            // Calculate counts from data if not provided by backend
+            const totalMeetings = myMeetingsResponse.data.length;
+            const totalScheduled = myMeetingsResponse.data.filter(m => m.status?.name === 'Scheduled').length;
+            const totalRescheduled = myMeetingsResponse.data.filter(m => m.status?.name === 'Rescheduled').length;
+            const totalCompleted = myMeetingsResponse.data.filter(m => m.status?.name === 'Completed').length;
+            const totalCancelled = myMeetingsResponse.data.filter(m => m.status?.name === 'Cancelled').length;
+            
+            setCounts({
+              totalMeetings,
+              totalScheduled,
+              totalRescheduled,
+              totalCompleted,
+              totalCancelled
+            });
+          }
+          return; // Success, exit early
+        }
+      } catch (myMeetingsError) {
+        console.warn('AdminMeetings: My meetings endpoint failed, falling back to all meetings filter:', myMeetingsError);
+      }
+      
+      // Fallback: Fetch all meetings and filter on client side
+      const allMeetingsResponse = await fetchAllMeetingSchedules();
+      
+      if (allMeetingsResponse && allMeetingsResponse.data) {
+        // Filter meetings where current user is the customer
+        const myMeetings = allMeetingsResponse.data.filter(meeting => {
+          // Handle both populated and unpopulated customerId
+          if (meeting.customerId && typeof meeting.customerId === 'object' && meeting.customerId._id) {
+            return meeting.customerId._id === currentUserId;
+          } else if (meeting.customerId) {
+            return meeting.customerId === currentUserId;
+          }
+          return false;
+        });
+        
+        setRawMyMeetings(myMeetings);
+        
+        // Calculate counts
+        const totalMeetings = myMeetings.length;
+        const totalScheduled = myMeetings.filter(m => m.status?.name === 'Scheduled').length;
+        const totalRescheduled = myMeetings.filter(m => m.status?.name === 'Rescheduled').length;
+        const totalCompleted = myMeetings.filter(m => m.status?.name === 'Completed').length;
+        const totalCancelled = myMeetings.filter(m => m.status?.name === 'Cancelled').length;
+        
+        setCounts({
+          totalMeetings,
+          totalScheduled,
+          totalRescheduled,
+          totalCompleted,
+          totalCancelled
+        });
+      } else {
+        setRawMyMeetings([]);
+        setCounts({
+          totalMeetings: 0,
+          totalScheduled: 0,
+          totalRescheduled: 0,
+          totalCompleted: 0,
+          totalCancelled: 0
+        });
+      }
+    } catch (error) {
+      console.error('AdminMeetings: Error fetching my meetings:', error);
+      showErrorToast('Failed to fetch my meetings. Please try again.');
+      setRawMyMeetings([]);
+      setCounts({
+        totalMeetings: 0,
+        totalScheduled: 0,
+        totalRescheduled: 0,
+        totalCompleted: 0,
+        totalCancelled: 0
+      });
     } finally {
       setLoading(false);
     }
@@ -198,34 +281,20 @@ const AdminMeetings = () => {
 
   // Transform meetings when users and properties are available
   useEffect(() => {
-    console.log('AdminMeetings: useEffect triggered - rawMeetings:', rawMeetings.length, 'users:', users.length, 'properties:', properties.length);
-    console.log('AdminMeetings: Users state:', users);
-    console.log('AdminMeetings: Raw meetings state:', rawMeetings);
     
-    if (rawMeetings.length > 0) {
-      console.log('AdminMeetings: Raw meetings data:', rawMeetings);
+    // Determine which data to transform based on active view
+    const dataToTransform = activeView === 'my' ? rawMyMeetings : rawMeetings;
+    
+    if (dataToTransform.length > 0) {
       
       // Always transform meetings, even if users/properties aren't loaded yet
-      const transformedMeetings = rawMeetings.map(meeting => {
-        console.log('AdminMeetings: Processing meeting:', {
-          id: meeting._id,
-          title: meeting.title,
-          customerId: meeting.customerId,
-          propertyId: meeting.propertyId,
-          status: meeting.status
-        });
-        
-        // Get customer details - check if backend populated the data
-        console.log('AdminMeetings: Customer ID type:', typeof meeting.customerId, 'Value:', meeting.customerId);
-        console.log('AdminMeetings: Users loaded:', users.length > 0, 'Users count:', users.length);
-        
+      const transformedMeetings = dataToTransform.map(meeting => {
         // Determine the actual customer ID and details
         let actualCustomerId = meeting.customerId;
         let customerDetails = { name: 'Loading...', email: 'Loading...' };
         
         if (meeting.customerId && typeof meeting.customerId === 'object' && meeting.customerId.firstName) {
           // Backend populated the customer data - extract the ID
-          console.log('AdminMeetings: Using populated customer data:', meeting.customerId);
           actualCustomerId = meeting.customerId._id || meeting.customerId.id;
           customerDetails = {
             name: `${meeting.customerId.firstName} ${meeting.customerId.lastName}`,
@@ -233,13 +302,9 @@ const AdminMeetings = () => {
           };
         } else if (users.length > 0 && meeting.customerId) {
           // Use the helper function to find customer by ID
-          console.log('AdminMeetings: Looking up customer by ID:', meeting.customerId);
           customerDetails = getCustomerDetails(meeting.customerId);
         } else if (!meeting.customerId) {
-          console.log('AdminMeetings: No customer ID found in meeting');
           customerDetails = { name: 'No Customer', email: 'No email' };
-        } else {
-          console.log('AdminMeetings: No users loaded yet, showing loading for customer');
         }
         
         // Get property details - check if backend populated the data
@@ -258,9 +323,6 @@ const AdminMeetings = () => {
           // Use the helper function to find property by ID
           propertyDetails = getPropertyDetails(meeting.propertyId);
         }
-        
-        console.log('Meeting:', meeting.title, 'Customer ID:', meeting.customerId, 'Found customer:', customerDetails.name);
-        console.log('Meeting:', meeting.title, 'Property ID:', meeting.propertyId, 'Found property:', propertyDetails.name);
         
         return {
           id: meeting._id,
@@ -286,14 +348,15 @@ const AdminMeetings = () => {
         };
       });
       
-      console.log('AdminMeetings: Transformed meetings:', transformedMeetings);
       setMeetings(transformedMeetings);
+    } else {
+      // Clear meetings if no data to transform
+      setMeetings([]);
     }
-  }, [rawMeetings, users, properties]);
+  }, [rawMeetings, rawMyMeetings, users, properties, activeView]);
 
   // Filter meetings based on search and status
   const filteredMeetings = useMemo(() => {
-    console.log('AdminMeetings: Filtering meetings - total meetings:', meetings.length, 'searchTerm:', searchTerm, 'statusFilter:', statusFilter);
     
     const filtered = meetings.filter(meeting => {
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -303,7 +366,6 @@ const AdminMeetings = () => {
       return matchesSearch && matchesStatus;
     });
     
-    console.log('AdminMeetings: Filtered meetings result:', filtered.length, 'meetings');
     return filtered;
   }, [meetings, searchTerm, statusFilter]);
 
@@ -314,9 +376,6 @@ const AdminMeetings = () => {
   // Pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
   
-  console.log('Paginated meetings:', filteredMeetings.slice(startIndex, startIndex + itemsPerPage));
-
-
   const handleAddMeeting = () => {
     setSelectedMeeting(null);
     resetForm();
@@ -324,10 +383,6 @@ const AdminMeetings = () => {
   };
 
   const handleEditMeeting = (meeting) => {
-    console.log('AdminMeetings: Editing meeting:', meeting);
-    console.log('AdminMeetings: Meeting customerId:', meeting.customerId);
-    console.log('AdminMeetings: Meeting propertyId:', meeting.propertyId);
-    console.log('AdminMeetings: Meeting statusId:', meeting.statusId);
     
     setSelectedMeeting(meeting);
     setFormData({
@@ -787,6 +842,22 @@ const AdminMeetings = () => {
     setCurrentPage(1); // Reset to first page when page size changes
   };
 
+  // Handle view change between "Scheduled" and "My Meetings"
+  const handleViewChange = async (newView) => {
+    setActiveView(newView);
+    setCurrentPage(1); // Reset to first page when changing views
+    setSearchTerm(''); // Reset search term when changing views
+    setStatusFilter(''); // Reset status filter when changing views
+    
+    if (newView === 'my') {
+      // Fetch my meetings data
+      await fetchMyMeetingsData();
+    } else {
+      // Fetch all meetings data
+      await fetchAllData();
+    }
+  };
+
   return (
     <Box p={{ base: 3, sm: 4, md: 6 }}>
       {/* Loader at the top, non-blocking */}
@@ -794,9 +865,11 @@ const AdminMeetings = () => {
       
       {/* Header */}
       <HStack justify="space-between" mb={{ base: 4, sm: 6 }} flexWrap="wrap" gap={2}>
-        <Text fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold">
-          Admin Meetings
-        </Text>
+        
+
+        <Heading as="h1" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold">
+        {activeView === 'my' ? 'My Meetings (As Customer)' : 'Admin Meetings'}
+        </Heading>
         
         {activeView === 'scheduled' && (
           <CommonAddButton onClick={handleAddMeeting} />
@@ -822,7 +895,7 @@ const AdminMeetings = () => {
             colorScheme={activeView === 'my' ? 'purple' : 'gray'}
             borderRadius="lg"
             size={{ base: "sm", sm: "md" }}
-            onClick={() => setActiveView('my')}
+            onClick={() => handleViewChange('my')}
             _hover={{
               bg: activeView === 'my' ? 'purple.600' : 'gray.200'
             }}
@@ -841,7 +914,7 @@ const AdminMeetings = () => {
             colorScheme={activeView === 'scheduled' ? 'purple' : 'gray'}
             borderRadius="lg"
             size={{ base: "sm", sm: "md" }}
-            onClick={() => setActiveView('scheduled')}
+            onClick={() => handleViewChange('scheduled')}
             _hover={{
               bg: activeView === 'scheduled' ? 'purple.600' : 'gray.200'
             }}
@@ -876,7 +949,7 @@ const AdminMeetings = () => {
               <FaSearch color="gray.400" />
             </InputLeftElement>
             <Input 
-              placeholder="Search meetings..." 
+              placeholder={activeView === 'my' ? "Search my meetings as customer..." : "Search meetings..."}
               value={searchTerm} 
               onChange={(e) => setSearchTerm(e.target.value)}
               borderRadius="lg"

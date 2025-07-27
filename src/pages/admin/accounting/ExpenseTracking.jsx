@@ -42,7 +42,6 @@ import { FiPlus, FiFilter, FiEdit, FiTrash2, FiPaperclip } from "react-icons/fi"
 
 // Placeholder for API call
 const fetchExpenses = async () => {
-  console.log("Fetching expenses...");
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve([

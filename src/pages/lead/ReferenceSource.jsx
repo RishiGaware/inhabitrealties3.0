@@ -67,9 +67,6 @@ const ReferenceSource = () => {
   }, []);
 
   useEffect(() => {
-    console.log('ReferenceSource DEBUG: referenceSources', referenceSources);
-    console.log('ReferenceSource DEBUG: filteredSources', filteredSources);
-    console.log('ReferenceSource DEBUG: searchTerm', searchTerm);
   }, [referenceSources, filteredSources, searchTerm]);
 
   const fetchAllSources = async () => {
@@ -180,7 +177,6 @@ const ReferenceSource = () => {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     if (!validateForm()) return;

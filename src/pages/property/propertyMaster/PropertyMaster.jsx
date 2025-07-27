@@ -98,7 +98,6 @@ const PropertyMaster = () => {
     setErrorType(null);
     try {
       const response = await fetchProperties();
-      console.log('PropertyMaster: Fetch properties response:', response);
       setProperties(response.data || []);
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');
@@ -129,7 +128,6 @@ const PropertyMaster = () => {
 
   const handleAddProperty = async (propertyData) => {
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
 
@@ -167,9 +165,7 @@ const PropertyMaster = () => {
         published: propertyData.published !== undefined ? propertyData.published : true
       };
 
-      console.log('PropertyMaster: Sending formatted data to backend:', formattedData);
       const response = await createProperty(formattedData);
-      console.log('PropertyMaster: Add property response:', response);
       
       // Add the new property to local state
       const newProperty = {
@@ -206,7 +202,6 @@ const PropertyMaster = () => {
 
   const handleUpdateProperty = async (updatedData) => {
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
 
@@ -244,9 +239,7 @@ const PropertyMaster = () => {
         published: updatedData.published !== undefined ? updatedData.published : true
       };
 
-      console.log('PropertyMaster: Sending formatted update data to backend:', formattedData);
       const response = await editProperty(selectedProperty._id, formattedData);
-      console.log('PropertyMaster: Update property response:', response);
       
       // Update the property in local state
       setProperties(prevProperties => 
@@ -287,7 +280,6 @@ const PropertyMaster = () => {
       setIsApiCallInProgress(true);
       try {
         const response = await deleteProperty(propertyToDelete._id);
-        console.log('PropertyMaster: Delete property response:', response);
         
         // Remove the property from local state
         setProperties(prevProperties => 

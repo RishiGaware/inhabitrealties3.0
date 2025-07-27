@@ -136,8 +136,6 @@ const MyMeetings = () => {
 
   const getCurrentMeetings = () => {
     const currentMeetings = activeView === 'scheduled' ? scheduledMeetings : myMeetings;
-    console.log('Current meetings:', currentMeetings);
-    console.log('Active view:', activeView);
     return currentMeetings;
   };
 
@@ -151,7 +149,6 @@ const MyMeetings = () => {
     const totalCompleted = meetings.filter(m => m.status === 'Completed').length;
     const totalCancelled = meetings.filter(m => m.status === 'Cancelled').length;
 
-    console.log('Counts:', { totalMeetings, totalScheduled, totalRescheduled, totalCompleted, totalCancelled });
 
     return {
           totalMeetings,
@@ -171,15 +168,12 @@ const MyMeetings = () => {
       const matchesStatus = !statusFilter || meeting.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-    console.log('Filtered meetings:', filtered);
     return filtered;
   }, [meetings, searchTerm, statusFilter]);
 
   // Pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
   
-  console.log('Paginated meetings:', filteredMeetings.slice(startIndex, startIndex + itemsPerPage));
-
   const handleViewMeeting = (meeting) => {
     setSelectedMeeting(meeting);
     onViewModalOpen();

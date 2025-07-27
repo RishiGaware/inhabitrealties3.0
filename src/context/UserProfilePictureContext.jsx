@@ -19,7 +19,6 @@ export const UserProfilePictureProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchUserProfilePictures();
-      console.log('UserProfilePictureContext: API response:', res);
       setUserProfilePictures(res.data || []);
     } catch (err) {
       console.error('UserProfilePictureContext: Fetch error:', err);
@@ -34,7 +33,6 @@ export const UserProfilePictureProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchUserProfilePictureById(userId);
-      console.log('UserProfilePictureContext: Get by ID response:', res);
       setCurrentUserProfilePicture(res.data);
       return res.data;
     } catch (err) {
@@ -50,8 +48,6 @@ export const UserProfilePictureProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await createUserProfilePicture(formData);
-      console.log('UserProfilePictureContext: Add response:', res);
-      
       const newProfilePicture = res.data;
       setUserProfilePictures(prev => [...prev, newProfilePicture]);
       setCurrentUserProfilePicture(newProfilePicture);
@@ -70,10 +66,8 @@ export const UserProfilePictureProvider = ({ children }) => {
   const updateUserProfilePictureById = async (id, formData) => {
     setLoading(true);
     try {
-      console.log('UserProfilePictureContext: Updating profile picture with ID:', id);
       
       const res = await updateUserProfilePicture(id, formData);
-      console.log('UserProfilePictureContext: Update response:', res);
       
       const updatedProfilePicture = res.data;
       setUserProfilePictures(prev => prev.map(pic => 
@@ -95,10 +89,8 @@ export const UserProfilePictureProvider = ({ children }) => {
   const removeUserProfilePicture = async (id) => {
     setLoading(true);
     try {
-      console.log('UserProfilePictureContext: Deleting profile picture with ID:', id);
       
       const res = await deleteUserProfilePicture(id);
-      console.log('UserProfilePictureContext: Delete response:', res);
       
       setUserProfilePictures(prev => prev.filter(pic => pic._id !== id));
       setCurrentUserProfilePicture(null);

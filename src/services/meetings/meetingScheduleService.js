@@ -4,9 +4,7 @@ import { MEETING_SCHEDULE_ENDPOINTS } from '../apiEndpoints';
 // Fetch all meeting schedules (admin, executive only)
 export const fetchAllMeetingSchedules = async () => {
   try {
-    console.log('meetingScheduleService: Fetching all meeting schedules');
     const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_ALL);
-    console.log('meetingScheduleService: Fetch all response:', response.data);
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Fetch all error:', error);
@@ -17,9 +15,7 @@ export const fetchAllMeetingSchedules = async () => {
 // Get my meetings (for different user roles)
 export const getMyMeetings = async (userId) => {
   try {
-    console.log('meetingScheduleService: Fetching my meetings for user:', userId);
     const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_MY_MEETINGS(userId));
-    console.log('meetingScheduleService: Get my meetings response:', response.data);
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Get my meetings error:', error);
@@ -30,9 +26,7 @@ export const getMyMeetings = async (userId) => {
 // Get meeting schedule by ID (scheduled by user ID)
 export const getMeetingScheduleById = async (userId) => {
   try {
-    console.log('meetingScheduleService: Fetching meeting schedule by user ID:', userId);
     const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_BY_SCHEDULED_USER_ID(userId));
-    console.log('meetingScheduleService: Get by scheduled user ID response:', response.data);
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Get by scheduled user ID error:', error);
@@ -43,9 +37,7 @@ export const getMeetingScheduleById = async (userId) => {
 // Create a new meeting schedule
 export const createMeetingSchedule = async (meetingData) => {
   try {
-    console.log('meetingScheduleService: Creating meeting schedule with data:', meetingData);
     const response = await api.post(MEETING_SCHEDULE_ENDPOINTS.CREATE, meetingData);
-    console.log('meetingScheduleService: Create response:', response.data);
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Create error:', error);
@@ -56,10 +48,7 @@ export const createMeetingSchedule = async (meetingData) => {
 // Update meeting schedule
 export const updateMeetingSchedule = async (id, meetingData) => {
   try {
-    console.log('meetingScheduleService: Updating meeting schedule with ID:', id);
-    console.log('meetingScheduleService: Update data:', meetingData);
     const response = await api.put(MEETING_SCHEDULE_ENDPOINTS.UPDATE(id), meetingData);
-    console.log('meetingScheduleService: Update response:', response.data);
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Update error:', error);
@@ -70,9 +59,7 @@ export const updateMeetingSchedule = async (id, meetingData) => {
 // Delete meeting schedule (soft delete - sets published to false)
 export const deleteMeetingSchedule = async (id) => {
   try {
-    console.log('meetingScheduleService: Deleting meeting schedule with ID:', id);
     const response = await api.delete(MEETING_SCHEDULE_ENDPOINTS.DELETE(id));
-    console.log('meetingScheduleService: Delete response:', response.data);
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Delete error:', error);
@@ -83,9 +70,7 @@ export const deleteMeetingSchedule = async (id) => {
 // Get not published meeting schedules (admin only)
 export const getNotPublishedMeetingSchedules = async () => {
   try {
-    console.log('meetingScheduleService: Fetching not published meeting schedules');
     const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_NOT_PUBLISHED);
-    console.log('meetingScheduleService: Get not published response:', response.data);
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Get not published error:', error);

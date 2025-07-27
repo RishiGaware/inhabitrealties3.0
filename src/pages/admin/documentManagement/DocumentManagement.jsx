@@ -297,7 +297,6 @@ const DocumentManagement = () => {
     e.preventDefault();
     
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     
@@ -316,10 +315,8 @@ const DocumentManagement = () => {
       }
 
       if (selectedDocument) {
-        console.log('Editing document:', selectedDocument._id, 'with data:', formData);
         await updateDocument(selectedDocument._id, formDataToSend);
       } else {
-        console.log('Adding new document with data:', formData);
         await addDocument(formDataToSend);
       }
       

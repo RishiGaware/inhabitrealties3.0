@@ -503,25 +503,21 @@ const Dashboard = () => {
                         icon={BiUserPlus}
                         label="Add Lead"
                         color="blue"
-                        onClick={() => console.log('Add Lead clicked')}
                       />
                       <QuickActionButton
                         icon={FaBuilding}
                         label="Add Property"
                         color="green"
-                        onClick={() => console.log('Add Property clicked')}
                       />
                       <QuickActionButton
                         icon={FaMoneyBillWave}
                         label="Record Payment"
                         color="purple"
-                        onClick={() => console.log('Record Payment clicked')}
                       />
                       <QuickActionButton
                         icon={FaChartLine}
                         label="View Reports"
                         color="orange"
-                        onClick={() => console.log('View Reports clicked')}
                       />
                     </SimpleGrid>
                   </CardBody>

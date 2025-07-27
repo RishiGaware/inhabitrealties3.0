@@ -88,7 +88,6 @@ const FavoriteProperties = () => {
     setErrorType(null);
     try {
       const response = await fetchProperties();
-      console.log('FavoriteProperties: Fetch properties response:', response);
       setAllProperties(response.data || []);
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');

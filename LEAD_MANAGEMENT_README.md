@@ -257,8 +257,6 @@ const safeTotalItems = parseInt(totalItems) || 0;
 Enable console logging for debugging:
 ```javascript
 // Add to any component for debugging
-console.log('Component state:', state);
-console.log('Props received:', props);
 ```
 
 ## Dependencies

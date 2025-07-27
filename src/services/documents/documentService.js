@@ -4,7 +4,6 @@ import { DOCUMENT_ENDPOINTS } from '../apiEndpoints';
 // Fetch all documents
 export const fetchDocuments = async () => {
   try {
-    console.log('documentService: Fetching all documents')
     const response = await api.get(DOCUMENT_ENDPOINTS.GET_ALL);
     return response.data;
   } catch (error) {
@@ -58,7 +57,6 @@ export const createDocument = async (documentData) => {
         },
       }
     );
-    console.log('documentService: Create document response:', response.data);
     return response.data;
   } catch (error) {
     console.error('documentService: Create document error:', error);

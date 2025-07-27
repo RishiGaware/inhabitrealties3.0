@@ -32,7 +32,6 @@ export const DocumentTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchDocumentTypes();
-      console.log('DocumentTypeContext: Fetch document types response:', res);
       setDocumentTypes(res.data || []);
     } catch (err) {
       console.error('DocumentTypeContext: Fetch document types error:', err);
@@ -67,7 +66,6 @@ export const DocumentTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchNotPublishedDocumentTypes();
-      console.log('DocumentTypeContext: Fetch not published response:', res);
       return res.data || [];
     } catch (err) {
       console.error('DocumentTypeContext: Fetch not published error:', err);
@@ -82,7 +80,6 @@ export const DocumentTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const res = await fetchDocumentTypesWithParams(params);
-      console.log('DocumentTypeContext: Fetch with params response:', res);
       return res.data || [];
     } catch (err) {
       console.error('DocumentTypeContext: Fetch with params error:', err);
@@ -96,7 +93,6 @@ export const DocumentTypeProvider = ({ children }) => {
   const getDocumentTypeById = useCallback(async (id) => {
     try {
       const res = await getDocumentTypeById(id);
-      console.log('DocumentTypeContext: Get by ID response:', res);
       return res.data;
     } catch (err) {
       console.error('DocumentTypeContext: Get by ID error:', err);
@@ -109,7 +105,6 @@ export const DocumentTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await createDocumentType(documentTypeData);
-      console.log('DocumentTypeContext: Add document type response:', response);
       
       const newDocumentType = {
         ...documentTypeData,
@@ -159,11 +154,8 @@ export const DocumentTypeProvider = ({ children }) => {
   const updateDocumentType = async (id, documentTypeData) => {
     setLoading(true);
     try {
-      console.log('DocumentTypeContext: Updating document type with ID:', id);
-      console.log('DocumentTypeContext: Update data:', documentTypeData);
       
       const response = await editDocumentType(id, documentTypeData);
-      console.log('DocumentTypeContext: Update response:', response);
       
       setDocumentTypes(prevTypes => 
         prevTypes.map(type => 
@@ -224,7 +216,6 @@ export const DocumentTypeProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await deleteDocumentType(id);
-      console.log('DocumentTypeContext: Delete document type response:', response);
       
       setDocumentTypes(prevTypes => prevTypes.filter(type => type._id !== id));
       

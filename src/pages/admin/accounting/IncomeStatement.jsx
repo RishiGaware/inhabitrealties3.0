@@ -22,7 +22,6 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 // Placeholder for API call
 const fetchIncomeStatementData = async (period) => {
-  console.log(`Fetching income statement data for period: ${period}`);
   // In a real app, you would fetch data based on the period.
   // This would involve aggregating data from sales, rent, expenses, etc.
   return new Promise((resolve) => {

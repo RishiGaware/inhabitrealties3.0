@@ -78,15 +78,12 @@ const UserManagement = () => {
   const getAllRoles = async () => {
     setRolesLoading(true);
     try {
-      console.log('UserManagement: Fetching roles...');
       const response = await fetchRoles();
-      console.log('UserManagement: Roles response:', response);
       
       // Handle the response format: { message, count, data }
       const rolesData = response.data || response;
       setRoles(rolesData);
       
-      console.log('UserManagement: Roles loaded:', rolesData.length);
     } catch (error) {
       console.error('UserManagement: Fetch roles error:', error);
     } finally {
@@ -193,22 +190,15 @@ const UserManagement = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form submitted!');
-    console.log('Form data:', formData);
-    console.log('Selected user:', selectedUser);
-    
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     
     if (!validateForm()) {
-      console.log('Form validation failed');
       return;
     }
     
-    console.log('Starting API call...');
     setIsSubmitting(true);
     setIsApiCallInProgress(true);
     
@@ -229,10 +219,7 @@ const UserManagement = () => {
           editData.password = formData.password;
         }
         
-        console.log('Editing user:', selectedUser._id, 'with data:', editData);
-        console.log('Role ID being sent:', editData.role);
         const result = await updateUser(selectedUser._id, editData);
-        console.log('Edit result:', result);
       } else {
         // Prepare add data
         const addData = {
@@ -245,13 +232,9 @@ const UserManagement = () => {
           published: formData.published !== undefined ? formData.published : true,
         };
         
-        console.log('Adding new user with data:', addData);
-        console.log('Role ID being sent:', addData.role);
         const result = await addUser(addData);
-        console.log('Add result:', result);
       }
       
-      console.log('API call successful, closing modal...');
       setIsSubmitting(false);
       setIsApiCallInProgress(false);
       setSelectedUser(null);
@@ -336,8 +319,6 @@ const UserManagement = () => {
   };
 
   const handleRoleChange = (roleId) => {
-    console.log('Role selected - ID:', roleId);
-    console.log('Role selected - Name:', roleOptions.find(r => r.value === roleId)?.label);
     setFormData({ ...formData, role: roleId });
     if (errors.role) {
       setErrors({ ...errors, role: '' });

@@ -57,7 +57,6 @@ const Properties = () => {
     setErrorType(null);
     try {
       const response = await fetchProperties();
-      console.log('Properties: Fetch properties response:', response);
       setProperties(response.data || []);
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');

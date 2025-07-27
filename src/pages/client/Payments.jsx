@@ -39,7 +39,6 @@ const Payments = () => {
   ]);
 
   const handleViewDetails = (payment) => {
-    console.log('View payment details:', payment._id);
   };
 
   const columns = [
@@ -74,7 +73,6 @@ const Payments = () => {
         size="sm"
         variant="ghost"
         colorScheme="brand"
-        onClick={() => console.log('Download receipt:', payment._id)}
       />
     </Flex>
   );

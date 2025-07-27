@@ -41,7 +41,6 @@ import { FiPlus, FiEdit, FiDollarSign, FiEye, FiFilter, FiHome } from "react-ico
 
 // Placeholder for API call
 const fetchRentRollData = async () => {
-  console.log("Fetching rent roll data...");
   // Replace with actual API call, e.g., axios.get('/api/rent-roll')
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -153,7 +152,6 @@ const RentRoll = () => {
   
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
-    console.log("Submitting payment for:", selectedRecord);
     // Placeholder for API call to record payment
     toast({
         title: "Payment Recorded",

@@ -81,7 +81,6 @@ const Settings = () => {
     setLoading(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log(`Saving ${section} settings:`, settings[section]);
       
       toast({
         title: 'Settings saved successfully',
@@ -114,7 +113,6 @@ const Settings = () => {
     }
     
     // Handle password change logic here
-    console.log('Changing password:', passwordData);
     toast({
       title: 'Password changed successfully',
       status: 'success',

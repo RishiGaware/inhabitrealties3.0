@@ -162,7 +162,6 @@ const DocumentTypeManagement = () => {
     e.preventDefault();
     
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     
@@ -178,7 +177,6 @@ const DocumentTypeManagement = () => {
           description: formData.description,
         };
         
-        console.log('Editing document type:', selectedDocumentType._id, 'with data:', editData);
         await updateDocumentType(selectedDocumentType._id, editData);
       } else {
         const addData = {
@@ -186,7 +184,6 @@ const DocumentTypeManagement = () => {
           description: formData.description,
         };
         
-        console.log('Adding new document type with data:', addData);
         await addDocumentType(addData);
       }
       

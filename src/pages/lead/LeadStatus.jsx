@@ -177,7 +177,6 @@ const LeadStatus = () => {
     
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
-      console.log('API call already in progress, ignoring duplicate request');
       return;
     }
     
@@ -195,7 +194,6 @@ const LeadStatus = () => {
           published: formData.published,
         };
         
-        console.log('Editing lead status:', selectedLeadStatus._id, 'with data:', editData);
         await updateLeadStatus(selectedLeadStatus._id, editData);
       } else {
         // Prepare add data
@@ -204,7 +202,6 @@ const LeadStatus = () => {
           description: formData.description,
         };
         
-        console.log('Adding new lead status with data:', addData);
         await addLeadStatus(addData);
       }
       
