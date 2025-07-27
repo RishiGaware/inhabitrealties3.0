@@ -30,6 +30,7 @@ import TableContainer from '../../components/common/Table/TableContainer';
 import FormModal from '../../components/common/FormModal';
 import FloatingInput from '../../components/common/FloatingInput';
 import SearchableSelect from '../../components/common/SearchableSelect';
+import MultiSelect from '../../components/common/MultiSelect';
 import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
@@ -43,7 +44,7 @@ import {
 } from '../../services/meetings/meetingScheduleService';
 import { fetchAllMeetingScheduleStatuses } from '../../services/meetings/meetingScheduleStatusService';
 import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
-import { useUserContext } from '../../context/UserContext';
+
 import { fetchProperties } from '../../services/propertyService';
 import { fetchUsers } from '../../services/usermanagement/userService';
 
@@ -83,9 +84,7 @@ const AdminMeetings = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onClose: onViewModalClose } = useDisclosure();
 
-  // Get user context
-  const userContext = useUserContext();
-  const { getAllUsers } = userContext;
+
   
 
   // Helper function to get customer details by ID
@@ -108,6 +107,15 @@ const AdminMeetings = () => {
         email: 'Customer not found'
       };
     }
+  };
+
+  // Helper function to get multiple customer details
+  const getMultipleCustomerDetails = (customerIds) => {
+    if (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0) {
+      return [{ name: 'No Customer', email: 'No email' }];
+    }
+    
+    return customerIds.map(customerId => getCustomerDetails(customerId));
   };
 
   // Helper function to get property details by ID
@@ -289,22 +297,34 @@ const AdminMeetings = () => {
       
       // Always transform meetings, even if users/properties aren't loaded yet
       const transformedMeetings = dataToTransform.map(meeting => {
-        // Determine the actual customer ID and details
-        let actualCustomerId = meeting.customerId;
-        let customerDetails = { name: 'Loading...', email: 'Loading...' };
+        // Determine the actual customer IDs and details
+        let actualCustomerIds = [];
+        let customerDetails = [];
         
-        if (meeting.customerId && typeof meeting.customerId === 'object' && meeting.customerId.firstName) {
-          // Backend populated the customer data - extract the ID
-          actualCustomerId = meeting.customerId._id || meeting.customerId.id;
-          customerDetails = {
+        // Handle both single customerId and multiple customerIds
+        if (meeting.customerIds && Array.isArray(meeting.customerIds)) {
+          // Multiple customers
+          actualCustomerIds = meeting.customerIds;
+          if (users.length > 0) {
+            customerDetails = getMultipleCustomerDetails(meeting.customerIds);
+          } else {
+            customerDetails = [{ name: 'Loading...', email: 'Loading...' }];
+          }
+        } else if (meeting.customerId && typeof meeting.customerId === 'object' && meeting.customerId.firstName) {
+          // Backend populated single customer data - extract the ID
+          actualCustomerIds = [meeting.customerId._id || meeting.customerId.id];
+          customerDetails = [{
             name: `${meeting.customerId.firstName} ${meeting.customerId.lastName}`,
             email: meeting.customerId.email
-          };
+          }];
         } else if (users.length > 0 && meeting.customerId) {
-          // Use the helper function to find customer by ID
-          customerDetails = getCustomerDetails(meeting.customerId);
-        } else if (!meeting.customerId) {
-          customerDetails = { name: 'No Customer', email: 'No email' };
+          // Single customer by ID
+          actualCustomerIds = [meeting.customerId];
+          customerDetails = [getCustomerDetails(meeting.customerId)];
+        } else if (!meeting.customerId && !meeting.customerIds) {
+          customerDetails = [{ name: 'No Customer', email: 'No email' }];
+        } else {
+          customerDetails = [{ name: 'Loading...', email: 'Loading...' }];
         }
         
         // Get property details - check if backend populated the data
@@ -324,26 +344,64 @@ const AdminMeetings = () => {
           propertyDetails = getPropertyDetails(meeting.propertyId);
         }
         
+        // Format customer display for table
+        const customerDisplayName = customerDetails.length > 1 
+          ? `${customerDetails[0].name} +${customerDetails.length - 1} more`
+          : customerDetails[0]?.name || 'No Customer';
+        const customerDisplayEmail = customerDetails.length > 0 
+          ? customerDetails[0]?.email || 'No email'
+          : 'No email';
+
+        // Debug: Log the meeting status structure
+        console.log('Meeting status debug:', {
+          meetingId: meeting._id,
+          status: meeting.status,
+          statusType: typeof meeting.status,
+          statusName: meeting.status?.name,
+          statusId: meeting.status?._id
+        });
+
+        // Try to get status name from different possible structures
+        let statusName = 'Unknown Status';
+        let statusId = '';
+        
+        if (meeting.status && typeof meeting.status === 'object' && meeting.status.name) {
+          // Status is populated object with name
+          statusName = meeting.status.name;
+          statusId = meeting.status._id || '';
+        } else if (meeting.status && typeof meeting.status === 'string') {
+          // Status is just a string (ID)
+          statusId = meeting.status;
+          // Try to find status name from statuses array
+          const statusObj = statuses.find(s => s._id === meeting.status);
+          statusName = statusObj ? statusObj.name : 'Unknown Status';
+        } else if (meeting.status) {
+          // Status exists but structure is unclear
+          statusName = meeting.status.name || meeting.status.toString();
+          statusId = meeting.status._id || meeting.status;
+        }
+
         return {
           id: meeting._id,
           title: meeting.title,
           description: meeting.description,
-          customerName: customerDetails.name,
-          customerEmail: customerDetails.email,
+          customerName: customerDisplayName,
+          customerEmail: customerDisplayEmail,
+          customerDetails: customerDetails, // Store full details for modal
           propertyName: propertyDetails.name,
           propertyLocation: propertyDetails.location,
           propertyPrice: propertyDetails.price,
           meetingDate: meeting.meetingDate,
           startTime: meeting.startTime,
           endTime: meeting.endTime,
-          status: meeting.status?.name || 'Unknown Status',
-          statusId: meeting.status?._id || meeting.status || '',
+          status: statusName,
+          statusId: statusId,
           salesPersonEmail: meeting.scheduledByUserId?.email || 'No email',
           location: propertyDetails.location,
           notes: meeting.notes,
           duration: meeting.duration,
           // Preserve original IDs for form editing
-          customerId: actualCustomerId,
+          customerIds: actualCustomerIds,
           propertyId: actualPropertyId
         };
       });
@@ -393,7 +451,7 @@ const AdminMeetings = () => {
       endTime: meeting.endTime || '',
       duration: meeting.duration || '',
       status: meeting.statusId || '',
-      customerIds: meeting.customerId ? [meeting.customerId] : [],
+      customerIds: meeting.customerIds && meeting.customerIds.length > 0 ? meeting.customerIds[0] : '',
       propertyId: meeting.propertyId || '',
       notes: meeting.notes || ''
     });
@@ -868,7 +926,7 @@ const AdminMeetings = () => {
         
 
         <Heading as="h1" fontSize={{ base: "xl", sm: "2xl" }} fontWeight="bold">
-        {activeView === 'my' ? 'My Meetings (As Customer)' : 'Admin Meetings'}
+        {'Admin Meetings'}
         </Heading>
         
         {activeView === 'scheduled' && (
@@ -1289,44 +1347,70 @@ const AdminMeetings = () => {
                       </Box>
                     </Flex>
                     <VStack spacing={3} align="stretch">
-                      <HStack spacing={3} align="center" p={3} bg="gray.50" borderRadius="xl">
-                        <Box
-                          p={2}
-                          bg="white"
-                          borderRadius="lg"
-                          color="gray.600"
-                          boxShadow="sm"
-                        >
-                          <FaUser size={14} />
-                        </Box>
-                        <Box flex={1}>
-                          <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
-                            Name
-                          </Text>
-                          <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                            {selectedMeeting.customerName}
-                          </Text>
-                        </Box>
-                      </HStack>
-                      <HStack spacing={3} align="center" p={3} bg="gray.50" borderRadius="xl">
-                        <Box
-                          p={2}
-                          bg="white"
-                          borderRadius="lg"
-                          color="gray.600"
-                          boxShadow="sm"
-                        >
-                          <FaEnvelope size={14} />
-                        </Box>
-                        <Box flex={1}>
-                          <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
-                            Email
-                          </Text>
-                          <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
-                            {selectedMeeting.customerEmail}
-                          </Text>
-                        </Box>
-                      </HStack>
+                      {selectedMeeting.customerDetails && selectedMeeting.customerDetails.length > 0 ? (
+                        selectedMeeting.customerDetails.map((customer, index) => (
+                          <Box key={index} p={3} bg="gray.50" borderRadius="xl">
+                            <HStack spacing={3} align="center" mb={2}>
+                              <Box
+                                p={2}
+                                bg="white"
+                                borderRadius="lg"
+                                color="gray.600"
+                                boxShadow="sm"
+                              >
+                                <FaUser size={14} />
+                              </Box>
+                              <Box flex={1}>
+                                <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
+                                  Customer {selectedMeeting.customerDetails.length > 1 ? index + 1 : ''}
+                                </Text>
+                                <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
+                                  {customer.name}
+                                </Text>
+                              </Box>
+                            </HStack>
+                            <HStack spacing={3} align="center">
+                              <Box
+                                p={2}
+                                bg="white"
+                                borderRadius="lg"
+                                color="gray.600"
+                                boxShadow="sm"
+                              >
+                                <FaEnvelope size={14} />
+                              </Box>
+                              <Box flex={1}>
+                                <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
+                                  Email
+                                </Text>
+                                <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
+                                  {customer.email}
+                                </Text>
+                              </Box>
+                            </HStack>
+                          </Box>
+                        ))
+                      ) : (
+                        <HStack spacing={3} align="center" p={3} bg="gray.50" borderRadius="xl">
+                          <Box
+                            p={2}
+                            bg="white"
+                            borderRadius="lg"
+                            color="gray.600"
+                            boxShadow="sm"
+                          >
+                            <FaUser size={14} />
+                          </Box>
+                          <Box flex={1}>
+                            <Text fontSize={{ base: "2xs", md: "xs" }} color="gray.500" fontWeight="medium" textTransform="uppercase" letterSpacing="wide">
+                              Name
+                            </Text>
+                            <Text fontSize={{ base: "xs", md: "sm" }} color="gray.700" fontWeight="semibold">
+                              {selectedMeeting.customerName}
+                            </Text>
+                          </Box>
+                        </HStack>
+                      )}
                     </VStack>
                   </Box>
 
@@ -1485,26 +1569,51 @@ const AdminMeetings = () => {
                   Participants & Property
                 </Box>
                 <VStack spacing={4}>
-                  <SearchableSelect
-                    label="Customer"
-                    placeholder="Select customer"
-                    options={users.map(user => ({
-                      value: user._id,
-                      label: `${user.firstName} ${user.lastName}`
-                    }))}
-                    value={formData.customerIds[0] || ''}
-                    onChange={(value) => handleInputChange('customerIds', [value])}
-                    error={formErrors.customerIds}
-                    isRequired
-                    bg="white"
-                    border="1px solid"
-                    borderColor="gray.200"
-                    _focus={{
-                      borderColor: "purple.400",
-                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
-                    }}
-                    w="full"
-                  />
+                  {selectedMeeting ? (
+                    // Edit mode - Single select
+                    <SearchableSelect
+                      label="Customer"
+                      placeholder="Select customer"
+                      options={users.map(user => ({
+                        value: user._id,
+                        label: `${user.firstName} ${user.lastName}`
+                      }))}
+                      value={formData.customerIds}
+                      onChange={(value) => handleInputChange('customerIds', value)}
+                      error={formErrors.customerIds}
+                      isRequired
+                      bg="white"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      _focus={{
+                        borderColor: "purple.400",
+                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                      }}
+                      w="full"
+                    />
+                  ) : (
+                    // Add mode - Multi select
+                    <MultiSelect
+                      label="Customers"
+                      placeholder="Select customers"
+                      options={users.map(user => ({
+                        value: user._id,
+                        label: `${user.firstName} ${user.lastName}`
+                      }))}
+                      value={formData.customerIds}
+                      onChange={(value) => handleInputChange('customerIds', value)}
+                      error={formErrors.customerIds}
+                      isRequired
+                      bg="white"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      _focus={{
+                        borderColor: "purple.400",
+                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                      }}
+                      w="full"
+                    />
+                  )}
                   <SearchableSelect
                     label="Property"
                     placeholder="Select property"
@@ -1581,7 +1690,8 @@ const AdminMeetings = () => {
                   <FloatingInput
                     label="Duration"
                     value={calculateDuration(formData.startTime, formData.endTime)}
-                    isReadOnly
+                    onChange={() => {}} // Empty onChange to prevent warning
+                    disabled={true}
                     bg="gray.50"
                     border="1px solid"
                     borderColor="gray.300"

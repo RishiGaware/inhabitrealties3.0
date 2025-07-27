@@ -80,10 +80,21 @@ export const getNotPublishedMeetingSchedules = async () => {
 
 // Helper function to format meeting data for API
 export const formatMeetingDataForAPI = (formData) => {
-  // Extract customerId from customerIds array or use customerId directly
-  const customerId = formData.customerIds && formData.customerIds.length > 0 
-    ? formData.customerIds[0] 
-    : formData.customerId;
+  // Handle both single customer ID (edit mode) and multiple customer IDs (add mode)
+  let customerData;
+  
+  if (Array.isArray(formData.customerIds)) {
+    // Add mode - multiple customers
+    customerData = { customerIds: formData.customerIds };
+  } else if (formData.customerIds) {
+    // Edit mode - single customer
+    customerData = { customerId: formData.customerIds };
+  } else if (formData.customerId) {
+    // Fallback for backward compatibility
+    customerData = { customerId: formData.customerId };
+  } else {
+    customerData = { customerId: '' };
+  }
   
   return {
     title: formData.title,
@@ -93,7 +104,7 @@ export const formatMeetingDataForAPI = (formData) => {
     endTime: formData.endTime || null,
     duration: formData.duration || null,
     status: formData.status,
-    customerId: customerId,
+    ...customerData, // Spread the appropriate customer field
     propertyId: formData.propertyId || null,
     notes: formData.notes || ""
   };

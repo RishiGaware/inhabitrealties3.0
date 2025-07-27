@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -22,142 +22,288 @@ import {
   Input,
   Select,
 } from '@chakra-ui/react';
-import { FaEye, FaCalendar, FaMapMarkerAlt, FaClock, FaUser, FaSearch, FaHome, FaEnvelope, FaStickyNote, FaUsers } from 'react-icons/fa';
+import { FaEye, FaCalendar, FaMapMarkerAlt, FaClock, FaUser, FaSearch, FaHome, FaEnvelope, FaStickyNote, FaUsers, FaMap } from 'react-icons/fa';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
+import Loader from '../../components/common/Loader';
+import { 
+  getMyMeetings,
+} from '../../services/meetings/meetingScheduleService';
+import { fetchAllMeetingScheduleStatuses } from '../../services/meetings/meetingScheduleStatusService';
+import { showErrorToast } from '../../utils/toastUtils';
+import { fetchProperties } from '../../services/propertyService';
+import { fetchUsers } from '../../services/usermanagement/userService';
 
 const MyMeetings = () => {
-  const [activeView, setActiveView] = useState('my'); // 'my' or 'scheduled'
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [selectedMeeting, setSelectedMeeting] = useState(null);
+  const [meetings, setMeetings] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [properties, setProperties] = useState([]);
+  const [rawMyMeetings, setRawMyMeetings] = useState([]);
+  const [counts, setCounts] = useState({
+    totalMeetings: 0,
+    totalScheduled: 0,
+    totalRescheduled: 0,
+    totalCompleted: 0,
+    totalCancelled: 0
+  });
+  const [statuses, setStatuses] = useState([]);
   const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onClose: onViewModalClose } = useDisclosure();
 
-  // Static data for my meetings (personal view) - matches AdminMeetings format
-  const myMeetings = [
-    {
-      id: 1,
-      title: 'Client Consultation',
-      description: 'Initial property discussion for first-time buyer',
-      customerName: 'Emma Davis',
-      customerEmail: 'emma.d@email.com',
-      propertyName: 'Downtown Apartments',
-      propertyLocation: 'Andheri West, Mumbai',
-      propertyPrice: '₹1.5 Cr',
-      meetingDate: '2024-01-18',
-      startTime: '15:00',
-      endTime: '16:00',
-      status: 'Scheduled',
-      salesPersonName: 'Emma Sales',
-      salesPersonEmail: 'emma@inhabit.com',
-      location: 'Andheri West, Mumbai',
-      notes: 'First time buyer, needs guidance on home loan process'
-    },
-    {
-      id: 2,
-      title: 'Property Tour',
-      description: 'Show multiple properties to interested client',
-      customerName: 'David Brown',
-      customerEmail: 'david.b@email.com',
-      propertyName: 'Garden Heights',
-      propertyLocation: 'Powai, Mumbai',
-      propertyPrice: '₹2.1 Cr',
-      meetingDate: '2024-01-19',
-      startTime: '10:00',
-      endTime: '12:30',
-      status: 'Completed',
-      salesPersonName: 'Emma Sales',
-      salesPersonEmail: 'emma@inhabit.com',
-      location: 'Powai, Mumbai',
-      notes: 'Client liked the amenities and green surroundings'
-    },
-    {
-      id: 3,
-      title: 'Investment Discussion',
-      description: 'Portfolio review meeting for high-value client',
-      customerName: 'Sarah Johnson',
-      customerEmail: 'sarah.j@email.com',
-      propertyName: 'Premium Apartments',
-      propertyLocation: 'Worli, Mumbai',
-      propertyPrice: '₹1.8 Cr',
-      meetingDate: '2024-01-20',
-      startTime: '14:00',
-      endTime: '15:30',
-      status: 'Rescheduled',
-      salesPersonName: 'Emma Sales',
-      salesPersonEmail: 'emma@inhabit.com',
-      location: 'Worli, Mumbai',
-      notes: 'Client wants to reschedule due to personal commitments'
+  // Helper function to get customer details by ID
+  const getCustomerDetails = (customerId) => {
+    if (!customerId) {
+      return { name: 'No Customer', email: 'No email' };
     }
-  ];
-
-  // Static data for scheduled meetings (view-only for clients)
-  const scheduledMeetings = [
-    {
-      id: 4,
-      title: 'Property Viewing - Luxury Villa',
-      description: 'Client interested in 3BHK villa with garden view',
-      customerName: 'John Smith',
-      customerEmail: 'john.smith@email.com',
-      propertyName: 'Luxury Villa Complex',
-      propertyLocation: 'Bandra West, Mumbai',
-      propertyPrice: '₹2.5 Cr',
-      meetingDate: '2024-01-21',
-      startTime: '10:00',
-      endTime: '12:00',
-      status: 'Scheduled',
-      salesPersonName: 'John Admin',
-      salesPersonEmail: 'admin@inhabit.com',
-      location: 'Bandra West, Mumbai',
-      notes: 'Client wants to see the garden area and parking facilities'
-    },
-    {
-      id: 5,
-      title: 'Property Inspection',
-      description: 'Pre-purchase inspection for potential buyer',
-      customerName: 'Mike Wilson',
-      customerEmail: 'mike.w@email.com',
-      propertyName: 'Sea View Residences',
-      propertyLocation: 'Juhu, Mumbai',
-      propertyPrice: '₹3.2 Cr',
-      meetingDate: '2024-01-22',
-      startTime: '11:30',
-      endTime: '12:30',
-      status: 'Scheduled',
-      salesPersonName: 'John Admin',
-      salesPersonEmail: 'admin@inhabit.com',
-      location: 'Juhu, Mumbai',
-      notes: 'Check for water damage and structural integrity'
+    
+    const customer = users.find(user => user._id === customerId);
+    
+    if (customer) {
+      return {
+        name: `${customer.firstName} ${customer.lastName}`,
+        email: customer.email
+      };
+    } else {
+      return {
+        name: `Customer ID: ${customerId}`,
+        email: 'Customer not found'
+      };
     }
-  ];
-
-  const getCurrentMeetings = () => {
-    const currentMeetings = activeView === 'scheduled' ? scheduledMeetings : myMeetings;
-    return currentMeetings;
   };
 
-  const meetings = getCurrentMeetings();
+  // Helper function to get multiple customer details
+  const getMultipleCustomerDetails = (customerIds) => {
+    if (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0) {
+      return [{ name: 'No Customer', email: 'No email' }];
+    }
+    return customerIds.map(customerId => getCustomerDetails(customerId));
+  };
 
-  // Calculate counts based on current meetings
-  const counts = useMemo(() => {
-    const totalMeetings = meetings.length;
-    const totalScheduled = meetings.filter(m => m.status === 'Scheduled').length;
-    const totalRescheduled = meetings.filter(m => m.status === 'Rescheduled').length;
-    const totalCompleted = meetings.filter(m => m.status === 'Completed').length;
-    const totalCancelled = meetings.filter(m => m.status === 'Cancelled').length;
-
-
+  // Helper function to get property details by ID
+  const getPropertyDetails = (propertyId) => {
+    if (!propertyId) {
+      return { name: 'No Property', location: 'No location', price: 'No price' };
+    }
+    
+    const property = properties.find(prop => prop._id === propertyId);
+    
+    if (property) {
     return {
+        name: property.name,
+        location: property.location,
+        price: property.price
+      };
+    } else {
+      return {
+        name: `Property ID: ${propertyId}`,
+        location: 'Property not found',
+        price: 'Price not available'
+      };
+    }
+  };
+
+  // Fetch my meetings data
+  const fetchMyMeetingsData = async () => {
+    setLoading(true);
+    try {
+      // Get current user ID from context or localStorage
+      const auth = JSON.parse(localStorage.getItem("auth"));
+      const currentUserId = auth?.data?._id;
+      
+      if (!currentUserId) {
+        console.error('MyMeetings: No current user ID found');
+        showErrorToast('User not authenticated');
+        setRawMyMeetings([]);
+        return;
+      }
+
+      // Fetch meetings, users, properties, and statuses in parallel
+      const [myMeetingsResponse, usersResponse, propertiesResponse, statusesResponse] = await Promise.all([
+        getMyMeetings(currentUserId),
+        fetchUsers(),
+        fetchProperties(),
+        fetchAllMeetingScheduleStatuses()
+      ]);
+
+      // Set users and properties
+      if (usersResponse && usersResponse.data) {
+        setUsers(usersResponse.data);
+      } 
+    
+      if (propertiesResponse && propertiesResponse.data) {
+        setProperties(propertiesResponse.data);
+      }
+      
+      if (statusesResponse && statusesResponse.data) {
+        setStatuses(statusesResponse.data);
+      }
+      
+      // Store raw meetings data
+      if (myMeetingsResponse && myMeetingsResponse.data) {
+        setRawMyMeetings(myMeetingsResponse.data);
+        
+        // Set counts from API response
+        if (myMeetingsResponse.counts) {
+          setCounts(myMeetingsResponse.counts);
+        } else {
+          // Calculate counts from data if not provided by backend
+          const totalMeetings = myMeetingsResponse.data.length;
+          const totalScheduled = myMeetingsResponse.data.filter(m => m.status?.name === 'Scheduled').length;
+          const totalRescheduled = myMeetingsResponse.data.filter(m => m.status?.name === 'Rescheduled').length;
+          const totalCompleted = myMeetingsResponse.data.filter(m => m.status?.name === 'Completed').length;
+          const totalCancelled = myMeetingsResponse.data.filter(m => m.status?.name === 'Cancelled').length;
+          
+          setCounts({
           totalMeetings,
           totalScheduled,
       totalRescheduled,
           totalCompleted,
           totalCancelled
-    };
-  }, [meetings]);
+          });
+        }
+      } else {
+        setRawMyMeetings([]);
+        setCounts({
+          totalMeetings: 0,
+          totalScheduled: 0,
+          totalRescheduled: 0,
+          totalCompleted: 0,
+          totalCancelled: 0
+        });
+      }
+    } catch (error) {
+      console.error('MyMeetings: Error fetching my meetings:', error);
+      showErrorToast('Failed to fetch my meetings. Please try again.');
+      setRawMyMeetings([]);
+      setCounts({
+        totalMeetings: 0,
+        totalScheduled: 0,
+        totalRescheduled: 0,
+        totalCompleted: 0,
+        totalCancelled: 0
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMyMeetingsData();
+  }, []);
+
+  // Transform meetings when users and properties are available
+  useEffect(() => {
+    if (rawMyMeetings.length > 0) {
+      // Always transform meetings, even if users/properties aren't loaded yet
+      const transformedMeetings = rawMyMeetings.map(meeting => {
+        // Determine the actual customer IDs and details
+        let actualCustomerIds = [];
+        let customerDetails = [];
+        
+        // Handle both single customerId and multiple customerIds
+        if (meeting.customerIds && Array.isArray(meeting.customerIds)) {
+          // Multiple customers
+          actualCustomerIds = meeting.customerIds;
+          if (users.length > 0) {
+            customerDetails = getMultipleCustomerDetails(meeting.customerIds);
+          } else {
+            customerDetails = [{ name: 'Loading...', email: 'Loading...' }];
+          }
+        } else if (meeting.customerId && typeof meeting.customerId === 'object' && meeting.customerId.firstName) {
+          // Backend populated single customer data - extract the ID
+          actualCustomerIds = [meeting.customerId._id || meeting.customerId.id];
+          customerDetails = [{
+            name: `${meeting.customerId.firstName} ${meeting.customerId.lastName}`,
+            email: meeting.customerId.email
+          }];
+        } else if (users.length > 0 && meeting.customerId) {
+          // Single customer by ID
+          actualCustomerIds = [meeting.customerId];
+          customerDetails = [getCustomerDetails(meeting.customerId)];
+        } else if (!meeting.customerId && !meeting.customerIds) {
+          customerDetails = [{ name: 'No Customer', email: 'No email' }];
+        } else {
+          customerDetails = [{ name: 'Loading...', email: 'Loading...' }];
+        }
+        
+        // Format customer display for table
+        const customerDisplayName = customerDetails.length > 1
+          ? `${customerDetails[0].name} +${customerDetails.length - 1} more`
+          : customerDetails[0]?.name || 'No Customer';
+        const customerDisplayEmail = customerDetails.length > 0
+          ? customerDetails[0]?.email || 'No email'
+          : 'No email';
+
+        // Get property details
+        const propertyDetails = getPropertyDetails(meeting.propertyId);
+        const actualPropertyId = meeting.propertyId;
+
+        // Debug: Log the meeting status structure
+        console.log('Meeting status debug:', {
+          meetingId: meeting._id,
+          status: meeting.status,
+          statusType: typeof meeting.status,
+          statusName: meeting.status?.name,
+          statusId: meeting.status?._id
+        });
+
+        // Try to get status name from different possible structures
+        let statusName = 'Unknown Status';
+        let statusId = '';
+        
+        if (meeting.status && typeof meeting.status === 'object' && meeting.status.name) {
+          // Status is populated object with name
+          statusName = meeting.status.name;
+          statusId = meeting.status._id || '';
+        } else if (meeting.status && typeof meeting.status === 'string') {
+          // Status is just a string (ID)
+          statusId = meeting.status;
+          // Try to find status name from statuses array
+          const statusObj = statuses.find(s => s._id === meeting.status);
+          statusName = statusObj ? statusObj.name : 'Unknown Status';
+        } else if (meeting.status) {
+          // Status exists but structure is unclear
+          statusName = meeting.status.name || meeting.status.toString();
+          statusId = meeting.status._id || meeting.status;
+        }
+
+        return {
+          id: meeting._id,
+          title: meeting.title,
+          description: meeting.description,
+          customerName: customerDisplayName,
+          customerEmail: customerDisplayEmail,
+          customerDetails: customerDetails, // Store full details for modal
+          propertyName: propertyDetails.name,
+          propertyLocation: propertyDetails.location,
+          propertyPrice: propertyDetails.price,
+          meetingDate: meeting.meetingDate,
+          startTime: meeting.startTime,
+          endTime: meeting.endTime,
+          status: statusName,
+          statusId: statusId,
+          salesPersonEmail: meeting.scheduledByUserId?.email || 'No email',
+          location: propertyDetails.location,
+          notes: meeting.notes,
+          duration: meeting.duration,
+          // Preserve original IDs for form editing
+          customerIds: actualCustomerIds,
+          propertyId: actualPropertyId
+        };
+      });
+      
+      setMeetings(transformedMeetings);
+    } else {
+      // Clear meetings if no data to transform
+      setMeetings([]);
+    }
+  }, [rawMyMeetings, users, properties, statuses]);
 
   // Filter meetings based on search and status
   const filteredMeetings = useMemo(() => {
@@ -177,6 +323,14 @@ const MyMeetings = () => {
   const handleViewMeeting = (meeting) => {
     setSelectedMeeting(meeting);
     onViewModalOpen();
+  };
+
+  const handleMapRedirect = (location) => {
+    if (location && location !== 'No location') {
+      const encodedLocation = encodeURIComponent(location);
+      const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodedLocation}`;
+      window.open(googleMapsUrl, '_blank');
+    }
   };
 
   const handlePageChange = (page) => {
@@ -476,6 +630,10 @@ const MyMeetings = () => {
       </Grid>
   );
 
+  if (loading) {
+    return <Loader />;
+  }
+
   return (
     <Box p={{ base: 3, sm: 4, md: 6 }}>
       {/* Header */}
@@ -485,43 +643,7 @@ const MyMeetings = () => {
         </Heading>
       </HStack>
 
-      {/* Segmented Buttons */}
-      <Flex 
-        direction="row" 
-        gap={0} 
-        mb={6}
-        bg="gray.100"
-        p={1}
-        borderRadius="lg"
-        maxW="fit-content"
-      >
-        <Button
-          size={{ base: "sm", sm: "md" }}
-          fontSize={{ base: "xs", sm: "sm" }}
-          px={{ base: 3, sm: 4 }}
-          minW={{ base: "auto", sm: "auto" }}
-          whiteSpace="nowrap"
-          variant={activeView === 'my' ? 'solid' : 'ghost'}
-          colorScheme="purple"
-          onClick={() => setActiveView('my')}
-          leftIcon={<FaUser />}
-        >
-          My Meetings
-        </Button>
-        <Button
-          size={{ base: "sm", sm: "md" }}
-          fontSize={{ base: "xs", sm: "sm" }}
-          px={{ base: 3, sm: 4 }}
-          minW={{ base: "auto", sm: "auto" }}
-          whiteSpace="nowrap"
-          variant={activeView === 'scheduled' ? 'solid' : 'ghost'}
-          colorScheme="purple"
-          onClick={() => setActiveView('scheduled')}
-          leftIcon={<FaUsers />}
-        >
-          Scheduled
-        </Button>
-      </Flex>
+
 
       {/* Summary Cards */}
       <SummaryCards />
@@ -737,6 +859,16 @@ const MyMeetings = () => {
                         {selectedMeeting.propertyLocation}
                       </Text>
                         </Box>
+                        <Button
+                          size="sm"
+                          colorScheme="blue"
+                          variant="ghost"
+                          onClick={() => handleMapRedirect(selectedMeeting.propertyLocation)}
+                          isDisabled={!selectedMeeting.propertyLocation || selectedMeeting.propertyLocation === 'No location'}
+                          _hover={{ bg: "blue.100" }}
+                        >
+                          <FaMap size={14} />
+                        </Button>
                     </HStack>
                       <HStack spacing={3} align="center" p={3} bg="green.50" borderRadius="xl">
                         <Box
