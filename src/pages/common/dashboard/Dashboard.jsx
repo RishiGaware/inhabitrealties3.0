@@ -16,9 +16,11 @@ import {
   useColorModeValue,
   Flex,
   SimpleGrid,
+  Tooltip,
 } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
   FaUsers, 
   FaBuilding, 
@@ -92,6 +94,7 @@ const Dashboard = () => {
     pendingPayments: 0
   });
   const [recentActivities, setRecentActivities] = useState([]);
+  const navigate = useNavigate();
 
   // Move all useColorModeValue hooks to the top level
   const bgColor = useColorModeValue('gray.50', 'gray.900');
@@ -174,14 +177,69 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
+  const handleStatCardClick = (type) => {
+    let path = '';
+    switch (type) {
+      case 'totalproperties':
+        path = '/properties';
+        break;
+      case 'totalleads':
+        path = '/leads';
+        break;
+      case 'totalcustomers':
+        path = '/customers/profiles';
+        break;
+      case 'totalbookings':
+        path = '/bookings/booked-units';
+        break;
+      case 'totalrevenue':
+        path = '/admin/reports';
+        break;
+      case 'pendingpayments':
+        path = '/payments/due-payments';
+        break;
+      default:
+        path = '/';
+    }
+    navigate(path);
+  };
+
+  const handleQuickActionClick = (type) => {
+    let path = '';
+    switch (type) {
+      case 'addlead':
+        path = '/lead/add';
+        break;
+      case 'addproperty':
+        path = '/property/property-master';
+        break;
+      case 'recordpayment':
+        path = '/payments/installments';
+        break;
+      case 'viewreports':
+        path = '/admin/reports';
+        break;
+      default:
+        path = '/';
+    }
+    navigate(path);
+  };
+
   const StatCard = ({ title, value, icon: IconComponent, change, gradient }) => (
-    <motion.div
-      variants={cardVariants}
-      whileHover="hover"
-      initial="hidden"
-      animate="visible"
+    <Tooltip 
+      label={`Click to view ${title.toLowerCase()}`} 
+      placement="top" 
+      hasArrow
+      bg="gray.800"
+      color="white"
     >
-      <Card
+      <motion.div
+        variants={cardVariants}
+        whileHover="hover"
+        initial="hidden"
+        animate="visible"
+      >
+        <Card
         bg={cardBg}
         borderRadius="xl"
         boxShadow="lg"
@@ -192,8 +250,19 @@ const Dashboard = () => {
         _hover={{
           boxShadow: 'xl',
           transform: 'translateY(-2px)',
+          bg: 'gray.50',
         }}
         transition="all 0.3s ease"
+        onClick={() => handleStatCardClick(title.toLowerCase().replace(/\s/g, ''))}
+        cursor="pointer"
+        role="button"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleStatCardClick(title.toLowerCase().replace(/\s/g, ''));
+          }
+        }}
       >
         <Box
           position="absolute"
@@ -244,7 +313,8 @@ const Dashboard = () => {
           </Flex>
         </CardBody>
       </Card>
-    </motion.div>
+      </motion.div>
+    </Tooltip>
   );
 
   const ActivityItem = ({ activity, index }) => (
@@ -288,12 +358,19 @@ const Dashboard = () => {
     </motion.div>
   );
 
-  const QuickActionButton = ({ icon: IconComponent, label, color, onClick }) => (
-    <motion.div
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
+  const QuickActionButton = ({ icon: IconComponent, label, color }) => (
+    <Tooltip 
+      label={`Click to ${label.toLowerCase()}`} 
+      placement="top" 
+      hasArrow
+      bg="gray.800"
+      color="white"
     >
-      <Button
+      <motion.div
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        <Button
         variant="outline"
         size="lg"
         h="auto"
@@ -308,7 +385,7 @@ const Dashboard = () => {
           boxShadow: 'lg',
         }}
         transition="all 0.2s ease"
-        onClick={onClick}
+        onClick={() => handleQuickActionClick(label.toLowerCase().replace(/\s/g, ''))}
       >
         <VStack spacing={3}>
           <Box
@@ -324,7 +401,8 @@ const Dashboard = () => {
           </Text>
         </VStack>
       </Button>
-    </motion.div>
+      </motion.div>
+    </Tooltip>
   );
 
   const formatCurrency = (amount) => {

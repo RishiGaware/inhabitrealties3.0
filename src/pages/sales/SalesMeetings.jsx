@@ -33,6 +33,7 @@ import FormModal from '../../components/common/FormModal';
 import FloatingInput from '../../components/common/FloatingInput';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import MultiSelect from '../../components/common/MultiSelect';
+import SearchAndFilter from '../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
@@ -385,14 +386,6 @@ const SalesMeetings = () => {
           ? customerDetails[0]?.email || 'No email'
           : 'No email';
 
-        // Debug: Log the meeting status structure
-        console.log('Meeting status debug:', {
-          meetingId: meeting._id,
-          status: meeting.status,
-          statusType: typeof meeting.status,
-          statusName: meeting.status?.name,
-          statusId: meeting.status?._id
-        });
 
         // Try to get status name from different possible structures
         let statusName = 'Unknown Status';
@@ -1085,60 +1078,37 @@ const SalesMeetings = () => {
       {/* Summary Cards */}
       <SummaryCards />
 
-      {/* Search and Filter */}
-      <Box 
-        p={4} 
-        bg="white" 
-        borderRadius="xl" 
-        boxShadow="0 2px 8px rgba(0, 0, 0, 0.05)"
-        border="1px solid"
-        borderColor="gray.100"
-        mb={6}
-      >
-        <HStack spacing={4} align="center">
-          <InputGroup maxW={{ base: "full", sm: "400px" }}>
-            <InputLeftElement pointerEvents="none">
-              <FaSearch color="gray.400" />
-            </InputLeftElement>
-            <Input 
-              placeholder={activeView === 'my' ? "Search my meetings as customer..." : "Search meetings..."}
-              value={searchTerm} 
-              onChange={(e) => setSearchTerm(e.target.value)}
-              borderRadius="lg"
-              border="1px solid"
-              borderColor="gray.200"
-              _focus={{
-                borderColor: "purple.400",
-                boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
-              }}
-              _hover={{
-                borderColor: "gray.300"
-              }}
-            />
-          </InputGroup>
-          <Select
-            maxW={{ base: "full", sm: "200px" }}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            placeholder="Filter by status"
-            borderRadius="lg"
-            border="1px solid"
-            borderColor="gray.200"
-            _focus={{
-              borderColor: "purple.400",
-              boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
-            }}
-            _hover={{
-              borderColor: "gray.300"
-            }}
-          >
-            <option value="Scheduled">Scheduled</option>
-            <option value="Completed">Completed</option>
-            <option value="Cancelled">Cancelled</option>
-            <option value="Rescheduled">Rescheduled</option>
-          </Select>
-        </HStack>
-      </Box>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={(e) => setSearchTerm(e.target.value)}
+        onSearchSubmit={() => {}} // No API search needed for this page
+        searchPlaceholder={activeView === 'my' ? "Search my meetings as customer..." : "Search meetings..."}
+        filters={{ status: statusFilter }}
+        onFilterChange={(key, value) => {
+          if (key === 'status') {
+            setStatusFilter(value);
+          }
+        }}
+        onApplyFilters={() => {}} // No API filter needed for this page
+        onClearFilters={() => {
+          setStatusFilter('');
+        }}
+        filterOptions={{
+          status: {
+            label: "Status",
+            placeholder: "Filter by status",
+            options: [
+              { value: "Scheduled", label: "Scheduled" },
+              { value: "Completed", label: "Completed" },
+              { value: "Cancelled", label: "Cancelled" },
+              { value: "Rescheduled", label: "Rescheduled" }
+            ]
+          }
+        }}
+        title="Filter Meetings"
+        activeFiltersCount={statusFilter ? 1 : 0}
+      />
 
       {/* Table */}
       <TableContainer>

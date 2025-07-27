@@ -25,6 +25,7 @@ import CommonPagination from '../../../components/common/pagination/CommonPagina
 import TableContainer from '../../../components/common/Table/TableContainer';
 import FloatingInput from '../../../components/common/FloatingInput';
 import FormModal from '../../../components/common/FormModal';
+import SearchAndFilter from '../../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import { usePropertyTypeContext } from '../../../context/PropertyTypeContext';
 import Loader from '../../../components/common/Loader';
@@ -340,18 +341,20 @@ const PropertyTypes = () => {
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
 
-      <Box mb={6} maxW="400px">
-        <InputGroup>
-          <InputLeftElement pointerEvents="none">
-            <SearchIcon color="gray.300" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search property types..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-        </InputGroup>
-      </Box>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {}} // No API search needed for this page
+        searchPlaceholder="Search property types..."
+        filters={{}}
+        onFilterChange={() => {}}
+        onApplyFilters={() => {}}
+        onClearFilters={() => {}}
+        filterOptions={{}}
+        title="Filter Property Types"
+        activeFiltersCount={0}
+      />
 
       <TableContainer>
         <CommonTable

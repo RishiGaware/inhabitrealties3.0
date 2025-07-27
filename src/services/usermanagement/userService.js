@@ -33,7 +33,7 @@ export const registerUser = async (userData) => {
   }
 };
 
-// Edit/Update user
+// Edit/Update uxser
 export const editUser = async (id, userData) => {
   try {
     const response = await api.put(USER_ENDPOINTS.EDIT(id), userData);
@@ -78,6 +78,22 @@ export const deleteUser = async (id) => {
       status: error?.response?.status,
       data: error?.response?.data,
       statusText: error?.response?.statusText
+    });
+    throw error;
+  }
+};
+
+// Fetch users with parameters (for admin only)
+export const fetchUsersWithParams = async (params) => {
+  try {
+    const response = await api.post(USER_ENDPOINTS.GET_ALL_WITH_PARAMS, params);
+    return response.data;
+  } catch (error) {
+    console.error('userService: Fetch users with params error:', error);
+    console.error('userService: Error details:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
     });
     throw error;
   }

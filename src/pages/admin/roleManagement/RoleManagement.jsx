@@ -21,6 +21,7 @@ import CommonPagination from '../../../components/common/pagination/CommonPagina
 import TableContainer from '../../../components/common/Table/TableContainer';
 import FormModal from '../../../components/common/FormModal';
 import FloatingInput from '../../../components/common/FloatingInput';
+import SearchAndFilter from '../../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import { useRoleContext } from '../../../context/RoleContext';
 import Loader from '../../../components/common/Loader';
@@ -292,18 +293,20 @@ const RoleManagement = () => {
         </Heading>
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
-      <Box mb={6} maxW="400px">
-        <InputGroup>
-          <InputLeftElement pointerEvents="none">
-            <SearchIcon color="gray.300" />
-          </InputLeftElement>
-          <Input
-            placeholder="Search roles..."
-            value={searchTerm}
-            onChange={handleSearch}
-          />
-        </InputGroup>
-      </Box>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {}} // No API search needed for this page
+        searchPlaceholder="Search roles..."
+        filters={{}}
+        onFilterChange={() => {}}
+        onApplyFilters={() => {}}
+        onClearFilters={() => {}}
+        filterOptions={{}}
+        title="Filter Roles"
+        activeFiltersCount={0}
+      />
       <TableContainer>
         <CommonTable
           columns={columns}

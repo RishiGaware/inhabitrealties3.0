@@ -5,6 +5,7 @@ import { Box, Heading, Flex, Grid, IconButton, Text, Badge, Image, Button } from
 import { useNavigate } from 'react-router-dom';
 import PropertyPreview from '../property/propertyMaster/PropertyPreview';
 import CommonCard from '../../components/common/Card/CommonCard';
+import SearchAndFilter from '../../components/common/SearchAndFilter';
 import Loader from '../../components/common/Loader';
 import { usePropertyTypeContext } from '../../context/PropertyTypeContext';
 import { useAuth } from '../../context/AuthContext';
@@ -365,49 +366,19 @@ const FavoriteProperties = () => {
       {favorites.length > 0 && (
         <>
           {/* Search and Filter Section */}
-          <Flex gap={2} align="center" mb={4} wrap="wrap" direction={{ base: 'column', md: 'row' }}>
-            <Box flex="1" minW={{ base: '100%', sm: '180px' }}>
-              <input
-                type="text"
-                placeholder="Search favorite properties..."
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                style={{
-                  width: '100%',
-                  borderRadius: '8px',
-                  border: '1px solid #E2E8F0',
-                  padding: '8px 12px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  background: '#fff',
-                  outline: 'none',
-                  marginRight: '8px',
-                  boxShadow: '0 1px 2px 0 rgba(80, 36, 143, 0.04)'
-                }}
-                onKeyDown={e => { if (e.key === 'Enter') handlePropertySearch(); }}
-              />
-            </Box>
-            <Box>
-              <button
-                onClick={handlePropertySearch}
-                style={{
-                  background: 'linear-gradient(90deg, #805AD5 0%, #6B46C1 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '8px 20px',
-                  fontWeight: 600,
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  boxShadow: '0 1px 2px 0 rgba(80, 36, 143, 0.08)',
-                  maxWidth: '160px',
-                  width: '100%'
-                }}
-              >
-                Search
-              </button>
-            </Box>
-          </Flex>
+          <SearchAndFilter
+            searchTerm={searchTerm}
+            onSearchChange={e => setSearchTerm(e.target.value)}
+            onSearchSubmit={handlePropertySearch}
+            searchPlaceholder="Search favorite properties..."
+            filters={{}}
+            onFilterChange={() => {}}
+            onApplyFilters={() => {}}
+            onClearFilters={() => {}}
+            filterOptions={{}}
+            title="Filter Favorite Properties"
+            activeFiltersCount={0}
+          />
 
           {/* Property Types Filter - Responsive */}
           <Box 

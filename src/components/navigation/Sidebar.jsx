@@ -213,50 +213,28 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         if (path[2] === 'favorite-properties') {
           setSelectedMenu('displayProperties');
           setSelectedSubMenu('favorite');
-          if (!subMenus.displayProperties) {
-            toggleSubMenu('displayProperties');
-          }
         } else {
           setSelectedMenu('displayProperties');
           setSelectedSubMenu('properties');
-          if (!subMenus.displayProperties) {
-            toggleSubMenu('displayProperties');
-          }
         }
       } else if (path[1] === 'property' && path[2] === 'favorite-properties') {
         setSelectedMenu('property');
         setSelectedSubMenu('favorite-properties');
-        if (!subMenus.property) {
-          toggleSubMenu('property');
-        }
       } else if (path[1] === 'admin-meetings') {
         setSelectedMenu('scheduleMeetings');
         setSelectedSubMenu('admin-meetings');
-        if (!subMenus.scheduleMeetings) {
-          toggleSubMenu('scheduleMeetings');
-        }
       } else if (path[1] === 'sales-meetings') {
         setSelectedMenu('scheduleMeetings');
         setSelectedSubMenu('sales-meetings');
-        if (!subMenus.scheduleMeetings) {
-          toggleSubMenu('scheduleMeetings');
-        }
       } else if (path[1] === 'my-meetings') {
         setSelectedMenu('scheduleMeetings');
         setSelectedSubMenu('my-meetings');
-        if (!subMenus.scheduleMeetings) {
-          toggleSubMenu('scheduleMeetings');
-        }
       } else if (path[2]) {
         // Handle submenu paths
         const parentMenu = findParentMenu(path[2]);
         if (parentMenu) {
           setSelectedMenu(parentMenu.key);
           setSelectedSubMenu(path[2]);
-          // Ensure the parent menu is expanded
-          if (!subMenus[parentMenu.key]) {
-            toggleSubMenu(parentMenu.key);
-          }
         }
       } else {
         setSelectedMenu(path[1]);
@@ -266,10 +244,11 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       setSelectedMenu('dashboard');
       setSelectedSubMenu('');
     }
-  }, [location, toggleSubMenu, subMenus]);
+  }, [location]); // Removed toggleSubMenu and subMenus from dependencies
 
   const handleMenuClick = (menu) => {
     const menuKey = menu.key;
+    
     if (!menu.subMenu) {
       const route = routeMap[menuKey];
       if (typeof route === 'string') {
@@ -294,6 +273,11 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       navigate(path);
       setSelectedMenu(menuKey);
       setSelectedSubMenu(subMenuKey);
+      
+      // Close sidebar on mobile when submenu item is clicked
+      if (isMobile) {
+        setOpen(false);
+      }
     } else {
       console.error('No route found for:', { menuKey, subMenuKey });
     }
@@ -373,40 +357,44 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
                     </span>
                   </div>
                   {Menu.subMenu && (
-                    <span className={`ml-auto text-sm transition-all duration-300
-                      ${subMenus[Menu.key] ? "rotate-360" : ""}
+                    <span className={`ml-auto text-sm transition-transform duration-300 ease-in-out
+                      ${subMenus[Menu.key] ? "rotate-180" : "rotate-0"}
                       ${!open && "hidden"}
                       ${Menu.key === selectedMenu ? "text-light-primary" : "text-gray-600"}`}
                     >
-                      {subMenus[Menu.key] ? <FaChevronDown /> : <FaChevronRight />}
+                      <FaChevronDown />
                     </span>
                   )}
                 </div>
                 {/* Submenu items */}
-                {Menu.subMenu && subMenus[Menu.key] && (
-                  <ul className="pl-3 pt-4">
-                    {Menu.subMenu.map((subMenu, subIndex) => (
-                      <li 
-                        key={subIndex} 
-                        className={`text-sm flex items-center gap-x-2 py-2 px-2 rounded-md
-                          transition-all duration-200 ease-in-out
-                          hover:bg-gray-50/50
-                          ${toKebab(subMenu) === selectedSubMenu ? "text-light-primary" : "text-gray-600"}`}
-                        onClick={e => { e.stopPropagation(); handleSubMenuClick(Menu, subMenu); }}
-                      >
-                        <span className={`transition-colors duration-200
-                          ${toKebab(subMenu) === selectedSubMenu ? "text-light-primary" : "text-gray-400"}`}
+                {Menu.subMenu && (
+                  <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    subMenus[Menu.key] ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                  }`}>
+                    <ul className="pl-3 pt-4">
+                      {Menu.subMenu.map((subMenu, subIndex) => (
+                        <li 
+                          key={subIndex} 
+                          className={`text-sm flex items-center gap-x-2 py-2 px-2 rounded-md
+                            transition-all duration-200 ease-in-out
+                            hover:bg-gray-50/50
+                            ${toKebab(subMenu) === selectedSubMenu ? "text-light-primary" : "text-gray-600"}`}
+                          onClick={e => { e.stopPropagation(); handleSubMenuClick(Menu, subMenu); }}
                         >
-                          <FaChevronRight className="text-xs" />
-                        </span>
-                        <span className={`truncate
-                          ${toKebab(subMenu) === selectedSubMenu ? "font-medium" : ""}`}
-                        >
-                          {subMenu}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                          <span className={`transition-colors duration-200
+                            ${toKebab(subMenu) === selectedSubMenu ? "text-light-primary" : "text-gray-400"}`}
+                          >
+                            <FaChevronRight className="text-xs" />
+                          </span>
+                          <span className={`truncate
+                            ${toKebab(subMenu) === selectedSubMenu ? "font-medium" : ""}`}
+                          >
+                            {subMenu}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </li>
             ))}

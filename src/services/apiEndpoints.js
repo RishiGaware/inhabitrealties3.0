@@ -9,6 +9,7 @@ export const USER_ENDPOINTS = {
   GET_BY_ID: (id) => `/users/${id}`,
   EDIT: (id) => `/users/edit/${id}`,
   DELETE: (id) => `/users/delete/${id}`,
+  GET_ALL_WITH_PARAMS: '/users/withparams',
 };
 
 export const CUSTOMER_ENDPOINTS = {

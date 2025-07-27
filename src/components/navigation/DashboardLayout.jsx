@@ -30,26 +30,46 @@ const DashboardLayout = ({ children }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Initialize submenus based on current route
+  // Initialize submenus based on current route (only on mount)
   useEffect(() => {
     const path = location.pathname.split('/');
     if (path[1] && path[2]) {
       // If we're on a submenu page, ensure the parent menu is expanded
       const parentKey = path[1];
-      if (!subMenus[parentKey]) {
-        setSubMenus(prev => ({
-          ...prev,
-          [parentKey]: true
-        }));
-      }
+      setSubMenus(prev => {
+        // Only initialize if no menus are currently open
+        const hasOpenMenus = Object.values(prev).some(val => val);
+        if (!hasOpenMenus) {
+          return {
+            [parentKey]: true
+          };
+        }
+        return prev; // Keep current state if menus are already set
+      });
     }
-  }, [location.pathname]);
+  }, []); // Only run on mount, not on every location change
 
   const toggleSubMenu = (menuKey) => {
-    setSubMenus(prev => ({
-      ...prev,
-      [menuKey]: !prev[menuKey]
-    }));
+    setSubMenus(prev => {
+      // If the clicked menu is already open, close it
+      if (prev[menuKey]) {
+        return {
+          ...prev,
+          [menuKey]: false
+        };
+      }
+      
+      // If the clicked menu is closed, open it and close all others
+      const newSubMenus = {};
+      // Close all existing menus
+      Object.keys(prev).forEach(key => {
+        newSubMenus[key] = false;
+      });
+      // Open the clicked menu
+      newSubMenus[menuKey] = true;
+      
+      return newSubMenus;
+    });
   };
 
   const handleMobileOpen = () => {

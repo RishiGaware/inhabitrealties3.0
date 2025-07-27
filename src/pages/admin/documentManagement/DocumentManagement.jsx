@@ -46,6 +46,7 @@ import CommonPagination from '../../../components/common/pagination/CommonPagina
 import FormModal from '../../../components/common/FormModal';
 import FloatingInput from '../../../components/common/FloatingInput';
 import SearchableSelect from '../../../components/common/SearchableSelect';
+import SearchAndFilter from '../../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import DocumentUpload from '../../../components/common/DocumentUpload';
 import { useDocumentContext } from '../../../context/DocumentContext';
@@ -61,9 +62,8 @@ const DocumentManagement = () => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(12); // Changed to 12 for cards (3x4 grid)
+  const [pageSize, setPageSize] = useState(5); // Default to 5 documents per page
   const [searchTerm, setSearchTerm] = useState('');
-  const [showFilters, setShowFilters] = useState(false);
   const [userFilter, setUserFilter] = useState('');
   const [documentTypeFilter, setDocumentTypeFilter] = useState('');
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
@@ -181,12 +181,25 @@ const DocumentManagement = () => {
   };
 
   const handlePageChange = (newPage) => {
-    if (newPage > 0 && newPage <= Math.ceil(filteredDocuments.length / pageSize)) {
+    const totalPages = Math.ceil(filteredDocuments.length / pageSize);
+    console.log('DocumentManagement: handlePageChange called', {
+      newPage,
+      totalPages,
+      filteredDocumentsLength: filteredDocuments.length,
+      pageSize,
+      currentPage
+    });
+    if (newPage > 0 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
   };
 
   const handlePageSizeChange = (newSize) => {
+    console.log('DocumentManagement: handlePageSizeChange called', {
+      oldSize: pageSize,
+      newSize,
+      currentPage
+    });
     setPageSize(newSize);
     setCurrentPage(1);
   };
@@ -574,69 +587,49 @@ const DocumentManagement = () => {
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
 
-      <Box mb={6}>
-        <Flex direction={{ base: 'column', sm: 'row' }} gap={3} align={{ base: 'stretch', sm: 'center' }}>
-          <Box maxW="400px" flex={1}>
-            <InputGroup>
-              <InputLeftElement pointerEvents="none">
-                <SearchIcon color="gray.300" />
-              </InputLeftElement>
-              <Input
-                placeholder="Search documents..."
-                value={searchTerm}
-                onChange={handleSearch}
-                size="md"
-              />
-            </InputGroup>
-          </Box>
-          <IconButton
-            icon={<FaFilter />}
-            aria-label="Show filters"
-            variant={showFilters ? 'solid' : 'outline'}
-            colorScheme="purple"
-            size="sm"
-            onClick={() => setShowFilters(v => !v)}
-            ml={{ base: 0, sm: 2 }}
-            alignSelf={{ base: 'flex-start', sm: 'center' }}
-          />
-          {(userFilter || documentTypeFilter) && (
-            <Button
-              size="sm"
-              colorScheme="gray"
-              variant="outline"
-              onClick={() => { setUserFilter(''); setDocumentTypeFilter(''); }}
-              ml={{ base: 0, sm: 2 }}
-              alignSelf={{ base: 'flex-start', sm: 'center' }}
-            >
-              Clear Filter
-            </Button>
-          )}
-        </Flex>
-        {showFilters && (
-          <Flex mt={3} gap={3} direction={{ base: 'column', sm: 'row' }}>
-            <Box minW={{ base: '120px', sm: '180px' }} flexShrink={0}>
-              <SearchableSelect
-                options={userOptions}
-                value={userFilter}
-                onChange={setUserFilter}
-                placeholder="Filter by user"
-                size="sm"
-                isClearable
-              />
-            </Box>
-            <Box minW={{ base: '120px', sm: '180px' }} flexShrink={0}>
-              <SearchableSelect
-                options={documentTypeOptions}
-                value={documentTypeFilter}
-                onChange={setDocumentTypeFilter}
-                placeholder="Filter by type"
-                size="sm"
-                isClearable
-              />
-            </Box>
-          </Flex>
-        )}
-      </Box>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {
+          // Reset to first page when search is submitted
+          setCurrentPage(1);
+        }}
+        searchPlaceholder="Search documents..."
+        filters={{ user: userFilter, documentType: documentTypeFilter }}
+        onFilterChange={(key, value) => {
+          if (key === 'user') {
+            setUserFilter(value);
+          } else if (key === 'documentType') {
+            setDocumentTypeFilter(value);
+          }
+        }}
+        onApplyFilters={() => {
+          // Reset to first page when filters are applied
+          setCurrentPage(1);
+        }}
+        onClearFilters={() => {
+          setUserFilter('');
+          setDocumentTypeFilter('');
+          setSearchTerm('');
+          // Reset to first page when filters are cleared
+          setCurrentPage(1);
+        }}
+        filterOptions={{
+          user: {
+            label: "User",
+            placeholder: "Filter by user",
+            options: userOptions
+          },
+          documentType: {
+            label: "Document Type",
+            placeholder: "Filter by type",
+            options: documentTypeOptions
+          }
+        }}
+        title="Filter Documents"
+        activeFiltersCount={(userFilter ? 1 : 0) + (documentTypeFilter ? 1 : 0)}
+      />
       
       {/* Document Cards Grid */}
       <Box mb={6}>
@@ -652,9 +645,21 @@ const DocumentManagement = () => {
           </Box>
         ) : (
           <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4, xl: 5 }} spacing={{ base: 3, sm: 4, md: 5, lg: 6 }}>
-            {filteredDocuments
-              .slice((currentPage - 1) * pageSize, currentPage * pageSize)
-              .map(renderDocumentCard)}
+            {(() => {
+              const startIndex = (currentPage - 1) * pageSize;
+              const endIndex = currentPage * pageSize;
+              const documentsToShow = filteredDocuments.slice(startIndex, endIndex);
+              console.log('DocumentManagement: Document slicing', {
+                startIndex,
+                endIndex,
+                pageSize,
+                currentPage,
+                totalDocuments: filteredDocuments.length,
+                documentsToShow: documentsToShow.length,
+                sliceRange: `${startIndex} to ${endIndex}`
+              });
+              return documentsToShow.map(renderDocumentCard);
+            })()}
           </SimpleGrid>
         )}
       </Box>
@@ -662,6 +667,13 @@ const DocumentManagement = () => {
       {/* Pagination */}
       {filteredDocuments.length > 0 && (
         <Box mt={6}>
+          {console.log('DocumentManagement: Rendering pagination', {
+            currentPage,
+            totalPages: Math.ceil(filteredDocuments.length / pageSize),
+            filteredDocumentsLength: filteredDocuments.length,
+            pageSize,
+            totalItems: filteredDocuments.length
+          })}
           <CommonPagination
             currentPage={currentPage}
             totalPages={Math.ceil(filteredDocuments.length / pageSize)}

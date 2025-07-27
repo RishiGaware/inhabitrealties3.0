@@ -34,7 +34,6 @@ const MyBookings = () => {
 
   const handleViewDetails = () => {
     // TODO: Implement view details functionality
-    console.log('View details clicked');
   };
 
   const columns = [

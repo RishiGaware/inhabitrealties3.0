@@ -26,6 +26,7 @@ import TableContainer from '../../../components/common/Table/TableContainer';
 import FormModal from '../../../components/common/FormModal';
 import FloatingInput from '../../../components/common/FloatingInput';
 import SearchableSelect from '../../../components/common/SearchableSelect';
+import SearchAndFilter from '../../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import { useUserContext } from '../../../context/UserContext';
 import { fetchRoles } from '../../../services/rolemanagement/roleService';
@@ -450,25 +451,32 @@ const UserManagement = () => {
         </Heading>
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
-      <HStack spacing={4} mb={6}>
-        <InputGroup maxW="400px">
-          <InputLeftElement pointerEvents="none"><SearchIcon color="gray.300" /></InputLeftElement>
-          <Input placeholder="Search users..." value={searchTerm} onChange={handleSearch} />
-        </InputGroup>
-        <Select
-          maxW="200px"
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          placeholder="Filter by role"
-          isDisabled={rolesLoading}
-        >
-          {roleOptions.map(role => (
-            <option key={role.value} value={role.value}>
-              {role.label}
-            </option>
-          ))}
-        </Select>
-      </HStack>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {}} // No API search needed for this page
+        searchPlaceholder="Search users..."
+        filters={{ role: roleFilter }}
+        onFilterChange={(key, value) => {
+          if (key === 'role') {
+            setRoleFilter(value);
+          }
+        }}
+        onApplyFilters={() => {}} // No API filter needed for this page
+        onClearFilters={() => {
+          setRoleFilter('');
+        }}
+        filterOptions={{
+          role: {
+            label: "Role",
+            placeholder: "Filter by role",
+            options: roleOptions
+          }
+        }}
+        title="Filter Users"
+        activeFiltersCount={roleFilter ? 1 : 0}
+      />
       <TableContainer>
         <CommonTable
           columns={columns}

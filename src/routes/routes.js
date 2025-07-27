@@ -18,6 +18,7 @@ import LeadManagement from '../pages/lead/LeadManagement';
 import AddLead from '../pages/lead/AddLead';
 import ViewLeads from '../pages/lead/ViewLeads';
 import LeadQualification from '../pages/lead/LeadQualification';
+import Leads from '../pages/lead/Leads';
 import CustomerProfiles from '../pages/customers/CustomerProfiles';
 import CustomerDocuments from '../pages/customers/Documents';
 import CustomerDocumentTypeManagement from '../pages/customers/DocumentTypeManagement';
@@ -91,6 +92,7 @@ export const ROUTES = [
   { name: 'propertyMasterDisplay', path: '/property-master-display', component: PropertyMasterDisplay, permissions: 'public' },
 
   // Lead
+  { name: 'leads', path: '/leads', component: Leads, permissions: 'public' },
   { name: 'leadAdd', path: '/lead/add', component: AddLead, permissions: 'public' },
   { name: 'leadView', path: '/lead/view', component: ViewLeads, permissions: 'public' },
   { name: 'leadQualification', path: '/lead/qualification', component: LeadQualification, permissions: 'public' },

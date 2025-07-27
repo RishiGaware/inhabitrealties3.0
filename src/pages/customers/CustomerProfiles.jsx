@@ -16,7 +16,6 @@ import {
   Heading,
   Switch,
   FormLabel,
-  useToast,
   Badge,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
@@ -26,11 +25,14 @@ import TableContainer from '../../components/common/Table/TableContainer';
 import FormModal from '../../components/common/FormModal';
 import FloatingInput from '../../components/common/FloatingInput';
 import SearchableSelect from '../../components/common/SearchableSelect';
+import SearchAndFilter from '../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
 import { useUserContext } from '../../context/UserContext';
 import { fetchRoles } from '../../services/rolemanagement/roleService';
+import { fetchUsersWithParams } from '../../services/usermanagement/userService';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import { showErrorToast } from '../../utils/toastUtils';
 
 const CustomerProfiles = () => {
   // All hooks must be called at the top level
@@ -41,7 +43,7 @@ const CustomerProfiles = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-  const [roleFilter, setRoleFilter] = useState('');
+  const [publishedFilter, setPublishedFilter] = useState('');
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(false);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -52,10 +54,10 @@ const CustomerProfiles = () => {
   } = useDisclosure();
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
-  const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
-  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  const [isFiltered, setIsFiltered] = useState(false);
 
   // Get user context
   const userContext = useUserContext();
@@ -91,30 +93,144 @@ const CustomerProfiles = () => {
     }
   };
 
-  // Memoize filtered users to prevent unnecessary re-renders
-  const filteredUsers = useMemo(() => {
-    let filtered = users;
+  // Memoize filtered users to prevent unnecessary re-renders (fallback for local filtering)
+  const localFilteredUsers = useMemo(() => {
+    // Use filtered users from API if available, otherwise use context users
+    let filtered = isFiltered ? filteredUsers : users;
+    
+    // For customer management, only show users with "user" role
+    filtered = filtered.filter(user => user.role === "USER");
+    
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.lastName.toLowerCase().includes(searchTerm.toLowerCase())
+        user.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.phoneNumber && user.phoneNumber.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
-    if (roleFilter) {
-      filtered = filtered.filter(user => user.role === roleFilter);
-    }
     return filtered;
-  }, [users, searchTerm, roleFilter]);
+  }, [users, filteredUsers, isFiltered, searchTerm]);
+
+  // Use filtered users from API if available, otherwise use local filtered users
+  const displayUsers = isFiltered ? filteredUsers : localFilteredUsers;
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      await getAllUsers();
+      // First, get all roles to find the "USER" role ID
       await getAllRoles();
+      
+      // Wait a bit for roles to be set in state, then find the "USER" role ID
+      const userRole = roles.find(role => role.name === "USER");
+      
+      if (!userRole) {
+        console.error('CustomerProfiles: User role not found, using fallback role ID');
+        // Fallback: Use the known USER role ID from your API response
+        const fallbackRoleId = "681632b6ab1624e874bb2dcf";
+        
+        // Use fetchUsersWithParams to get only users with "USER" role
+        const response = await fetchUsersWithParams({ roleId: fallbackRoleId });
+        
+        // Store the filtered users directly in state for customer management
+        if (response && response.data) {
+          setFilteredUsers(response.data);
+          setIsFiltered(true);
+        }
+        return;
+      }
+      
+      // Use fetchUsersWithParams to get only users with "USER" role
+      const response = await fetchUsersWithParams({ roleId: userRole._id });
+      
+      // Store the filtered users directly in state for customer management
+      if (response && response.data) {
+        setFilteredUsers(response.data);
+        setIsFiltered(true);
+      }
+    } catch (error) {
+      console.error('CustomerProfiles: Error fetching users:', error);
+      showErrorToast('Failed to fetch users');
     } finally {
       setLoading(false);
     }
+  };
+
+  // Fetch users with parameters from API
+  const fetchUsersWithFilters = async (params) => {
+    setLoading(true);
+    try {
+      // Find the "USER" role ID
+      const userRole = roles.find(role => role.name === "USER");
+      
+      if (!userRole) {
+        console.error('CustomerProfiles: User role not found for filtering, using fallback');
+        // Fallback: Use the known USER role ID from your API response
+        const fallbackRoleId = "681632b6ab1624e874bb2dcf";
+        
+        // For customer management, always filter by "USER" role ID
+        const customerParams = {
+          ...params,
+          roleId: fallbackRoleId // Use the fallback role ID
+        };
+        
+        const response = await fetchUsersWithParams(customerParams);
+        setFilteredUsers(response.data || []);
+        setIsFiltered(true);
+        return;
+      }
+      
+      // For customer management, always filter by "USER" role ID
+      const customerParams = {
+        ...params,
+        roleId: userRole._id // Use the actual role ID from the database
+      };
+      
+      const response = await fetchUsersWithParams(customerParams);
+      setFilteredUsers(response.data || []);
+      setIsFiltered(true);
+    } catch (error) {
+      console.error('CustomerProfiles: Fetch users with params error:', error);
+      setIsFiltered(false); // Fallback to local filtering
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle search and filter submission
+  const handleSearchSubmit = async () => {
+    const params = {};
+    
+    // Add search term to multiple fields for comprehensive search
+    if (searchTerm) {
+      params.email = searchTerm;
+      params.firstName = searchTerm;
+      params.lastName = searchTerm;
+      params.phoneNumber = searchTerm;
+    }
+    
+    // Add published filter if set
+    if (publishedFilter) {
+      params.published = publishedFilter === 'true';
+    }
+    
+    // Always call fetchUsersWithFilters with params (role will be added automatically)
+    await fetchUsersWithFilters(params);
+  };
+
+  // Handle filter changes (removed role filter for customers)
+  const handleFilterChange = (key, value) => {
+    if (key === 'published') {
+      setPublishedFilter(value);
+    }
+  };
+
+  // Clear all filters
+  const handleClearFilters = async () => {
+    setSearchTerm('');
+    setPublishedFilter('');
+    // Call service with empty params to get all customers (still filtered by USER role)
+    await fetchUsersWithFilters({});
   };
 
   useEffect(() => {
@@ -123,11 +239,11 @@ const CustomerProfiles = () => {
 
   // Only reset page when filtered results change significantly
   useEffect(() => {
-    const maxPage = Math.ceil(filteredUsers.length / pageSize);
+    const maxPage = Math.ceil(displayUsers.length / pageSize);
     if (currentPage > maxPage && maxPage > 0) {
       setCurrentPage(1);
     }
-  }, [filteredUsers.length, pageSize, currentPage]);
+  }, [displayUsers.length, pageSize, currentPage]);
 
   const handleSearch = (event) => {
     setSearchTerm(event.target.value);
@@ -172,80 +288,55 @@ const CustomerProfiles = () => {
   };
 
   const confirmDelete = async () => {
-    if (userToDelete && !isApiCallInProgress && !isDeleteLoading) {
-      setIsApiCallInProgress(true);
+    if (!userToDelete) return;
+    
+    try {
       setIsDeleteLoading(true);
-      try {
-        await removeUser(userToDelete._id);
-        onDeleteClose();
-        setUserToDelete(null);
-      } catch (error) {
-        console.error('Delete error:', error);
-      } finally {
-        setIsApiCallInProgress(false);
-        setIsDeleteLoading(false);
-      }
+      await removeUser(userToDelete._id);
+      
+      // Refresh the customer data after delete
+      await fetchUsers();
+      
+      onDeleteClose();
+      setUserToDelete(null);
+    } catch (error) {
+      console.error('CustomerProfiles: Delete error:', error);
+      // Error toast is handled by the context
+    } finally {
+      setIsDeleteLoading(false);
     }
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     
-    // Prevent multiple API calls
-    if (isApiCallInProgress || isSubmitting) {
-      return;
-    }
-    
     if (!validateForm()) {
       return;
     }
     
-    setIsSubmitting(true);
-    setIsApiCallInProgress(true);
-    
     try {
+      setIsSubmitting(true);
+      
       if (selectedUser) {
-        // Prepare edit data with all necessary fields
-        const editData = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          role: formData.role, // This will be the role ID (e.g., "68162f63ff2da55b40ca61b8")
-          published: formData.published !== undefined ? formData.published : true,
-        };
-        
-        // Add password only if provided
-        if (formData.password) {
-          editData.password = formData.password;
-        }
-        
-        const result = await updateUser(selectedUser._id, editData);
+        // Update existing user
+        await updateUser(selectedUser._id, formData);
       } else {
-        // Prepare add data
-        const addData = {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          role: formData.role, // This will be the role ID (e.g., "68162f63ff2da55b40ca61b8")
-          password: formData.password,
-          published: formData.published !== undefined ? formData.published : true,
-        };
-        
-        const result = await addUser(addData);
+        // Add new user
+        await addUser(formData);
       }
       
-      setIsSubmitting(false);
-      setIsApiCallInProgress(false);
+      // Refresh the customer data after add/edit
+      await fetchUsers();
+      
+      onClose();
       setSelectedUser(null);
       setFormData({});
-      onClose();
+      setErrors({});
     } catch (error) {
-      console.error('Form submission error:', error);
+      console.error('CustomerProfiles: Form submission error:', error);
+      // Error toast is handled by the context
+    } finally {
       setIsSubmitting(false);
-      setIsApiCallInProgress(false);
-      // Don't close the modal on error so user can fix the data
     }
   };
 
@@ -450,29 +541,33 @@ const CustomerProfiles = () => {
         </Heading>
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
-      <HStack spacing={4} mb={6}>
-        <InputGroup maxW="400px">
-          <InputLeftElement pointerEvents="none"><SearchIcon color="gray.300" /></InputLeftElement>
-          <Input placeholder="Search users..." value={searchTerm} onChange={handleSearch} />
-        </InputGroup>
-        <Select
-          maxW="200px"
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value)}
-          placeholder="Filter by role"
-          isDisabled={rolesLoading}
-        >
-          {roleOptions.map(role => (
-            <option key={role.value} value={role.value}>
-              {role.label}
-            </option>
-          ))}
-        </Select>
-      </HStack>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={handleSearchSubmit}
+        searchPlaceholder="Search customers by name, email, or phone..."
+        filters={{ published: publishedFilter }}
+        onFilterChange={handleFilterChange}
+        onApplyFilters={handleSearchSubmit}
+        onClearFilters={handleClearFilters}
+        filterOptions={{
+          published: {
+            label: "Published Status",
+            placeholder: "Filter by published status",
+            options: [
+              { value: "true", label: "Published" },
+              { value: "false", label: "Unpublished" }
+            ]
+          }
+        }}
+        title="Search Customers"
+        activeFiltersCount={publishedFilter ? 1 : 0}
+      />
       <TableContainer>
         <CommonTable
           columns={columns}
-          data={filteredUsers.slice(
+          data={displayUsers.slice(
             (currentPage - 1) * pageSize,
             currentPage * pageSize
           )}
@@ -481,11 +576,11 @@ const CustomerProfiles = () => {
         />
         <CommonPagination
           currentPage={currentPage}
-          totalPages={Math.ceil(filteredUsers.length / pageSize)}
+          totalPages={Math.ceil(displayUsers.length / pageSize)}
           onPageChange={handlePageChange}
           pageSize={pageSize}
           onPageSizeChange={handlePageSizeChange}
-          totalItems={filteredUsers.length}
+          totalItems={displayUsers.length}
         />
       </TableContainer>
 
