@@ -13,6 +13,7 @@ import {
   Button,
   Flex,
   Heading,
+  Badge,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
 import CommonTable from '../../../components/common/Table/CommonTable';
@@ -208,13 +209,50 @@ const DocumentTypeManagement = () => {
   };
 
   const columns = [
-    { key: 'name', label: 'Document Type Name' },
-    { key: 'description', label: 'Description' },
-    { key: 'published', label: 'Status', render: (published) => (
-      <Text color={published ? 'green.500' : 'red.500'} fontWeight="medium">
-        {published ? 'Active' : 'Inactive'}
-      </Text>
-    )},
+    { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, documentType) => {
+        // Find the index of this document type in the filtered data
+        const documentTypeIndex = filteredDocumentTypes.findIndex(dt => dt._id === documentType._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {documentTypeIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
+    },
+    { 
+      key: 'name', 
+      label: 'Document Type Name',
+      render: (value) => (
+        <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="150px">
+          {value}
+        </Text>
+      ),
+      width: "150px"
+    },
+    { 
+      key: 'description', 
+      label: 'Description',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="200px">
+          {value || 'No description'}
+        </Text>
+      ),
+      width: "200px"
+    },
+    { 
+      key: 'published', 
+      label: 'Status', 
+      render: (published) => (
+        <Badge colorScheme={published ? 'green' : 'red'} variant="solid" fontSize="xs">
+          {published ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+      width: "80px"
+    }
   ];
 
   const renderRowActions = (documentType) => (

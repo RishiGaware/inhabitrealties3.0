@@ -268,41 +268,59 @@ const MeetingStatusManagement = () => {
 
   const columns = [
     { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, status) => {
+        // Find the index of this status in the filtered data
+        const statusIndex = filteredStatuses.findIndex(s => s._id === status._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {statusIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
+    },
+    { 
       key: 'name', 
       label: 'Status Name',
       render: (value) => (
         <HStack spacing={2}>
           <Text fontSize="lg">{getStatusIcon(value)}</Text>
-          <Text fontWeight="semibold" color={textColor}>{value}</Text>
+          <Text fontWeight="semibold" color={textColor} noOfLines={1} maxW="120px">{value}</Text>
         </HStack>
-      )
+      ),
+      width: "140px"
     },
     { 
       key: 'description', 
       label: 'Description',
       render: (value) => (
-        <Text color={subTextColor} fontSize="sm">
+        <Text color={subTextColor} fontSize="sm" noOfLines={1} maxW="200px">
           {value || 'No description'}
         </Text>
-      )
+      ),
+      width: "200px"
     },
     { 
       key: 'statusCode', 
       label: 'Status Code',
       render: (value) => (
-        <Badge colorScheme="purple" variant="solid">
+        <Badge colorScheme="purple" variant="solid" fontSize="xs">
           {value}
         </Badge>
-      )
+      ),
+      width: "100px"
     },
     {
       key: 'published',
       label: 'Status',
       render: (published) => (
-        <Badge colorScheme={published ? 'green' : 'red'} variant="solid">
+        <Badge colorScheme={published ? 'green' : 'red'} variant="solid" fontSize="xs">
           {published ? 'Active' : 'Inactive'}
         </Badge>
-      )
+      ),
+      width: "80px"
     }
   ];
 

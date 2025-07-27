@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Heading, Flex, Text, Tag, IconButton, Grid } from '@chakra-ui/react';
+import { Box, Heading, Flex, Text, Tag, IconButton, Grid, Badge } from '@chakra-ui/react';
 import { FaEye, FaMoneyBillWave, FaCreditCard, FaReceipt } from 'react-icons/fa';
 import CommonCard from '../../components/common/Card/CommonCard';
 import CommonTable from '../../components/common/Table/CommonTable';
@@ -38,25 +38,100 @@ const Payments = () => {
     }
   ]);
 
-  const handleViewDetails = (payment) => {
+  const handleViewDetails = () => {
+    // TODO: Implement view details functionality
+    console.log('View details clicked');
   };
 
   const columns = [
-    { key: 'propertyName', label: 'Property' },
-    { key: 'paymentType', label: 'Payment Type' },
-    { key: 'amount', label: 'Amount', render: (amount) => `₹${amount}` },
+    { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, payment) => {
+        // Find the index of this payment in the data
+        const paymentIndex = payments.findIndex(p => p._id === payment._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {paymentIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
+    },
+    { 
+      key: 'propertyName', 
+      label: 'Property',
+      render: (value) => (
+        <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
+          {value}
+        </Text>
+      ),
+      width: "120px"
+    },
+    { 
+      key: 'paymentType', 
+      label: 'Payment Type',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {value}
+        </Text>
+      ),
+      width: "100px"
+    },
+    { 
+      key: 'amount', 
+      label: 'Amount', 
+      render: (amount) => (
+        <Text color="gray.700" noOfLines={1} maxW="80px">
+          ₹{amount}
+        </Text>
+      ),
+      width: "80px"
+    },
     {
       key: 'status',
       label: 'Status',
       render: (status) => (
-        <Tag colorScheme={status === 'Completed' ? 'green' : status === 'Pending' ? 'orange' : 'red'}>
+        <Badge 
+          colorScheme={status === 'Completed' ? 'green' : status === 'Pending' ? 'orange' : 'red'} 
+          variant="solid" 
+          fontSize="xs"
+        >
           {status}
-        </Tag>
-      )
+        </Badge>
+      ),
+      width: "80px"
     },
-    { key: 'date', label: 'Date' },
-    { key: 'method', label: 'Payment Method' },
-    { key: 'transactionId', label: 'Transaction ID' }
+    { 
+      key: 'date', 
+      label: 'Date',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {value}
+        </Text>
+      ),
+      width: "100px"
+    },
+    { 
+      key: 'method', 
+      label: 'Payment Method',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {value}
+        </Text>
+      ),
+      width: "100px"
+    },
+    { 
+      key: 'transactionId', 
+      label: 'Transaction ID',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="120px">
+          {value}
+        </Text>
+      ),
+      width: "120px"
+    }
   ];
 
   const renderRowActions = (payment) => (

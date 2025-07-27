@@ -541,8 +541,8 @@ const UserProfile = () => {
                         isChecked={formData.isPublic}
                         onChange={handleInputChange}
                         isDisabled={!isEditing}
-                        colorScheme="brand"
-                        size={{ base: 'sm', md: 'md' }}
+                        colorScheme="green"
+                        size="md"
                       />
                     </FormControl>
 

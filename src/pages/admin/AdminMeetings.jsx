@@ -653,36 +653,53 @@ const AdminMeetings = () => {
 
   const columns = [
     { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, meeting) => {
+        // Find the index of this meeting in the filtered data
+        const meetingIndex = filteredMeetings.findIndex(m => m.id === meeting.id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {meetingIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
+    },
+    { 
       key: 'title', 
       label: 'Title',
       render: (value, meeting) => (
         <Box>
-          <Text fontWeight="semibold" color={textColor}>{value}</Text>
-          <Text fontSize="xs" color={subTextColor}>{meeting.description || 'No description'}</Text>
+          <Text fontWeight="semibold" color={textColor} noOfLines={1} maxW="150px">{value}</Text>
+          <Text fontSize="xs" color={subTextColor} noOfLines={1} maxW="150px">{meeting.description || 'No description'}</Text>
         </Box>
-      )
+      ),
+      width: "180px"
     },
     { 
       key: 'customerName', 
       label: 'Customer',
       render: (value, meeting) => (
         <Box>
-          <Text fontWeight="semibold" color={textColor}>{value}</Text>
-          <Text fontSize="xs" color={subTextColor}>{meeting.customerEmail}</Text>
+          <Text fontWeight="semibold" color={textColor} noOfLines={1} maxW="120px">{value}</Text>
+          <Text fontSize="xs" color={subTextColor} noOfLines={1} maxW="120px">{meeting.customerEmail}</Text>
         </Box>
-      )
+      ),
+      width: "140px"
     },
     { 
       key: 'propertyName', 
       label: 'Property',
       render: (value, meeting) => (
         <Box>
-          <Text fontWeight="semibold" color={textColor}>{value}</Text>
-          <Text fontSize="xs" color={subTextColor}>
+          <Text fontWeight="semibold" color={textColor} noOfLines={1} maxW="120px">{value}</Text>
+          <Text fontSize="xs" color={subTextColor} noOfLines={1} maxW="120px">
             {meeting.propertyLocation} • {meeting.propertyPrice}
           </Text>
         </Box>
-      )
+      ),
+      width: "160px"
     },
     { 
       key: 'meetingDate', 
@@ -691,24 +708,26 @@ const AdminMeetings = () => {
         const duration = calculateDuration(meeting.startTime, meeting.endTime);
         return (
           <Box>
-            <Text fontWeight="semibold" color={textColor}>
+            <Text fontWeight="semibold" color={textColor} noOfLines={1} maxW="100px">
               {new Date(meeting.meetingDate).toLocaleDateString()}
             </Text>
-            <Text fontSize="xs" color={subTextColor}>
+            <Text fontSize="xs" color={subTextColor} noOfLines={1} maxW="100px">
               {meeting.startTime} - {meeting.endTime || 'No end time'} ({duration})
             </Text>
           </Box>
         );
-      }
+      },
+      width: "120px"
     },
     {
       key: 'status',
       label: 'Status',
       render: (status) => (
-        <Badge colorScheme={getStatusColor(status)} variant="solid">
+        <Badge colorScheme={getStatusColor(status)} variant="solid" fontSize="xs">
           {getStatusIcon(status)} {status}
         </Badge>
-      )
+      ),
+      width: "100px"
     }
   ];
 

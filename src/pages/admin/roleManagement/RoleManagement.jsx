@@ -13,6 +13,7 @@ import {
   Button,
   Flex,
   Heading,
+  Badge,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
 import CommonTable from '../../../components/common/Table/CommonTable';
@@ -209,18 +210,50 @@ const RoleManagement = () => {
   };
 
   const columns = [
-    { key: 'name', label: 'Role Name' },
-    { key: 'description', label: 'Description' },
     { 
-      key: 'createdAt', 
-      label: 'Created Date', 
-      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A' 
+      key: 'index', 
+      label: 'ID',
+      render: (value, role) => {
+        // Find the index of this role in the filtered data
+        const roleIndex = filteredRoles.findIndex(r => r._id === role._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {roleIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
+    },
+    { 
+      key: 'name', 
+      label: 'Role Name',
+      render: (value) => (
+        <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
+          {value}
+        </Text>
+      ),
+      width: "120px"
+    },
+    { 
+      key: 'description', 
+      label: 'Description',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="200px">
+          {value || 'No description'}
+        </Text>
+      ),
+      width: "200px"
     },
     { 
       key: 'published', 
-      label: 'Status', 
-      render: (published) => published ? 'Active' : 'Inactive' 
-    },
+      label: 'Status',
+      render: (published) => (
+        <Badge colorScheme={published ? 'green' : 'red'} variant="solid" fontSize="xs">
+          {published ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+      width: "80px"
+    }
   ];
 
   const renderRowActions = (role) => (

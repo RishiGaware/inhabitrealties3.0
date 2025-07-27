@@ -17,6 +17,7 @@ import {
   Switch,
   FormLabel,
   useToast,
+  Badge,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
 import CommonTable from '../../components/common/Table/CommonTable';
@@ -337,36 +338,70 @@ const CustomerProfiles = () => {
   };
 
   const columns = [
-    { key: 'name', label: 'Name', render: (_, row) => `${row.firstName} ${row.lastName}` },
-    { key: 'email', label: 'Email' },
-    { key: 'phoneNumber', label: 'Phone' },
-    { key: 'role', label: 'Role', render: (role) => getRoleLabel(role) },
-    { key: 'published', label: 'Status', render: (s) => (s ? 'Active' : 'Inactive') },
-    {
-      Header: 'Actions',
-      accessor: 'actions',
-      Cell: ({ row }) => (
-        <Flex>
-          <IconButton
-            key="edit"
-            icon={<EditIcon />}
-            variant="outline"
-            colorScheme="brand"
-            aria-label="Edit user"
-            mr={2}
-            onClick={() => handleEdit(row.original)}
-          />
-          <IconButton
-            key="delete"
-            icon={<DeleteIcon />}
-            variant="outline"
-            colorScheme="red"
-            aria-label="Delete user"
-            onClick={() => handleDelete(row.original)}
-          />
-        </Flex>
-      ),
+    { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, user) => {
+        // Find the index of this user in the filtered data
+        const userIndex = filteredUsers.findIndex(u => u._id === user._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {userIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
     },
+    { 
+      key: 'name', 
+      label: 'Name', 
+      render: (_, row) => (
+        <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
+          {`${row.firstName} ${row.lastName}`}
+        </Text>
+      ),
+      width: "120px"
+    },
+    { 
+      key: 'email', 
+      label: 'Email',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="150px">
+          {value}
+        </Text>
+      ),
+      width: "150px"
+    },
+    { 
+      key: 'phoneNumber', 
+      label: 'Phone',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {value}
+        </Text>
+      ),
+      width: "100px"
+    },
+    { 
+      key: 'role', 
+      label: 'Role', 
+      render: (role) => (
+        <Text color="gray.700" noOfLines={1} maxW="80px">
+          {getRoleLabel(role)}
+        </Text>
+      ),
+      width: "80px"
+    },
+    { 
+      key: 'published', 
+      label: 'Status', 
+      render: (s) => (
+        <Badge colorScheme={s ? 'green' : 'red'} variant="solid" fontSize="xs">
+          {s ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+      width: "80px"
+    }
   ];
 
   const renderRowActions = (user) => (
@@ -593,7 +628,8 @@ const CustomerProfiles = () => {
               name="published"
               isChecked={formData.published !== undefined ? formData.published : true}
               onChange={handleInputChange}
-              colorScheme="brand"
+              colorScheme="green"
+              size="md"
             />
           </FormControl>
         </VStack>

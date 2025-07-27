@@ -15,6 +15,7 @@ import {
   Heading,
   Switch,
   FormLabel,
+  Badge,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
 import CommonTable from '../../components/common/Table/CommonTable';
@@ -228,13 +229,50 @@ const LeadStatus = () => {
   };
 
   const columns = [
-    { key: 'name', label: 'Lead Status Name' },
-    { key: 'description', label: 'Description' },
+    { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, leadStatus) => {
+        // Find the index of this lead status in the filtered data
+        const leadStatusIndex = filteredLeadStatuses.findIndex(ls => ls._id === leadStatus._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {leadStatusIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
+    },
+    { 
+      key: 'name', 
+      label: 'Status Name',
+      render: (value) => (
+        <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
+          {value}
+        </Text>
+      ),
+      width: "120px"
+    },
+    { 
+      key: 'description', 
+      label: 'Description',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="200px">
+          {value || 'No description'}
+        </Text>
+      ),
+      width: "200px"
+    },
     { 
       key: 'published', 
-      label: 'Status', 
-      render: (published) => published ? 'Active' : 'Inactive' 
-    },
+      label: 'Status',
+      render: (published) => (
+        <Badge colorScheme={published ? 'green' : 'red'} variant="solid" fontSize="xs">
+          {published ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+      width: "80px"
+    }
   ];
 
   const renderRowActions = (leadStatus) => (
@@ -355,7 +393,8 @@ const LeadStatus = () => {
               name="published"
               isChecked={formData.published !== undefined ? formData.published : true}
               onChange={handleInputChange}
-              colorScheme="brand"
+              colorScheme="green"
+              size="md"
             />
           </FormControl>
         </VStack>

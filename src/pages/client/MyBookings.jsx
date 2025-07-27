@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Heading, Flex, Text, Tag, IconButton, Grid } from '@chakra-ui/react';
+import { Box, Heading, Flex, Text, Tag, IconButton, Grid, Badge } from '@chakra-ui/react';
 import { FaEye, FaCalendar, FaMoneyBillWave } from 'react-icons/fa';
 import CommonCard from '../../components/common/Card/CommonCard';
 import CommonTable from '../../components/common/Table/CommonTable';
@@ -32,26 +32,80 @@ const MyBookings = () => {
     }
   ]);
 
-  const handleViewDetails = (booking) => {
+  const handleViewDetails = () => {
+    // TODO: Implement view details functionality
+    console.log('View details clicked');
   };
 
   const columns = [
-    { key: 'propertyName', label: 'Property Name' },
-    { key: 'propertyType', label: 'Type' },
-    { key: 'location', label: 'Location' },
-    { key: 'bookingDate', label: 'Booking Date' },
-    { key: 'visitDate', label: 'Visit Date' },
-    {
-      key: 'status',
-      label: 'Status',
-      render: (status) => (
-        <Tag colorScheme={status === 'Confirmed' ? 'green' : status === 'Pending' ? 'orange' : 'red'}>
-          {status}
-        </Tag>
-      )
+    { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, booking) => {
+        // Find the index of this booking in the data
+        const bookingIndex = bookings.findIndex(b => b._id === booking._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {bookingIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
     },
-    { key: 'amount', label: 'Amount', render: (amount) => `₹${amount}` },
-    { key: 'agent', label: 'Agent' }
+    { 
+      key: 'property', 
+      label: 'Property',
+      render: (value) => (
+        <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
+          {value}
+        </Text>
+      ),
+      width: "120px"
+    },
+    { 
+      key: 'date', 
+      label: 'Date',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {value}
+        </Text>
+      ),
+      width: "100px"
+    },
+    { 
+      key: 'status', 
+      label: 'Status',
+      render: (value) => (
+        <Badge 
+          colorScheme={value === 'Confirmed' ? 'green' : value === 'Pending' ? 'orange' : 'gray'} 
+          variant="solid" 
+          fontSize="xs"
+        >
+          {value}
+        </Badge>
+      ),
+      width: "80px"
+    },
+    { 
+      key: 'amount', 
+      label: 'Amount', 
+      render: (amount) => (
+        <Text color="gray.700" noOfLines={1} maxW="80px">
+          ₹{amount}
+        </Text>
+      ),
+      width: "80px"
+    },
+    { 
+      key: 'agent', 
+      label: 'Agent',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {value}
+        </Text>
+      ),
+      width: "100px"
+    }
   ];
 
   const renderRowActions = (booking) => (

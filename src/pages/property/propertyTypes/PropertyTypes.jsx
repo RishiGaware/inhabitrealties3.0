@@ -16,6 +16,7 @@ import {
   Switch,
   FormLabel,
   Image,
+  Badge,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
 import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
@@ -235,23 +236,70 @@ const PropertyTypes = () => {
   };
 
   const columns = [
-    { key: 'typeName', label: 'Property Type Name' },
-    { key: 'description', label: 'Description' },
+    { 
+      key: 'index', 
+      label: 'ID',
+      render: (value, propertyType) => {
+        // Find the index of this property type in the filtered data
+        const propertyTypeIndex = filteredPropertyTypes.findIndex(pt => pt._id === propertyType._id);
+        return (
+          <Text fontSize="sm" fontWeight="medium" color="gray.600">
+            {propertyTypeIndex + 1}
+          </Text>
+        );
+      },
+      width: "50px"
+    },
+    { 
+      key: 'typeName', 
+      label: 'Property Type Name',
+      render: (value) => (
+        <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="150px">
+          {value}
+        </Text>
+      ),
+      width: "150px"
+    },
+    { 
+      key: 'description', 
+      label: 'Description',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="200px">
+          {value || 'No description'}
+        </Text>
+      ),
+      width: "200px"
+    },
     { 
       key: 'createdAt', 
       label: 'Created Date', 
-      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A' 
+      render: (date) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {date ? new Date(date).toLocaleDateString() : 'N/A'}
+        </Text>
+      ),
+      width: "100px"
     },
     { 
       key: 'updatedAt', 
       label: 'Updated Date', 
-      render: (date) => date ? new Date(date).toLocaleDateString() : 'N/A' 
+      render: (date) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {date ? new Date(date).toLocaleDateString() : 'N/A'}
+        </Text>
+      ),
+      width: "100px"
     },
     { 
       key: 'published', 
       label: 'Status', 
-      render: (published) => published ? 'Active' : 'Inactive' 
-    },
+      render: (published) => (
+        <Badge colorScheme={published ? 'green' : 'red'} variant="solid" fontSize="xs">
+          {published ? 'Active' : 'Inactive'}
+        </Badge>
+      ),
+      width: "80px"
+    }
   ];
 
   const renderRowActions = (propertyType) => (
@@ -371,7 +419,8 @@ const PropertyTypes = () => {
               name="published"
               isChecked={formData.published !== undefined ? formData.published : true}
               onChange={handleInputChange}
-              colorScheme="brand"
+              colorScheme="green"
+              size="md"
             />
           </FormControl>
         </VStack>
