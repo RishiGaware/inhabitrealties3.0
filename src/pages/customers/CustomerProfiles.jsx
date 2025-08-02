@@ -234,7 +234,7 @@ const CustomerProfiles = () => {
   };
 
   useEffect(() => {
-    fetchUsers();
+    fetchUsers(); 
   }, []);
 
   // Only reset page when filtered results change significantly

@@ -80,15 +80,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       ],
       key: "payments"
     },
-    {
-      title: "Accounting", 
-      icon: <FaChartBar />,
-      subMenu: [
-        "Expense Tracking",
-        "Income Statement"
-      ],
-      key: "accounting"
-    },
+
     {
         title: "Post-Sale",
       icon: <FaHandshake />,
@@ -173,10 +165,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'rent-roll': ROUTES.RENT_ROLL,
       'lease-management': ROUTES.LEASE_MANAGEMENT
     },
-    'accounting': {
-      'expense-tracking': ROUTES.ACCOUNTING_EXPENSE_TRACKING,
-      'income-statement': ROUTES.ACCOUNTING_INCOME_STATEMENT
-    },
+    
     'postSale': {
       'referrals': ROUTES.POST_SALE_REFERRALS,
       'rewards': ROUTES.POST_SALE_REWARDS,

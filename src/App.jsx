@@ -66,8 +66,7 @@ import ThemeDemo from './pages/ThemeDemo';
 // Newly Created Pages
 import RentRoll from './pages/rent/RentRoll';
 import LeaseManagement from './pages/rent/LeaseManagement';
-import ExpenseTracking from './pages/admin/accounting/ExpenseTracking';
-import IncomeStatement from './pages/admin/accounting/IncomeStatement';
+
 import UserProfile from './pages/profile/UserProfile';
 import ReferenceSource from './pages/lead/ReferenceSource';
 import Banner from './components/Banner';
@@ -193,9 +192,7 @@ const App = () => {
             <Route path={ROUTES.RENT_ROLL} element={<DashboardLayout><RentRoll /></DashboardLayout>} />
             <Route path={ROUTES.LEASE_MANAGEMENT} element={<DashboardLayout><LeaseManagement /></DashboardLayout>} />
 
-            {/* Accounting Routes */}
-            <Route path={ROUTES.ACCOUNTING_EXPENSE_TRACKING} element={<DashboardLayout><ExpenseTracking /></DashboardLayout>} />
-            <Route path={ROUTES.ACCOUNTING_INCOME_STATEMENT} element={<DashboardLayout><IncomeStatement /></DashboardLayout>} />
+
             
             {/* Post-Sale Routes */}
             <Route path={ROUTES.POST_SALE_REFERRALS} element={<DashboardLayout><Referrals /></DashboardLayout>} />

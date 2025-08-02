@@ -74,9 +74,7 @@ export const ROUTES = {
   RENT_ROLL: '/rent/rent-roll',
   LEASE_MANAGEMENT: '/rent/lease-management',
 
-  // Accounting Routes
-  ACCOUNTING_EXPENSE_TRACKING: '/accounting/expense-tracking',
-  ACCOUNTING_INCOME_STATEMENT: '/accounting/income-statement',
+
 
   // Post-Sale Routes
   POST_SALE_REFERRALS: '/post-sale/referrals',
@@ -151,10 +149,7 @@ export const ROUTE_GROUPS = {
     ROUTES.RENT_ROLL,
     ROUTES.LEASE_MANAGEMENT
   ],
-  ACCOUNTING: [
-    ROUTES.ACCOUNTING_EXPENSE_TRACKING,
-    ROUTES.ACCOUNTING_INCOME_STATEMENT
-  ],
+
   POST_SALE: [
     ROUTES.POST_SALE_REFERRALS,
     ROUTES.POST_SALE_REWARDS,

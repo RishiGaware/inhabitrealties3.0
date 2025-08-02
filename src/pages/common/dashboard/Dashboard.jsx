@@ -233,13 +233,13 @@ const Dashboard = () => {
       bg="gray.800"
       color="white"
     >
-      <motion.div
-        variants={cardVariants}
-        whileHover="hover"
-        initial="hidden"
-        animate="visible"
-      >
-        <Card
+    <motion.div
+      variants={cardVariants}
+      whileHover="hover"
+      initial="hidden"
+      animate="visible"
+    >
+      <Card
         bg={cardBg}
         borderRadius="xl"
         boxShadow="lg"
@@ -313,7 +313,7 @@ const Dashboard = () => {
           </Flex>
         </CardBody>
       </Card>
-      </motion.div>
+    </motion.div>
     </Tooltip>
   );
 
@@ -366,11 +366,11 @@ const Dashboard = () => {
       bg="gray.800"
       color="white"
     >
-      <motion.div
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        <Button
+    <motion.div
+      whileHover={{ scale: 1.05 }}
+      whileTap={{ scale: 0.95 }}
+    >
+      <Button
         variant="outline"
         size="lg"
         h="auto"
@@ -401,7 +401,7 @@ const Dashboard = () => {
           </Text>
         </VStack>
       </Button>
-      </motion.div>
+    </motion.div>
     </Tooltip>
   );
 

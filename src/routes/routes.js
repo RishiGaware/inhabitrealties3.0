@@ -50,8 +50,7 @@ import SalesReports from '../pages/admin/sales/SalesReports';
 import ThemeDemo from '../pages/ThemeDemo';
 import RentRoll from '../pages/rent/RentRoll';
 import LeaseManagement from '../pages/rent/LeaseManagement';
-import ExpenseTracking from '../pages/admin/accounting/ExpenseTracking';
-import IncomeStatement from '../pages/admin/accounting/IncomeStatement';
+
 import UserProfile from '../pages/profile/UserProfile';
 import Settings from '../pages/Settings';
 import ReferenceSource from '../pages/lead/ReferenceSource';
@@ -124,9 +123,7 @@ export const ROUTES = [
   { name: 'rentRoll', path: '/rent/rent-roll', component: RentRoll, permissions: 'public' },
   { name: 'leaseManagement', path: '/rent/lease-management', component: LeaseManagement, permissions: 'public' },
 
-  // Accounting
-  { name: 'accountingExpenseTracking', path: '/accounting/expense-tracking', component: ExpenseTracking, permissions: 'public' },
-  { name: 'accountingIncomeStatement', path: '/accounting/income-statement', component: IncomeStatement, permissions: 'public' },
+
 
   // Post-Sale
   { name: 'postSaleReferrals', path: '/post-sale/referrals', component: Referrals, permissions: 'public' },
