@@ -225,7 +225,7 @@ const AboutUsWithBrochure = () => {
             <div className="relative">
               {/* Background Pattern */}
               <div className="absolute inset-0 bg-gradient-to-br from-purple-200 via-blue-200 to-indigo-200 rounded-xl"></div>
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/15 to-blue-600/15 rounded-xl"></div>
+              <div className="absolute inset-0 bg-gradient-to-br from-purple-600/10 to-blue-600/10 rounded-xl"></div>
               
               {/* Main Content */}
               <div className="relative bg-white rounded-xl p-4 sm:p-6 lg:p-8 border-2 border-purple-300 shadow-xl">
@@ -282,67 +282,55 @@ const AboutUsWithBrochure = () => {
                       <div className="text-center space-y-2 sm:space-y-3">
                         {/* Brochure Preview Image */}
                         <div className="flex justify-center">
-                          <div className="relative w-16 h-20 sm:w-20 sm:h-24 lg:w-24 lg:h-28 bg-gradient-to-br from-purple-600 to-blue-700 rounded-lg border-2 border-white/50 overflow-hidden shadow-xl">
-                            {/* Real Estate Brochure Image */}
-                            <div className="w-full h-full bg-gradient-to-br from-purple-600 to-blue-700 flex items-center justify-center relative">
-                              {/* Background Pattern */}
-                              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/40 to-blue-600/40"></div>
+                          <div className="relative w-16 h-20 sm:w-20 sm:h-24 lg:w-24 lg:h-28 bg-purple-600 rounded-lg border-2 border-white overflow-hidden shadow-xl">
+                            {/* Simple Brochure Design */}
+                            <div className="w-full h-full bg-purple-600 flex flex-col">
+                              {/* Header */}
+                              <div className="bg-white text-purple-600 p-1 text-center">
+                                <div className="text-xs font-bold">INHABIT</div>
+                                <div className="text-xs">REALTIES</div>
+                              </div>
                               
-                              {/* Brochure Content Layout */}
-                              <div className="relative z-10 w-full h-full flex flex-col">
-                                {/* Header Section */}
-                                <div className="bg-white/30 backdrop-blur-sm p-1 text-center border-b border-white/20">
-                                  <div className="text-white text-xs font-bold">INHABIT</div>
-                                  <div className="text-white/90 text-xs">REALTIES</div>
+                              {/* Main Content */}
+                              <div className="flex-1 p-1 bg-purple-600">
+                                {/* Icon Section */}
+                                <div className="flex justify-center items-center h-8 mb-1">
+                                  <FaBuilding className="text-white text-lg" />
                                 </div>
                                 
-                                {/* Main Content Area */}
-                                <div className="flex-1 p-1">
-                                  {/* Property Image Placeholder */}
-                                  <div className="w-full h-6 sm:h-7 bg-gradient-to-br from-green-500 to-blue-600 rounded mb-1 flex items-center justify-center border border-white/30">
-                                    <FaBuilding className="text-white text-xs sm:text-sm" />
+                                {/* Content Items */}
+                                <div className="space-y-1">
+                                  <div className="bg-white/20 rounded px-1 py-0.5 flex items-center">
+                                    <FaHome className="text-white text-xs mr-1" />
+                                    <div className="text-white text-xs font-semibold">Premium</div>
                                   </div>
-                                  
-                                  {/* Content Sections */}
-                                  <div className="space-y-0.5 sm:space-y-1">
-                                    <div className="bg-white/40 rounded px-1 py-0.5 flex items-center border border-white/20">
-                                      <FaHome className="text-white text-xs mr-1" />
-                                      <div className="text-white text-xs font-semibold">Premium</div>
-                                    </div>
-                                    <div className="bg-white/40 rounded px-1 py-0.5 flex items-center border border-white/20">
-                                      <FaUserFriends className="text-white text-xs mr-1" />
-                                      <div className="text-white text-xs">Agents</div>
-                                    </div>
-                                    <div className="bg-white/40 rounded px-1 py-0.5 flex items-center border border-white/20">
-                                      <FaChartLine className="text-white text-xs mr-1" />
-                                      <div className="text-white text-xs">Insights</div>
-                                    </div>
+                                  <div className="bg-white/20 rounded px-1 py-0.5 flex items-center">
+                                    <FaUserFriends className="text-white text-xs mr-1" />
+                                    <div className="text-white text-xs">Agents</div>
                                   </div>
-                                </div>
-                                
-                                {/* Footer Section */}
-                                <div className="bg-black/60 backdrop-blur-sm p-1 text-center border-t border-white/20">
-                                  <div className="text-white text-xs font-semibold">2024</div>
+                                  <div className="bg-white/20 rounded px-1 py-0.5 flex items-center">
+                                    <FaChartLine className="text-white text-xs mr-1" />
+                                    <div className="text-white text-xs">Insights</div>
+                                  </div>
                                 </div>
                               </div>
                               
-                              {/* Decorative Elements */}
-                              <div className="absolute top-1 right-1 w-1.5 h-1.5 bg-white/80 rounded-full shadow-sm"></div>
-                              <div className="absolute bottom-1 left-1 w-1.5 h-1.5 bg-white/60 rounded-full shadow-sm"></div>
-                              <div className="absolute top-1/3 left-1 w-1 h-1 bg-white/40 rounded-full"></div>
-                              <div className="absolute bottom-1/3 right-1 w-1 h-1 bg-white/40 rounded-full"></div>
-                            </div>
-                            
-                            {/* Overlay with file info */}
-                            <div className="absolute bottom-0 left-0 right-0 bg-black/90 backdrop-blur-sm p-1 border-t border-white/20">
-                              <div className="text-white text-xs">
-                                <div className="flex justify-between">
-                                  <span>Size:</span>
-                                  <span className="font-semibold">2.4 MB</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span>Format:</span>
-                                  <span className="font-semibold">PDF</span>
+                              {/* Footer */}
+                              <div className="bg-black text-white p-1 text-center">
+                                <div className="text-xs font-semibold">2024</div>
+                              </div>
+                              
+                              {/* File Info Overlay */}
+                              <div className="absolute bottom-0 left-0 right-0 bg-black text-white p-1">
+                                <div className="text-xs">
+                                  <div className="flex justify-between">
+                                    <span>Size:</span>
+                                    <span className="font-semibold">2.4 MB</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Format:</span>
+                                    <span className="font-semibold">PDF</span>
+                                  </div>
                                 </div>
                               </div>
                             </div>
