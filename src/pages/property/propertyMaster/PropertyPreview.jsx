@@ -1122,10 +1122,6 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         borderColor={currentImageIndex === index ? 'brand.500' : borderColor}
                         onClick={() => setCurrentImageIndex(index)}
                         transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                        _hover={{ 
-                          transform: 'scale(1.08)',
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)'
-                        }}
                         bg="white"
                         boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
                         _hover={{

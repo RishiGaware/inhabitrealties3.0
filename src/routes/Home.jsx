@@ -1,7 +1,7 @@
 import React from 'react';
 import Banner from '../components/Banner';
 import Features from '../pages/common/Features';
-import AboutUs from '../pages/common/AboutUs';
+import AboutUsWithBrochure from '../pages/common/AboutUs';
 import TopDevelopers from '../components/TopDevelopers';
 import DownloadAppSection from '../components/DownloadAppSection';
 import HouseList from '../components/Houses/HouseList';
@@ -25,7 +25,7 @@ const Home = () => {
       <Agents />
       <PropertyFeatures />
       <ImageSlider />
-      <AboutUs />
+      <AboutUsWithBrochure />
       <TopDevelopers />
       <GetStarted />
       <DownloadAppSection />
