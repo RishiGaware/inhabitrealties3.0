@@ -26,6 +26,7 @@ import DocumentTypeManagement from './pages/admin/documentTypeManagement/Documen
 import DocumentManagement from './pages/admin/documentManagement/DocumentManagement';
 import MeetingStatusManagement from './pages/admin/meetingStatusManagement/MeetingStatusManagement';
 import Reports from './pages/admin/Reports';
+import SalespersonManagement from './pages/admin/SalespersonManagement';
 import Leads from './pages/lead/Leads';
 import LeadStatus from './pages/lead/LeadStatus';
 import LeadFollowUp from './pages/lead/LeadFollowUp';
@@ -66,6 +67,11 @@ import ThemeDemo from './pages/ThemeDemo';
 // Newly Created Pages
 import RentRoll from './pages/rent/RentRoll';
 import LeaseManagement from './pages/rent/LeaseManagement';
+import PaymentHistoryEnhanced from './pages/payments/PaymentHistoryEnhanced';
+import PaymentReports from './pages/payments/PaymentReports';
+import PaymentFiltering from './pages/payments/PaymentFiltering';
+import PurchaseBookingManagement from './pages/bookings/PurchaseBookingManagement';
+import RentalBookingManagement from './pages/bookings/RentalBookingManagement';
 
 import UserProfile from './pages/profile/UserProfile';
 import ReferenceSource from './pages/lead/ReferenceSource';
@@ -149,6 +155,7 @@ const App = () => {
             <Route path={ROUTES.ADMIN_DOCUMENT_MANAGEMENT} element={<DashboardLayout><DocumentManagement /></DashboardLayout>} />
             <Route path={ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT} element={<DashboardLayout><MeetingStatusManagement /></DashboardLayout>} />
             <Route path={ROUTES.ADMIN_REPORTS} element={<DashboardLayout><Reports /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_SALESPERSON_MANAGEMENT} element={<DashboardLayout><SalespersonManagement /></DashboardLayout>} />
             
             {/* Property Routes */}
             <Route path={ROUTES.PROPERTY_MASTER} element={<DashboardLayout><PropertyMaster /></DashboardLayout>} />
@@ -182,11 +189,16 @@ const App = () => {
             <Route path={ROUTES.BOOKINGS_INVENTORY} element={<DashboardLayout><Inventory /></DashboardLayout>} />
             <Route path={ROUTES.BOOKINGS_BOOKED_UNITS} element={<DashboardLayout><BookedUnits /></DashboardLayout>} />
             <Route path={ROUTES.BOOKINGS_PAYMENT_STATUS} element={<DashboardLayout><PaymentStatus /></DashboardLayout>} />
+            <Route path={ROUTES.BOOKINGS_PURCHASE_MANAGEMENT} element={<DashboardLayout><PurchaseBookingManagement /></DashboardLayout>} />
+            <Route path={ROUTES.BOOKINGS_RENTAL_MANAGEMENT} element={<DashboardLayout><RentalBookingManagement /></DashboardLayout>} />
             
             {/* Payments Routes */}
             <Route path={ROUTES.PAYMENTS_INSTALLMENTS} element={<DashboardLayout><Installments /></DashboardLayout>} />
             <Route path={ROUTES.PAYMENTS_HISTORY} element={<DashboardLayout><PaymentHistory /></DashboardLayout>} />
             <Route path={ROUTES.PAYMENTS_DUE} element={<DashboardLayout><DuePayments /></DashboardLayout>} />
+            <Route path={ROUTES.PAYMENTS_HISTORY_ENHANCED} element={<DashboardLayout><PaymentHistoryEnhanced /></DashboardLayout>} />
+            <Route path={ROUTES.PAYMENTS_REPORTS} element={<DashboardLayout><PaymentReports /></DashboardLayout>} />
+            <Route path={ROUTES.PAYMENTS_FILTERING} element={<DashboardLayout><PaymentFiltering /></DashboardLayout>} />
             
             {/* Rent Management Routes */}
             <Route path={ROUTES.RENT_ROLL} element={<DashboardLayout><RentRoll /></DashboardLayout>} />

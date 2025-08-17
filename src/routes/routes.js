@@ -30,6 +30,10 @@ import PaymentStatus from '../pages/bookings/PaymentStatus';
 import Installments from '../pages/payments/Installments';
 import PaymentHistory from '../pages/payments/PaymentHistory';
 import DuePayments from '../pages/payments/DuePayments';
+import PaymentHistoryEnhanced from '../pages/payments/PaymentHistoryEnhanced';
+import PaymentReports from '../pages/payments/PaymentReports';
+import PurchaseBookingManagement from '../pages/bookings/PurchaseBookingManagement';
+import RentalBookingManagement from '../pages/bookings/RentalBookingManagement';
 import Referrals from '../pages/postSale/Referrals';
 import Rewards from '../pages/postSale/Rewards';
 import Points from '../pages/postSale/Points';
@@ -113,11 +117,15 @@ export const ROUTES = [
   { name: 'bookingsInventory', path: '/bookings/inventory', component: Inventory, permissions: 'public' },
   { name: 'bookingsBookedUnits', path: '/bookings/booked-units', component: BookedUnits, permissions: 'public' },
   { name: 'bookingsPaymentStatus', path: '/bookings/payment-status', component: PaymentStatus, permissions: 'public' },
+  { name: 'bookingsPurchaseManagement', path: '/bookings/purchase-management', component: PurchaseBookingManagement, permissions: 'public' },
+  { name: 'bookingsRentalManagement', path: '/bookings/rental-management', component: RentalBookingManagement, permissions: 'public' },
 
   // Payments
   { name: 'paymentsInstallments', path: '/payments/installments', component: Installments, permissions: 'public' },
   { name: 'paymentsHistory', path: '/payments/payment-history', component: PaymentHistory, permissions: 'public' },
   { name: 'paymentsDue', path: '/payments/due-payments', component: DuePayments, permissions: 'public' },
+  { name: 'paymentsHistoryEnhanced', path: '/payments/payment-history-enhanced', component: PaymentHistoryEnhanced, permissions: 'public' },
+  { name: 'paymentsReports', path: '/payments/reports', component: PaymentReports, permissions: 'public' },
 
   // Rent
   { name: 'rentRoll', path: '/rent/rent-roll', component: RentRoll, permissions: 'public' },

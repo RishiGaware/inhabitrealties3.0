@@ -118,3 +118,50 @@ export const MEETING_SCHEDULE_STATUS_ENDPOINTS = {
   UPDATE: (id) => `/meetingschedulestatus/edit/${id}`,
   DELETE: (id) => `/meetingschedulestatus/delete/${id}`,
 };
+
+// Payment Management Endpoints
+export const PAYMENT_HISTORY_ENDPOINTS = {
+  GET_ALL: '/payment-history/all',
+  GET_BY_TYPE: (paymentType) => `/payment-history/type/${paymentType}`,
+  GET_BY_STATUS: (status) => `/payment-history/status/${status}`,
+  GET_BY_DATE_RANGE: '/payment-history/date-range',
+  GET_BY_ID: (id) => `/payment-history/${id}`,
+  UPDATE: (id) => `/payment-history/update/${id}`,
+  APPROVE: (id) => `/payment-history/approve/${id}`,
+  RECONCILE: (id) => `/payment-history/reconcile/${id}`,
+  GET_BY_BOOKING: (bookingId) => `/payment-history/booking/${bookingId}`,
+  GET_BY_RESPONSIBLE: (responsiblePersonId) => `/payment-history/responsible/${responsiblePersonId}`,
+  GET_BY_BOOKING_TYPE: (bookingType) => `/payment-history/booking-type/${bookingType}`,
+  GET_REPORTS_SUMMARY: '/payment-history/reports/summary',
+  GET_REPORTS_UNRECONCILED: '/payment-history/reports/unreconciled',
+};
+
+// Purchase Booking Endpoints
+export const PURCHASE_BOOKING_ENDPOINTS = {
+  GET_ALL: '/purchase-booking/all',
+  GET_BY_BOOKING_TYPE: (bookingType) => `/purchase-booking/booking-type/${bookingType}`,
+  CREATE: '/purchase-booking/create',
+  GET_BY_ID: (id) => `/purchase-booking/${id}`,
+  GET_INSTALLMENT_SCHEDULE: (id) => `/purchase-booking/${id}/installment-schedule`,
+  UPDATE: (id) => `/purchase-booking/update/${id}`,
+  RECORD_INSTALLMENT: (id) => `/purchase-booking/${id}/record-installment`,
+  UPDATE_INSTALLMENT_STATUS: (id) => `/purchase-booking/${id}/update-installment-status`,
+  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/purchase-booking/assigned/${salespersonId}`,
+  GET_REPORTS_PENDING_INSTALLMENTS: '/purchase-booking/reports/pending-installments',
+  GET_REPORTS_OVERDUE_INSTALLMENTS: '/purchase-booking/reports/overdue-installments',
+};
+
+// Rental Booking Endpoints
+export const RENTAL_BOOKING_ENDPOINTS = {
+  GET_ALL: '/rental-booking/all',
+  GET_BY_BOOKING_TYPE: (bookingType) => `/rental-booking/booking-type/${bookingType}`,
+  CREATE: '/rental-booking/create',
+  GET_BY_ID: (id) => `/rental-booking/${id}`,
+  GET_RENT_SCHEDULE: (id) => `/rental-booking/${id}/rent-schedule`,
+  UPDATE: (id) => `/rental-booking/update/${id}`,
+  RECORD_RENT_PAYMENT: (id) => `/rental-booking/${id}/record-rent-payment`,
+  UPDATE_MONTH_STATUS: (id) => `/rental-booking/${id}/update-month-status`,
+  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/rental-booking/assigned/${salespersonId}`,
+  GET_REPORTS_PENDING_RENTS: '/rental-booking/reports/pending-rents',
+  GET_REPORTS_OVERDUE_RENTS: '/rental-booking/reports/overdue-rents',
+};

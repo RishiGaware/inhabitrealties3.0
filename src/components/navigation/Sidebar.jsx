@@ -20,7 +20,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       title: "Admin",
       icon: <FaUsers />, 
       gap: true,
-      subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Meeting Status Management", "Reports"],
+      subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Meeting Status Management", "Reports", "Salesperson Management"],
       key: "admin"
     },
     {
@@ -66,7 +66,9 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       subMenu: [
         "Inventory",
         "Booked Units",
-        "Payment Status"
+        "Payment Status",
+        "Purchase Management",
+        "Rental Management"
       ],
       key: "bookings"
     },
@@ -76,11 +78,22 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       subMenu: [
         "Installments",
         "Payment History",
-        "Due Payments"
+        "Due Payments",
+        "Enhanced Payment History",
+        "Payment Reports",
+        "Payment Filtering"
       ],
       key: "payments"
     },
-
+    {
+      title: "Rent Management",
+      icon: <FaChartBar />,
+      subMenu: [
+        "Rent Roll",
+        "Lease Management"
+      ],
+      key: "rent"
+    },
     {
         title: "Post-Sale",
       icon: <FaHandshake />,
@@ -118,7 +131,8 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'document-type-management': ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT,
       'document-management': ROUTES.ADMIN_DOCUMENT_MANAGEMENT,
       'meeting-status-management': ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT,
-      'reports': ROUTES.ADMIN_REPORTS
+      'reports': ROUTES.ADMIN_REPORTS,
+      'salesperson-management': ROUTES.ADMIN_SALESPERSON_MANAGEMENT
     },
     'property': {
       'property-master': ROUTES.PROPERTY_MASTER,
@@ -154,12 +168,17 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'bookings': {
       'inventory': ROUTES.BOOKINGS_INVENTORY,
       'booked-units': ROUTES.BOOKINGS_BOOKED_UNITS,
-      'payment-status': ROUTES.BOOKINGS_PAYMENT_STATUS
+      'payment-status': ROUTES.BOOKINGS_PAYMENT_STATUS,
+      'purchase-management': ROUTES.BOOKINGS_PURCHASE_MANAGEMENT,
+      'rental-management': ROUTES.BOOKINGS_RENTAL_MANAGEMENT
     },
     'payments': {
       'installments': ROUTES.PAYMENTS_INSTALLMENTS,
       'payment-history': ROUTES.PAYMENTS_HISTORY,
-      'due-payments': ROUTES.PAYMENTS_DUE
+      'due-payments': ROUTES.PAYMENTS_DUE,
+      'enhanced-payment-history': ROUTES.PAYMENTS_HISTORY_ENHANCED,
+      'payment-reports': ROUTES.PAYMENTS_REPORTS,
+      'payment-filtering': ROUTES.PAYMENTS_FILTERING
     },
     'rent': {
       'rent-roll': ROUTES.RENT_ROLL,

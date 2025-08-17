@@ -31,6 +31,7 @@ export const ROUTES = {
   ADMIN_DOCUMENT_MANAGEMENT: '/admin/document-management',
   ADMIN_MEETING_STATUS_MANAGEMENT: '/admin/meeting-status-management',
   ADMIN_REPORTS: '/admin/reports',
+  ADMIN_SALESPERSON_MANAGEMENT: '/admin/salesperson-management',
 
   // Property Routes
   PROPERTY_MASTER: '/property/property-master',
@@ -64,11 +65,16 @@ export const ROUTES = {
   BOOKINGS_INVENTORY: '/bookings/inventory',
   BOOKINGS_BOOKED_UNITS: '/bookings/booked-units',
   BOOKINGS_PAYMENT_STATUS: '/bookings/payment-status',
+  BOOKINGS_PURCHASE_MANAGEMENT: '/bookings/purchase-management',
+  BOOKINGS_RENTAL_MANAGEMENT: '/bookings/rental-management',
 
   // Payments Routes
   PAYMENTS_INSTALLMENTS: '/payments/installments',
   PAYMENTS_HISTORY: '/payments/payment-history',
   PAYMENTS_DUE: '/payments/due-payments',
+  PAYMENTS_HISTORY_ENHANCED: '/payments/payment-history-enhanced',
+  PAYMENTS_REPORTS: '/payments/reports',
+  PAYMENTS_FILTERING: '/payments/filtering',
 
   // Rent Management Routes
   RENT_ROLL: '/rent/rent-roll',
@@ -105,7 +111,8 @@ export const ROUTE_GROUPS = {
     ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT,
     ROUTES.ADMIN_DOCUMENT_MANAGEMENT,
     ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT,
-    ROUTES.ADMIN_REPORTS
+    ROUTES.ADMIN_REPORTS,
+    ROUTES.ADMIN_SALESPERSON_MANAGEMENT
   ],
   PROPERTY: [
     ROUTES.PROPERTY_MASTER,
@@ -138,12 +145,17 @@ export const ROUTE_GROUPS = {
   BOOKINGS: [
     ROUTES.BOOKINGS_INVENTORY,
     ROUTES.BOOKINGS_BOOKED_UNITS,
-    ROUTES.BOOKINGS_PAYMENT_STATUS
+    ROUTES.BOOKINGS_PAYMENT_STATUS,
+    ROUTES.BOOKINGS_PURCHASE_MANAGEMENT,
+    ROUTES.BOOKINGS_RENTAL_MANAGEMENT
   ],
   PAYMENTS: [
     ROUTES.PAYMENTS_INSTALLMENTS,
     ROUTES.PAYMENTS_HISTORY,
-    ROUTES.PAYMENTS_DUE
+    ROUTES.PAYMENTS_DUE,
+    ROUTES.PAYMENTS_HISTORY_ENHANCED,
+    ROUTES.PAYMENTS_REPORTS,
+    ROUTES.PAYMENTS_FILTERING
   ],
   RENT: [
     ROUTES.RENT_ROLL,
