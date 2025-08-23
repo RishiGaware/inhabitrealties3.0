@@ -14,114 +14,166 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
   const [selectedSubMenu, setSelectedSubMenu] = useState('');
 
-  const Menus = [
-    { title: "Dashboard", icon: <MdSpaceDashboard />, key: "dashboard" },
-    {
-      title: "Admin",
-      icon: <FaUsers />, 
-      gap: true,
-      subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Meeting Status Management", "Reports", "Salesperson Management"],
-      key: "admin"
-    },
-    {
-      title: "Property",
-      icon: <FaBuilding />,
-      subMenu: ["Property Master", "Property Types", "Favorite Properties"],
-      key: "property"
-    },
-    {
-      title: "Properties",
-      icon: <FaHome />,
-      subMenu: ["Properties", "Favorite"],
-      key: "displayProperties"
-    },
-    {
-      title: "Lead Management",
-      icon: <BiUserPlus />,
-      subMenu: ["Leads", "Lead Status", "Lead Follow Up", "Reference Source"],
-      key: "leads"
-    },
-    {
-      title: "Customer Management",
-      icon: <BiUser />,
-      subMenu: ["Customer Profiles"],
-      key: "customers"
-    },
-    {
-      title: "Schedule Meetings",
-      icon: <FaCalendarAlt />,
-      subMenu: ["Admin Meetings", "Sales Meetings", "My Meetings"],
-      key: "scheduleMeetings"
-    },
-    // Sales Module
-    {
-      title: "Sales Management",
-      icon: <FaMoneyBillWave />,
-      subMenu: ["Sales List", "Pending Payments", "Sales Reports"],
-      key: "sales"
-    },
-    {
-      title: "Bookings", 
-      icon: <MdInventory />,
-      subMenu: [
-        "Inventory",
-        "Booked Units",
-        "Payment Status",
-        "Purchase Management",
-        "Rental Management"
-      ],
-      key: "bookings"
-    },
-    {
-      title: "Payments", 
-      icon: <FaMoneyBillWave />,
-      subMenu: [
-        "Installments",
-        "Payment History",
-        "Due Payments",
-        "Enhanced Payment History",
-        "Payment Reports",
-        "Payment Filtering"
-      ],
-      key: "payments"
-    },
-    {
-      title: "Rent Management",
-      icon: <FaChartBar />,
-      subMenu: [
-        "Rent Roll",
-        "Lease Management"
-      ],
-      key: "rent"
-    },
-    {
+  // Function to filter menu items based on user role
+  const getFilteredMenus = () => {
+    const allMenus = [
+      { title: "Dashboard", icon: <MdSpaceDashboard />, key: "dashboard" },
+      
+      // Admin section (keep as is)
+      {
+        title: "Admin",
+        icon: <FaUsers />, 
+        gap: true,
+        subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Meeting Status Management", "Reports", "Salesperson Management"],
+        key: "admin"
+      },
+      
+      // Property section (keep as is)
+      {
+        title: "Property",
+        icon: <FaBuilding />,
+        subMenu: ["Property Master", "Property Types", "Favorite Properties"],
+        key: "property"
+      },
+      
+      // Properties display (keep as is)
+      {
+        title: "Properties",
+        icon: <FaHome />,
+        subMenu: ["Properties", "Favorite"],
+        key: "displayProperties"
+      },
+      
+      // Lead Management (keep as is)
+      {
+        title: "Lead Management",
+        icon: <BiUserPlus />,
+        subMenu: ["Leads", "Lead Status", "Lead Follow Up", "Reference Source"],
+        key: "leads"
+      },
+      
+      // Customer Management (keep as is)
+      {
+        title: "Customer Management",
+        icon: <BiUser />,
+        subMenu: ["Customer Profiles"],
+        key: "customers"
+      },
+      
+      // Schedule Meetings (keep as is)
+      {
+        title: "Schedule Meetings",
+        icon: <FaCalendarAlt />,
+        subMenu: ["Admin Meetings", "Sales Meetings", "My Meetings"],
+        key: "scheduleMeetings"
+      },
+      
+      // **CORRECTED: Purchase Booking Management**
+      {
+        title: "Purchase Bookings", 
+        icon: <FaBuilding />,
+        subMenu: [
+          "All Purchase Bookings",
+          "My Assigned Bookings",
+          "Create New Purchase",
+          "Installment Schedule",
+          "Pending Installments",
+          "Overdue Installments"
+        ],
+        key: "purchaseBookings"
+      },
+      
+      // **CORRECTED: Rental Booking Management**
+      {
+        title: "Rental Bookings", 
+        icon: <FaHome />,
+        subMenu: [
+          "All Rental Bookings",
+          "My Assigned Rentals",
+          "Create New Rental",
+          "Rent Schedule",
+          "Pending Rents",
+          "Overdue Rents"
+        ],
+        key: "rentalBookings"
+      },
+      
+      // **CORRECTED: Payment Management**
+      {
+        title: "Payments", 
+        icon: <FaMoneyBillWave />,
+        subMenu: [
+          "Payment History",
+          "Record Payment",
+          "Payment Approval",
+          "Payment Reconciliation"
+        ],
+        key: "payments"
+      },
+      
+      // **CORRECTED: Financial Reports**
+      {
+        title: "Financial Reports", 
+        icon: <FaChartBar />,
+        subMenu: [
+          "Payment Summary",
+          "Pending Payments",
+          "Overdue Payments",
+          "Collection Reports",
+          "Revenue Analysis"
+        ],
+        key: "financialReports"
+      },
+      
+      // **CORRECTED: Rent Management**
+      {
+        title: "Rent Management",
+        icon: <FaChartBar />,
+        subMenu: [
+          "Rent Roll",
+          "Lease Management",
+          "Rent Schedule",
+          "Overdue Rents"
+        ],
+        key: "rent"
+      },
+      
+      // Post-Sale (keep as is)
+      {
         title: "Post-Sale",
-      icon: <FaHandshake />,
-      subMenu: [
-        "Referrals",
-        "Rewards",
-        "Points"
-      ],
-      key: "postSale"
-    },
-    
-    // Client Module
-    { 
-      title: "Client Portal", 
-      icon: <MdPerson />,
-      subMenu: [
-        "My Bookings",
-        "My Meetings",
-        "Documents",
-        "Payments",
-        "Referrals"
-      ],
-      key: "client"
-    },
-    
-    // Settings
-    { title: "Settings", icon: <FaCog />, gap: true, key: "settings" },
-  ];
+        icon: <FaHandshake />,
+        subMenu: [
+          "Referrals",
+          "Rewards",
+          "Points"
+        ],
+        key: "postSale"
+      },
+      
+      // Client Portal (keep as is)
+      { 
+        title: "Client Portal", 
+        icon: <MdPerson />,
+        subMenu: [
+          "My Bookings",
+          "My Meetings",
+          "Documents",
+          "Payments",
+          "Referrals"
+        ],
+        key: "client"
+      },
+      
+      // Settings (keep as is)
+      { title: "Settings", icon: <FaCog />, gap: true, key: "settings" },
+    ];
+
+    // Return all menus without role filtering
+    return allMenus;
+  };
+
+  // Get filtered menus
+  const Menus = getFilteredMenus();
 
   const routeMap = {
     'dashboard': ROUTES.DASHBOARD,
@@ -160,29 +212,40 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'sales-meetings': ROUTES.SALES_MEETINGS,
       'my-meetings': ROUTES.MY_MEETINGS
     },
-    'sales': {
-      'sales-list': ROUTES.SALES_LIST,
-      'pending-payments': ROUTES.SALES_PENDING_PAYMENTS,
-      'sales-reports': ROUTES.SALES_REPORTS
+    'purchaseBookings': {
+      'all-purchase-bookings': ROUTES.PURCHASE_ALL_BOOKINGS,
+      'my-assigned-bookings': ROUTES.PURCHASE_MY_BOOKINGS,
+      'create-new-purchase': ROUTES.PURCHASE_CREATE_NEW,
+      'installment-schedule': ROUTES.PURCHASE_INSTALLMENT_SCHEDULE,
+      'pending-installments': ROUTES.PURCHASE_PENDING_INSTALLMENTS,
+      'overdue-installments': ROUTES.PURCHASE_OVERDUE_INSTALLMENTS
     },
-    'bookings': {
-      'inventory': ROUTES.BOOKINGS_INVENTORY,
-      'booked-units': ROUTES.BOOKINGS_BOOKED_UNITS,
-      'payment-status': ROUTES.BOOKINGS_PAYMENT_STATUS,
-      'purchase-management': ROUTES.BOOKINGS_PURCHASE_MANAGEMENT,
-      'rental-management': ROUTES.BOOKINGS_RENTAL_MANAGEMENT
+    'rentalBookings': {
+      'all-rental-bookings': ROUTES.RENTAL_ALL_BOOKINGS,
+      'my-assigned-rentals': ROUTES.RENTAL_MY_RENTALS,
+      'create-new-rental': ROUTES.RENTAL_CREATE_NEW,
+      'rent-schedule': ROUTES.RENTAL_RENT_SCHEDULE,
+      'pending-rents': ROUTES.RENTAL_PENDING_RENTS,
+      'overdue-rents': ROUTES.RENTAL_OVERDUE_RENTS
     },
     'payments': {
-      'installments': ROUTES.PAYMENTS_INSTALLMENTS,
       'payment-history': ROUTES.PAYMENTS_HISTORY,
-      'due-payments': ROUTES.PAYMENTS_DUE,
-      'enhanced-payment-history': ROUTES.PAYMENTS_HISTORY_ENHANCED,
-      'payment-reports': ROUTES.PAYMENTS_REPORTS,
-      'payment-filtering': ROUTES.PAYMENTS_FILTERING
+      'record-payment': ROUTES.PAYMENTS_RECORD,
+      'payment-approval': ROUTES.PAYMENTS_APPROVAL,
+      'payment-reconciliation': ROUTES.PAYMENTS_RECONCILIATION
+    },
+    'financialReports': {
+      'payment-summary': ROUTES.PAYMENT_REPORTS_SUMMARY,
+      'pending-payments': ROUTES.PAYMENT_REPORTS_PENDING,
+      'overdue-payments': ROUTES.PAYMENT_REPORTS_OVERDUE,
+      'collection-reports': ROUTES.PAYMENT_REPORTS_COLLECTION,
+      'revenue-analysis': ROUTES.PAYMENT_REPORTS_REVENUE
     },
     'rent': {
       'rent-roll': ROUTES.RENT_ROLL,
-      'lease-management': ROUTES.LEASE_MANAGEMENT
+      'lease-management': ROUTES.LEASE_MANAGEMENT,
+      'rent-schedule': ROUTES.RENT_SCHEDULE,
+      'overdue-rents': ROUTES.RENT_OVERDUE_RENTS
     },
     
     'postSale': {

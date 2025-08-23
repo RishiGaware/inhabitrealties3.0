@@ -61,6 +61,24 @@ export const AuthProvider = ({ children }) => {
   };
   const getUserRole = () => auth?.data?.role || null;
   const isAdmin = () => auth?.data?.role === 'ADMIN' || auth?.data?.role === '68162f63ff2da55b40ca61b8';
+  const isSales = () => auth?.data?.role === 'SALES';
+  const isExecutive = () => auth?.data?.role === 'EXECUTIVE';
+  const isClient = () => auth?.data?.role === 'CLIENT';
+  
+  // Check if user has access to a specific module
+  const hasAccess = (module) => {
+    const role = getUserRole();
+    if (!role) return false;
+    
+    const rolePermissions = {
+      'ADMIN': ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'paymentHistory', 'paymentReports', 'rent', 'postSale', 'client', 'settings'],
+      'SALES': ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'paymentHistory', 'postSale', 'client', 'settings'],
+      'EXECUTIVE': ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'paymentHistory', 'paymentReports', 'rent', 'postSale', 'client', 'settings'],
+      'CLIENT': ['dashboard', 'client', 'settings']
+    };
+    
+    return rolePermissions[role]?.includes(module) || false;
+  };
 
   return (
     <AuthContext.Provider value={{ 
@@ -76,7 +94,11 @@ export const AuthProvider = ({ children }) => {
       getUserEmail,
       getUserName,
       getUserRole,
-      isAdmin
+      isAdmin,
+      isSales,
+      isExecutive,
+      isClient,
+      hasAccess
     }}>
       {children}
     </AuthContext.Provider>

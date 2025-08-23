@@ -32,8 +32,23 @@ import PaymentHistory from '../pages/payments/PaymentHistory';
 import DuePayments from '../pages/payments/DuePayments';
 import PaymentHistoryEnhanced from '../pages/payments/PaymentHistoryEnhanced';
 import PaymentReports from '../pages/payments/PaymentReports';
+import AllPayments from '../pages/payments/AllPayments';
+import PaymentDetails from '../pages/payments/PaymentDetails';
+import RecordPayment from '../pages/payments/RecordPayment';
+import PaymentSummary from '../pages/payments/PaymentSummary';
+import PendingPayments from '../pages/payments/PendingPayments';
+import OverduePayments from '../pages/payments/OverduePayments';
 import PurchaseBookingManagement from '../pages/bookings/PurchaseBookingManagement';
 import RentalBookingManagement from '../pages/bookings/RentalBookingManagement';
+import AllPurchaseBookings from '../pages/bookings/AllPurchaseBookings';
+import MyAssignedBookings from '../pages/bookings/MyAssignedBookings';
+import CreateNewPurchase from '../pages/bookings/CreateNewPurchase';
+import PendingInstallments from '../pages/bookings/PendingInstallments';
+import OverdueInstallments from '../pages/bookings/OverdueInstallments';
+import AllRentalBookings from '../pages/bookings/AllRentalBookings';
+import MyAssignedRentals from '../pages/bookings/MyAssignedRentals';
+import CreateNewRental from '../pages/bookings/CreateNewRental';
+import PendingRents from '../pages/bookings/PendingRents';
 import Referrals from '../pages/postSale/Referrals';
 import Rewards from '../pages/postSale/Rewards';
 import Points from '../pages/postSale/Points';
@@ -119,6 +134,19 @@ export const ROUTES = [
   { name: 'bookingsPaymentStatus', path: '/bookings/payment-status', component: PaymentStatus, permissions: 'public' },
   { name: 'bookingsPurchaseManagement', path: '/bookings/purchase-management', component: PurchaseBookingManagement, permissions: 'public' },
   { name: 'bookingsRentalManagement', path: '/bookings/rental-management', component: RentalBookingManagement, permissions: 'public' },
+  
+  // Purchase Bookings
+  { name: 'purchaseAllBookings', path: '/purchase-bookings/all', component: AllPurchaseBookings, permissions: 'public' },
+  { name: 'purchaseMyBookings', path: '/purchase-bookings/my-assigned', component: MyAssignedBookings, permissions: 'public' },
+  { name: 'purchaseCreateNew', path: '/purchase-bookings/create', component: CreateNewPurchase, permissions: 'public' },
+  { name: 'purchasePendingInstallments', path: '/purchase-bookings/pending-installments', component: PendingInstallments, permissions: 'public' },
+  { name: 'purchaseOverdueInstallments', path: '/purchase-bookings/overdue-installments', component: OverdueInstallments, permissions: 'public' },
+  
+  // Rental Bookings
+  { name: 'rentalAllBookings', path: '/rental-bookings/all', component: AllRentalBookings, permissions: 'public' },
+  { name: 'rentalMyRentals', path: '/rental-bookings/my-assigned', component: MyAssignedRentals, permissions: 'public' },
+  { name: 'rentalCreateNew', path: '/rental-bookings/create', component: CreateNewRental, permissions: 'public' },
+  { name: 'rentalPendingRents', path: '/rental-bookings/pending-rents', component: PendingRents, permissions: 'public' },
 
   // Payments
   { name: 'paymentsInstallments', path: '/payments/installments', component: Installments, permissions: 'public' },
@@ -126,6 +154,16 @@ export const ROUTES = [
   { name: 'paymentsDue', path: '/payments/due-payments', component: DuePayments, permissions: 'public' },
   { name: 'paymentsHistoryEnhanced', path: '/payments/payment-history-enhanced', component: PaymentHistoryEnhanced, permissions: 'public' },
   { name: 'paymentsReports', path: '/payments/reports', component: PaymentReports, permissions: 'public' },
+  
+  // Payment History
+  { name: 'paymentHistoryAll', path: '/payment-history/all', component: AllPayments, permissions: 'public' },
+  { name: 'paymentHistoryDetails', path: '/payment-history/details', component: PaymentDetails, permissions: 'public' },
+  { name: 'paymentHistoryRecord', path: '/payment-history/record', component: RecordPayment, permissions: 'public' },
+  
+  // Payment Reports
+  { name: 'paymentReportsSummary', path: '/payment-reports/summary', component: PaymentSummary, permissions: 'public' },
+  { name: 'paymentReportsPending', path: '/payment-reports/pending', component: PendingPayments, permissions: 'public' },
+  { name: 'paymentReportsOverdue', path: '/payment-reports/overdue', component: OverduePayments, permissions: 'public' },
 
   // Rent
   { name: 'rentRoll', path: '/rent/rent-roll', component: RentRoll, permissions: 'public' },

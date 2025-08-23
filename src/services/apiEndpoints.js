@@ -136,17 +136,25 @@ export const PAYMENT_HISTORY_ENDPOINTS = {
   GET_REPORTS_UNRECONCILED: '/payment-history/reports/unreconciled',
 };
 
-// Purchase Booking Endpoints
+// Purchase Booking Endpoints - Updated to match backend implementation
 export const PURCHASE_BOOKING_ENDPOINTS = {
+  // Core CRUD operations
   GET_ALL: '/purchase-booking/all',
-  GET_BY_BOOKING_TYPE: (bookingType) => `/purchase-booking/booking-type/${bookingType}`,
-  CREATE: '/purchase-booking/create',
   GET_BY_ID: (id) => `/purchase-booking/${id}`,
-  GET_INSTALLMENT_SCHEDULE: (id) => `/purchase-booking/${id}/installment-schedule`,
+  CREATE: '/purchase-booking/create',
   UPDATE: (id) => `/purchase-booking/update/${id}`,
+  DELETE: (id) => `/purchase-booking/delete/${id}`,
+  
+  // User-specific operations
+  GET_MY_BOOKINGS: (userId) => `/purchase-booking/my-bookings/${userId}`,
+  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/purchase-booking/assigned/${salespersonId}`,
+  
+  // Installment operations
+  GET_INSTALLMENT_SCHEDULE: (id) => `/purchase-booking/${id}/installment-schedule`,
   RECORD_INSTALLMENT: (id) => `/purchase-booking/${id}/record-installment`,
   UPDATE_INSTALLMENT_STATUS: (id) => `/purchase-booking/${id}/update-installment-status`,
-  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/purchase-booking/assigned/${salespersonId}`,
+  
+  // Reports
   GET_REPORTS_PENDING_INSTALLMENTS: '/purchase-booking/reports/pending-installments',
   GET_REPORTS_OVERDUE_INSTALLMENTS: '/purchase-booking/reports/overdue-installments',
 };

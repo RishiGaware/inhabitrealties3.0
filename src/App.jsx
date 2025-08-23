@@ -73,6 +73,19 @@ import PaymentFiltering from './pages/payments/PaymentFiltering';
 import PurchaseBookingManagement from './pages/bookings/PurchaseBookingManagement';
 import RentalBookingManagement from './pages/bookings/RentalBookingManagement';
 
+// Purchase Booking Components
+import AllPurchaseBookings from './pages/bookings/AllPurchaseBookings';
+import MyAssignedBookings from './pages/bookings/MyAssignedBookings';
+import CreateNewPurchase from './pages/bookings/CreateNewPurchase';
+import PendingInstallments from './pages/bookings/PendingInstallments';
+import OverdueInstallments from './pages/bookings/OverdueInstallments';
+
+// Rental Booking Components
+import AllRentalBookings from './pages/bookings/AllRentalBookings';
+import MyAssignedRentals from './pages/bookings/MyAssignedRentals';
+import CreateNewRental from './pages/bookings/CreateNewRental';
+import PendingRents from './pages/bookings/PendingRents';
+
 import UserProfile from './pages/profile/UserProfile';
 import ReferenceSource from './pages/lead/ReferenceSource';
 import Banner from './components/Banner';
@@ -191,6 +204,19 @@ const App = () => {
             <Route path={ROUTES.BOOKINGS_PAYMENT_STATUS} element={<DashboardLayout><PaymentStatus /></DashboardLayout>} />
             <Route path={ROUTES.BOOKINGS_PURCHASE_MANAGEMENT} element={<DashboardLayout><PurchaseBookingManagement /></DashboardLayout>} />
             <Route path={ROUTES.BOOKINGS_RENTAL_MANAGEMENT} element={<DashboardLayout><RentalBookingManagement /></DashboardLayout>} />
+            
+            {/* Purchase Bookings Routes */}
+            <Route path={ROUTES.PURCHASE_ALL_BOOKINGS} element={<DashboardLayout><AllPurchaseBookings /></DashboardLayout>} />
+            <Route path={ROUTES.PURCHASE_MY_BOOKINGS} element={<DashboardLayout><MyAssignedBookings /></DashboardLayout>} />
+            <Route path={ROUTES.PURCHASE_CREATE_NEW} element={<DashboardLayout><CreateNewPurchase /></DashboardLayout>} />
+            <Route path={ROUTES.PURCHASE_PENDING_INSTALLMENTS} element={<DashboardLayout><PendingInstallments /></DashboardLayout>} />
+            <Route path={ROUTES.PURCHASE_OVERDUE_INSTALLMENTS} element={<DashboardLayout><OverdueInstallments /></DashboardLayout>} />
+            
+            {/* Rental Bookings Routes */}
+            <Route path={ROUTES.RENTAL_ALL_BOOKINGS} element={<DashboardLayout><AllRentalBookings /></DashboardLayout>} />
+            <Route path={ROUTES.RENTAL_MY_RENTALS} element={<DashboardLayout><MyAssignedRentals /></DashboardLayout>} />
+            <Route path={ROUTES.RENTAL_CREATE_NEW} element={<DashboardLayout><CreateNewRental /></DashboardLayout>} />
+            <Route path={ROUTES.RENTAL_PENDING_RENTS} element={<DashboardLayout><PendingRents /></DashboardLayout>} />
             
             {/* Payments Routes */}
             <Route path={ROUTES.PAYMENTS_INSTALLMENTS} element={<DashboardLayout><Installments /></DashboardLayout>} />
