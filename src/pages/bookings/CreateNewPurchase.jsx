@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+// Note: React Router warnings about v7_startTransition and v7_relativeSplatPath are just future compatibility warnings
+// and don't affect current functionality. They can be addressed when upgrading to React Router v7.
 import {
   Box,
   Flex,
@@ -12,7 +14,6 @@ import {
   FormHelperText,
   Input,
   Select,
-  Textarea,
   NumberInput,
   NumberInputField,
   NumberInputStepper,
@@ -23,85 +24,200 @@ import {
   CardBody,
   CardHeader,
   Heading,
-  Divider,
-  useToast,
-  useColorModeValue,
   SimpleGrid,
   Badge,
-  IconButton,
-  Tooltip,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  useDisclosure,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  ModalCloseButton,
+  useColorModeValue,
 } from '@chakra-ui/react';
-import { FiSave, FiX, FiPlus, FiTrash2, FiSettings, FiHome, FiUser, FiDollarSign } from 'react-icons/fi';
+import { FiSave, FiX, FiHome, FiUser, FiDollarSign, FiSettings, FiCalendar, FiCheckCircle } from 'react-icons/fi';
+import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
+import { fetchProperties } from '../../services/propertyService';
+import { fetchUsersWithParams } from '../../services/usermanagement/userService';
+import { fetchRoles } from '../../services/rolemanagement/roleService';
+import toast from 'react-hot-toast';
+import Loader from '../../components/common/Loader';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 const CreateNewPurchase = () => {
   const navigate = useNavigate();
-  const toast = useToast();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const { isOpen, onOpen, onClose } = useDisclosure();
+  
+  // Color mode values
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const cardBorder = useColorModeValue('gray.200', 'gray.700');
+
+  // Loading states
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   // Form state
   const [formData, setFormData] = useState({
-    // Property Details
     propertyId: '',
-    propertyTitle: '',
-    propertyAddress: '',
-    propertyType: '',
-    propertyPrice: '',
-    
-    // Customer Details
     customerId: '',
-    customerName: '',
-    customerEmail: '',
-    customerPhone: '',
-    
-    // Salesperson Details
     assignedSalespersonId: '',
-    salespersonName: '',
-    
-    // Financial Details
     totalPropertyValue: '',
     downPayment: '',
-    loanAmount: '',
+    paymentTerms: 'INSTALLMENTS',
+    installmentCount: '',
     isFinanced: false,
     bankName: '',
     loanTenure: '',
     interestRate: '',
     emiAmount: '',
-    
-    // Payment Terms
-    paymentTerms: 'INSTALLMENTS',
-    installmentCount: '',
-    
-    // Additional Details
-    expectedCompletionDate: '',
-    notes: '',
+    bookingStatus: 'CONFIRMED',
   });
 
-  // Mock data for dropdowns
+  // Data for dropdowns
   const [properties, setProperties] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [salespeople, setSalespeople] = useState([]);
 
+  // Success modal state
+  const [createdBooking, setCreatedBooking] = useState(null);
+
   useEffect(() => {
-    // Mock data
-    setProperties([
-      { _id: 'prop_1', title: 'Luxury Apartment Downtown', address: '123 Main St, Downtown', price: 8500000, type: 'APARTMENT' },
-      { _id: 'prop_2', title: 'Modern Villa Suburbs', address: '456 Oak Ave, Suburbs', price: 12000000, type: 'VILLA' },
-      { _id: 'prop_3', title: 'Premium Condo', address: '789 Business District', price: 6500000, type: 'APARTMENT' },
-    ]);
-
-    setCustomers([
-      { _id: 'cust_1', name: 'John Smith', email: 'john@example.com', phone: '+1234567890' },
-      { _id: 'cust_2', name: 'Sarah Johnson', email: 'sarah@example.com', phone: '+1234567891' },
-      { _id: 'cust_3', name: 'Mike Wilson', email: 'mike@example.com', phone: '+1234567892' },
-    ]);
-
-    setSalespeople([
-      { _id: 'sales_1', name: 'Alex Thompson', email: 'alex@company.com' },
-      { _id: 'sales_2', name: 'Lisa Davis', email: 'lisa@company.com' },
-      { _id: 'sales_3', name: 'Robert Brown', email: 'robert@company.com' },
-    ]);
+    fetchInitialData();
   }, []);
+
+    const fetchInitialData = async () => {
+    setIsDataLoading(true);
+    try {
+      // Step 1: Fetch roles first to get role IDs
+      let rolesData;
+      try {
+        rolesData = await fetchRoles();
+      } catch (error) {
+        console.warn('Failed to fetch roles, using mock data:', error);
+        rolesData = { data: [] };
+      }
+
+      // Step 2: Fetch properties
+      let propertiesData;
+      try {
+        propertiesData = await fetchProperties();
+      } catch (error) {
+        console.warn('Failed to fetch properties, using mock data:', error);
+        propertiesData = { data: [] };
+      }
+
+      // Step 3: Fetch customers (users with USER role)
+      let customersData = { data: [] };
+      if (rolesData.data && rolesData.data.length > 0) {
+        const userRole = rolesData.data.find(role => role.name === 'USER');
+        if (userRole) {
+          try {
+            customersData = await fetchUsersWithParams({
+              roleId: userRole._id,
+              published: true
+            });
+          } catch (error) {
+            console.warn('Failed to fetch customers, using mock data:', error);
+          }
+        }
+      }
+
+      // Step 4: Fetch salespeople (users with SALES or EXECUTIVE role)
+      let salespeopleData = { data: [] };
+      if (rolesData.data && rolesData.data.length > 0) {
+        const salesRole = rolesData.data.find(role => role.name === 'SALES');
+        const executiveRole = rolesData.data.find(role => role.name === 'EXECUTIVE');
+        
+        if (salesRole || executiveRole) {
+          try {
+            // Fetch both roles and combine
+            const salesUsers = salesRole ? await fetchUsersWithParams({
+              roleId: salesRole._id,
+              published: true
+            }) : { data: [] };
+            
+            const executiveUsers = executiveRole ? await fetchUsersWithParams({
+              roleId: executiveRole._id,
+              published: true
+            }) : { data: [] };
+
+            // Combine and remove duplicates
+            const allSalespeople = [...(salesUsers.data || []), ...(executiveUsers.data || [])];
+            salespeopleData = { data: allSalespeople };
+          } catch (error) {
+            console.warn('Failed to fetch salespeople, using mock data:', error);
+          }
+        }
+      }
+
+      // Use real data if available, otherwise fall back to mock data
+      let publishedProperties = propertiesData.data?.filter(prop => prop.published) || [];
+      let publishedCustomers = customersData.data || [];
+      let salesUsers = salespeopleData.data || [];
+
+      // If no real data, use mock data
+      if (publishedProperties.length === 0) {
+        publishedProperties = [
+          { _id: 'prop_1', name: 'Luxury Apartment Downtown', address: '123 Main St, Downtown', price: 8500000, type: 'APARTMENT', published: true },
+          { _id: 'prop_2', name: 'Modern Villa Suburbs', address: '456 Oak Ave, Suburbs', price: 12000000, type: 'VILLA', published: true },
+          { _id: 'prop_3', name: 'Premium Condo', address: '789 Business District', price: 6500000, type: 'APARTMENT', published: true },
+        ];
+      }
+
+      if (publishedCustomers.length === 0) {
+        publishedCustomers = [
+          { _id: 'cust_1', firstName: 'John', lastName: 'Smith', email: 'john@example.com', phone: '+1234567890', published: true },
+          { _id: 'cust_2', firstName: 'Sarah', lastName: 'Johnson', email: 'sarah@example.com', phone: '+1234567891', published: true },
+          { _id: 'cust_3', firstName: 'Mike', lastName: 'Wilson', email: 'mike@example.com', phone: '+1234567892', published: true },
+        ];
+      }
+
+      if (salesUsers.length === 0) {
+        salesUsers = [
+          { _id: 'sales_1', firstName: 'Alex', lastName: 'Thompson', email: 'alex@company.com', role: 'SALES', published: true },
+          { _id: 'sales_2', firstName: 'Lisa', lastName: 'Davis', email: 'lisa@company.com', role: 'SALES', published: true },
+          { _id: 'sales_3', firstName: 'Robert', lastName: 'Brown', email: 'robert@company.com', role: 'EXECUTIVE', published: true },
+        ];
+      }
+
+      setProperties(publishedProperties);
+      setCustomers(publishedCustomers);
+      setSalespeople(salesUsers);
+
+      // Show info toast if using mock data
+      if (propertiesData.data?.length === 0 || customersData.data?.length === 0 || salespeopleData.data?.length === 0) {
+        toast('Using sample data for demonstration. Connect to backend for real data.', {
+          icon: 'ℹ️',
+        });
+      }
+
+    } catch (error) {
+      console.error('Error in fetchInitialData:', error);
+      // Set mock data as fallback
+      setProperties([
+        { _id: 'prop_1', name: 'Luxury Apartment Downtown', address: '123 Main St, Downtown', price: 8500000, type: 'APARTMENT', published: true },
+        { _id: 'prop_2', name: 'Modern Villa Suburbs', address: '456 Oak Ave, Suburbs', price: 12000000, type: 'VILLA', published: true },
+        { _id: 'prop_3', name: 'Premium Condo', address: '789 Business District', price: 6500000, type: 'APARTMENT', published: true },
+      ]);
+      setCustomers([
+        { _id: 'cust_1', firstName: 'John', lastName: 'Smith', email: 'john@example.com', phone: '+1234567890', published: true },
+        { _id: 'cust_2', firstName: 'Sarah', lastName: 'Johnson', email: 'sarah@example.com', phone: '+1234567891', published: true },
+        { _id: 'cust_3', firstName: 'Mike', lastName: 'Wilson', email: 'mike@example.com', phone: '+1234567892', published: true },
+      ]);
+      setSalespeople([
+        { _id: 'sales_1', firstName: 'Alex', lastName: 'Thompson', email: 'alex@company.com', role: 'SALES', published: true },
+        { _id: 'sales_2', firstName: 'Lisa', lastName: 'Davis', email: 'lisa@company.com', role: 'SALES', published: true },
+        { _id: 'sales_3', firstName: 'Robert', lastName: 'Brown', email: 'robert@company.com', role: 'EXECUTIVE', published: true },
+      ]);
+    } finally {
+      setIsDataLoading(false);
+    }
+  };
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -113,10 +229,6 @@ const CreateNewPurchase = () => {
       setFormData(prev => ({
         ...prev,
         propertyId,
-        propertyTitle: property.title,
-        propertyAddress: property.address,
-        propertyType: property.type,
-        propertyPrice: property.price,
         totalPropertyValue: property.price,
       }));
     }
@@ -128,9 +240,6 @@ const CreateNewPurchase = () => {
       setFormData(prev => ({
         ...prev,
         customerId,
-        customerName: customer.name,
-        customerEmail: customer.email,
-        customerPhone: customer.phone,
       }));
     }
   };
@@ -141,301 +250,262 @@ const CreateNewPurchase = () => {
       setFormData(prev => ({
         ...prev,
         assignedSalespersonId: salespersonId,
-        salespersonName: salesperson.name,
       }));
     }
   };
 
-  const calculateLoanAmount = () => {
-    const total = parseFloat(formData.totalPropertyValue) || 0;
-    const down = parseFloat(formData.downPayment) || 0;
-    return total - down;
-  };
 
-  const calculateEMI = () => {
-    const loan = calculateLoanAmount();
-    const tenure = parseFloat(formData.loanTenure) || 0;
-    const rate = parseFloat(formData.interestRate) || 0;
+
+
+
+  const validateForm = () => {
+    const errors = [];
     
-    if (loan > 0 && tenure > 0 && rate > 0) {
-      const monthlyRate = rate / (12 * 100);
-      const months = tenure * 12;
-      const emi = loan * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1);
-      return Math.round(emi);
+    if (!formData.propertyId) errors.push("Property selection is required");
+    if (!formData.customerId) errors.push("Customer selection is required");
+    if (!formData.assignedSalespersonId) errors.push("Salesperson assignment is required");
+    if (!formData.totalPropertyValue || formData.totalPropertyValue <= 0) errors.push("Valid property value is required");
+    if (!formData.downPayment || formData.downPayment <= 0) errors.push("Valid down payment is required");
+    if (formData.downPayment >= formData.totalPropertyValue) errors.push("Down payment must be less than total property value");
+    
+    if (formData.isFinanced) {
+      if (!formData.bankName) errors.push("Bank name is required for financed purchases");
+      if (!formData.loanTenure || formData.loanTenure <= 0) errors.push("Valid loan tenure is required");
+      if (!formData.interestRate || formData.interestRate <= 0) errors.push("Valid interest rate is required");
     }
-    return 0;
+    
+    if (formData.paymentTerms === 'INSTALLMENTS' && (!formData.installmentCount || formData.installmentCount < 2)) {
+      errors.push("Installment count must be at least 2 for installment payments");
+    }
+    
+    return errors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validation
-    if (!formData.propertyId || !formData.customerId || !formData.assignedSalespersonId) {
-      toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
-        status: "error",
-        duration: 3000,
-        isClosable: true,
-      });
+    const validationErrors = validateForm();
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors.join(", "));
       return;
     }
 
-    // Mock success
-    toast({
-      title: "Success!",
-      description: "Purchase booking created successfully",
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+    setIsSubmitting(true);
+    try {
+      // Prepare the API payload
+      const payload = {
+        propertyId: formData.propertyId,
+        customerId: formData.customerId,
+        bookingStatus: formData.bookingStatus,
+        assignedSalespersonId: formData.assignedSalespersonId,
+        totalPropertyValue: parseFloat(formData.totalPropertyValue),
+        downPayment: parseFloat(formData.downPayment),
+        paymentTerms: formData.paymentTerms,
+        installmentCount: formData.paymentTerms === 'INSTALLMENTS' ? parseInt(formData.installmentCount) : undefined,
+        isFinanced: formData.isFinanced,
+        bankName: formData.isFinanced ? formData.bankName : undefined,
+        loanTenure: formData.isFinanced ? parseInt(formData.loanTenure) : undefined,
+        interestRate: formData.isFinanced ? parseFloat(formData.interestRate) : undefined,
+        emiAmount: formData.isFinanced ? parseFloat(formData.emiAmount) : undefined,
+      };
 
-    // Navigate back to bookings list
-    setTimeout(() => {
-      navigate('/purchase-bookings/all');
-    }, 1500);
+      // Remove undefined values
+      Object.keys(payload).forEach(key => payload[key] === undefined && delete payload[key]);
+
+      const response = await purchaseBookingService.createPurchaseBooking(payload);
+      
+      // Show success modal
+      setCreatedBooking(response.data);
+      onOpen();
+      
+      toast.success('Purchase booking created successfully!');
+
+    } catch (error) {
+      console.error('Error creating purchase booking:', error);
+      toast.error(error.response?.data?.message || "Failed to create purchase booking. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const resetForm = () => {
     setFormData({
       propertyId: '',
-      propertyTitle: '',
-      propertyAddress: '',
-      propertyType: '',
-      propertyPrice: '',
       customerId: '',
-      customerName: '',
-      customerEmail: '',
-      customerPhone: '',
       assignedSalespersonId: '',
-      salespersonName: '',
       totalPropertyValue: '',
       downPayment: '',
-      loanAmount: '',
+      paymentTerms: 'INSTALLMENTS',
+      installmentCount: '',
       isFinanced: false,
       bankName: '',
       loanTenure: '',
       interestRate: '',
       emiAmount: '',
-      paymentTerms: 'INSTALLMENTS',
-      installmentCount: '',
-      expectedCompletionDate: '',
-      notes: '',
+      bookingStatus: 'CONFIRMED',
     });
   };
+
+  const handleSuccessModalClose = () => {
+    onClose();
+    setCreatedBooking(null);
+    resetForm();
+    navigate('/purchase-bookings/all');
+  };
+
+  if (isDataLoading) {
+    return (
+      <Box p={6} bg="gray.50" minH="100vh" display="flex" alignItems="center" justifyContent="center">
+        <Loader size="xl" label="Loading roles, properties, customers, and salespeople..." />
+      </Box>
+    );
+  }
 
   return (
     <Box p={6} bg="gray.50" minH="100vh">
       {/* Header */}
-      <Flex justify="space-between" align="center" mb={8}>
-        <VStack align="start" spacing={2}>
-          <Text fontSize="3xl" fontWeight="bold" color="gray.800">
-            Create New Purchase Booking
-          </Text>
-          <Text fontSize="lg" color="gray.600">
-            Set up a new property purchase booking with customer and financial details
-          </Text>
-        </VStack>
-        
-        <HStack spacing={3}>
-          <Button
-            leftIcon={<FiX />}
-            onClick={() => navigate('/purchase-bookings/all')}
-            variant="outline"
-            size="lg"
-          >
-            Cancel
-          </Button>
-          <Button
-            leftIcon={<FiSave />}
-            onClick={handleSubmit}
-            colorScheme="blue"
-            size="lg"
-            px={8}
-          >
-            Create Booking
-          </Button>
-        </HStack>
+      <Flex justify="space-between" align="center" mb={6}>
+        <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
+          Create New Purchase Booking
+        </Heading>
       </Flex>
 
-      <form onSubmit={handleSubmit}>
-        <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={8}>
-          {/* Left Column */}
-          <VStack spacing={6} align="stretch">
-            {/* Property Selection */}
-            <Card bg={bgColor} border="1px" borderColor={borderColor}>
-              <CardHeader>
-                <HStack>
-                  <FiHome color="blue.500" />
-                  <Heading size="md">Property Details</Heading>
-                </HStack>
-              </CardHeader>
-              <CardBody>
-                <VStack spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Select Property</FormLabel>
-                    <Select
-                      placeholder="Choose a property"
-                      value={formData.propertyId}
-                      onChange={(e) => handlePropertyChange(e.target.value)}
-                    >
-                      {properties.map(property => (
-                        <option key={property._id} value={property._id}>
-                          {property.title} - ${property.price.toLocaleString()}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
 
-                  <FormControl>
-                    <FormLabel>Property Title</FormLabel>
-                    <Input
-                      value={formData.propertyTitle}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
 
-                  <FormControl>
-                    <FormLabel>Property Address</FormLabel>
-                    <Input
-                      value={formData.propertyAddress}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
+              <form id="purchase-booking-form" onSubmit={handleSubmit}>
+        <VStack spacing={6} align="stretch">
+          {/* Property Selection */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiHome color="blue.500" size={20} />
+                <Heading size="md" color="blue.700">Property Selection</Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              <FormControl isRequired>
+                <FormLabel fontWeight="semibold">Select Property</FormLabel>
+                <Select
+                  name="propertyId"
+                  value={formData.propertyId}
+                  onChange={(e) => handlePropertyChange(e.target.value)}
+                  placeholder="Choose a property"
+                  isRequired={true}
+                  isDisabled={isSubmitting}
+                  size="md"
+                >
+                  {properties.map(property => (
+                    <option key={property._id} value={property._id}>
+                      {`${property.name || property.title} - $${property.price?.toLocaleString() || 'N/A'}`}
+                    </option>
+                  ))}
+                </Select>
+                <FormHelperText>Select from available properties</FormHelperText>
+              </FormControl>
+            </CardBody>
+          </Card>
 
-                  <FormControl>
-                    <FormLabel>Property Type</FormLabel>
-                    <Input
-                      value={formData.propertyType}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
+          {/* Customer Selection */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiUser color="green.500" size={20} />
+                <Heading size="md" color="green.700">Customer Selection</Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              <FormControl isRequired>
+                <FormLabel fontWeight="semibold">Select Customer</FormLabel>
+                <Select
+                  name="customerId"
+                  value={formData.customerId}
+                  onChange={(e) => handleCustomerChange(e.target.value)}
+                  placeholder="Choose a customer"
+                  isRequired={true}
+                  isDisabled={isSubmitting}
+                  size="md"
+                >
+                  {customers.map(customer => (
+                    <option key={customer._id} value={customer._id}>
+                      {`${customer.firstName || ''} ${customer.lastName || ''}`.trim() ? `${customer.firstName} ${customer.lastName} - ${customer.email}` : `Unknown Customer - ${customer.email}`}
+                    </option>
+                  ))}
+                </Select>
+                <FormHelperText>Select from registered customers</FormHelperText>
+              </FormControl>
+            </CardBody>
+          </Card>
 
-                  <FormControl>
-                    <FormLabel>Property Price</FormLabel>
-                    <Input
-                      value={formData.propertyPrice ? `$${formData.propertyPrice.toLocaleString()}` : ''}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
-                </VStack>
-              </CardBody>
-            </Card>
-
-            {/* Customer Details */}
-            <Card bg={bgColor} border="1px" borderColor={borderColor}>
-              <CardHeader>
-                <HStack>
-                  <FiUser color="green.500" />
-                  <Heading size="md">Customer Details</Heading>
-                </HStack>
-              </CardHeader>
-              <CardBody>
-                <VStack spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Select Customer</FormLabel>
-                    <Select
-                      placeholder="Choose a customer"
-                      value={formData.customerId}
-                      onChange={(e) => handleCustomerChange(e.target.value)}
-                    >
-                      {customers.map(customer => (
-                        <option key={customer._id} value={customer._id}>
-                          {customer.name} - {customer.email}
-                        </option>
-                      ))}
-                    </Select>
-                  </FormControl>
-
-                  <FormControl>
-                    <FormLabel>Customer Name</FormLabel>
-                    <Input
-                      value={formData.customerName}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
-
-                  <FormControl>
-                    <FormLabel>Customer Email</FormLabel>
-                    <Input
-                      value={formData.customerEmail}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
-
-                  <FormControl>
-                    <FormLabel>Customer Phone</FormLabel>
-                    <Input
-                      value={formData.customerPhone}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
-                </VStack>
-              </CardBody>
-            </Card>
-
-            {/* Salesperson Assignment */}
-            <Card bg={bgColor} border="1px" borderColor={borderColor}>
-              <CardHeader>
-                <HStack>
-                  <FiUser color="purple.500" />
-                  <Heading size="md">Salesperson Assignment</Heading>
-                </HStack>
-              </CardHeader>
-              <CardBody>
+          {/* Salesperson Assignment */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiUser color="purple.500" size={20} />
+                <Heading size="md" color="purple.700">Salesperson Assignment</Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
                 <FormControl isRequired>
-                  <FormLabel>Assign Salesperson</FormLabel>
+                  <FormLabel fontWeight="semibold">Assign Salesperson</FormLabel>
                   <Select
-                    placeholder="Choose a salesperson"
+                    name="assignedSalespersonId"
                     value={formData.assignedSalespersonId}
                     onChange={(e) => handleSalespersonChange(e.target.value)}
+                    placeholder="Choose a salesperson"
+                    isRequired={true}
+                    isDisabled={isSubmitting}
+                    size="md"
                   >
                     {salespeople.map(salesperson => (
                       <option key={salesperson._id} value={salesperson._id}>
-                        {salesperson.name} - {salesperson.email}
+                        {`${salesperson.firstName || ''} ${salesperson.lastName || ''}`.trim() ? `${salesperson.firstName} ${salesperson.lastName} - ${salesperson.email}` : `Unknown Salesperson - ${salesperson.email}`}
                       </option>
                     ))}
                   </Select>
+                  <FormHelperText>Assign a salesperson to handle this booking</FormHelperText>
                 </FormControl>
-              </CardBody>
-            </Card>
-          </VStack>
+            </CardBody>
+          </Card>
 
-          {/* Right Column */}
-          <VStack spacing={6} align="stretch">
-            {/* Financial Details */}
-            <Card bg={bgColor} border="1px" borderColor={borderColor}>
-              <CardHeader>
-                <HStack>
-                  <FiDollarSign color="orange.500" />
-                  <Heading size="md">Financial Details</Heading>
-                </HStack>
-              </CardHeader>
-              <CardBody>
-                <VStack spacing={4}>
-                  <FormControl>
-                    <FormLabel>Total Property Value</FormLabel>
-                    <Input
-                      value={formData.totalPropertyValue ? `$${formData.totalPropertyValue.toLocaleString()}` : ''}
-                      isReadOnly
-                      bg="gray.50"
-                    />
+          {/* Financial Details */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiDollarSign color="orange.500" size={20} />
+                <Heading size="md" color="orange.700">Financial Details</Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              <VStack spacing={4}>
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="full">
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="semibold">Total Property Value</FormLabel>
+                    <NumberInput
+                      name="totalPropertyValue"
+                      value={formData.totalPropertyValue}
+                      onChange={(value) => handleInputChange('totalPropertyValue', value)}
+                      min={0}
+                      isDisabled={isSubmitting}
+                      size="md"
+                    >
+                      <NumberInputField placeholder="Enter total property value" />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
                   </FormControl>
 
                   <FormControl isRequired>
-                    <FormLabel>Down Payment</FormLabel>
+                    <FormLabel fontWeight="semibold">Down Payment</FormLabel>
                     <NumberInput
+                      name="downPayment"
                       value={formData.downPayment}
                       onChange={(value) => handleInputChange('downPayment', value)}
                       min={0}
                       max={formData.totalPropertyValue}
+                      isDisabled={isSubmitting}
+                      size="md"
                     >
                       <NumberInputField placeholder="Enter down payment amount" />
                       <NumberInputStepper>
@@ -443,194 +513,271 @@ const CreateNewPurchase = () => {
                         <NumberDecrementStepper />
                       </NumberInputStepper>
                     </NumberInput>
-                    <FormHelperText>
-                      Minimum: ${Math.round((formData.totalPropertyValue || 0) * 0.1).toLocaleString()}
-                    </FormHelperText>
                   </FormControl>
+                </SimpleGrid>
 
-                  <FormControl>
-                    <FormLabel>Loan Amount</FormLabel>
-                    <Input
-                      value={`$${calculateLoanAmount().toLocaleString()}`}
-                      isReadOnly
-                      bg="gray.50"
-                    />
-                  </FormControl>
-
-                  <FormControl>
-                    <FormLabel>
-                      <HStack>
-                        <Text>Financed Purchase</Text>
-                        <Switch
+                <FormControl>
+                  <FormLabel>
+                    <HStack>
+                      <Text fontWeight="semibold">Financed Purchase</Text>
+                                              <Switch
+                          name="isFinanced"
                           isChecked={formData.isFinanced}
                           onChange={(e) => handleInputChange('isFinanced', e.target.checked)}
                           colorScheme="blue"
+                          isDisabled={isSubmitting}
                         />
-                      </HStack>
-                    </FormLabel>
-                  </FormControl>
+                    </HStack>
+                  </FormLabel>
+                </FormControl>
 
-                  {formData.isFinanced && (
-                    <VStack spacing={4} w="full">
-                      <FormControl>
-                        <FormLabel>Bank Name</FormLabel>
-                        <Input
+                {formData.isFinanced && (
+                  <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} w="full">
+                    <FormControl isRequired>
+                      <FormLabel fontWeight="semibold">Bank Name</FormLabel>
+                                              <Input
+                          name="bankName"
                           placeholder="Enter bank name"
                           value={formData.bankName}
                           onChange={(e) => handleInputChange('bankName', e.target.value)}
+                          isDisabled={isSubmitting}
+                          size="md"
                         />
-                      </FormControl>
+                    </FormControl>
 
-                      <FormControl>
-                        <FormLabel>Loan Tenure (Years)</FormLabel>
-                        <NumberInput
+                    <FormControl isRequired>
+                      <FormLabel fontWeight="semibold">Loan Tenure (Years)</FormLabel>
+                                              <NumberInput
+                          name="loanTenure"
                           value={formData.loanTenure}
                           onChange={(value) => handleInputChange('loanTenure', value)}
                           min={1}
                           max={30}
+                          isDisabled={isSubmitting}
+                          size="md"
                         >
-                          <NumberInputField placeholder="Enter loan tenure" />
-                          <NumberInputStepper>
-                            <NumberIncrementStepper />
-                            <NumberDecrementStepper />
-                          </NumberInputStepper>
-                        </NumberInput>
-                      </FormControl>
-
-                      <FormControl>
-                        <FormLabel>Interest Rate (%)</FormLabel>
-                        <NumberInput
-                          value={formData.interestRate}
-                          onChange={(value) => handleInputChange('interestRate', value)}
-                          min={0}
-                          max={20}
-                          step={0.1}
-                        >
-                          <NumberInputField placeholder="Enter interest rate" />
-                          <NumberInputStepper>
-                            <NumberIncrementStepper />
-                            <NumberDecrementStepper />
-                          </NumberInputStepper>
-                        </NumberInput>
-                      </FormControl>
-
-                      <FormControl>
-                        <FormLabel>EMI Amount</FormLabel>
-                        <Input
-                          value={`$${calculateEMI().toLocaleString()}`}
-                          isReadOnly
-                          bg="gray.50"
-                        />
-                      </FormControl>
-                    </VStack>
-                  )}
-                </VStack>
-              </CardBody>
-            </Card>
-
-            {/* Payment Terms */}
-            <Card bg={bgColor} border="1px" borderColor={borderColor}>
-              <CardHeader>
-                <HStack>
-                  <FiSettings color="teal.500" />
-                  <Heading size="md">Payment Terms</Heading>
-                </HStack>
-              </CardHeader>
-              <CardBody>
-                <VStack spacing={4}>
-                  <FormControl isRequired>
-                    <FormLabel>Payment Terms</FormLabel>
-                    <Select
-                      value={formData.paymentTerms}
-                      onChange={(e) => handleInputChange('paymentTerms', e.target.value)}
-                    >
-                      <option value="FULL_PAYMENT">Full Payment</option>
-                      <option value="INSTALLMENTS">Installments</option>
-                      <option value="MILESTONE">Milestone Based</option>
-                    </Select>
-                  </FormControl>
-
-                  {formData.paymentTerms === 'INSTALLMENTS' && (
-                    <FormControl>
-                      <FormLabel>Number of Installments</FormLabel>
-                      <NumberInput
-                        value={formData.installmentCount}
-                        onChange={(value) => handleInputChange('installmentCount', value)}
-                        min={2}
-                        max={60}
-                      >
-                        <NumberInputField placeholder="Enter number of installments" />
+                        <NumberInputField placeholder="Enter loan tenure" />
                         <NumberInputStepper>
                           <NumberIncrementStepper />
                           <NumberDecrementStepper />
                         </NumberInputStepper>
                       </NumberInput>
                     </FormControl>
-                  )}
-                </VStack>
-              </CardBody>
-            </Card>
 
-            {/* Additional Details */}
-            <Card bg={bgColor} border="1px" borderColor={borderColor}>
-              <CardHeader>
-                <Heading size="md">Additional Details</Heading>
-              </CardHeader>
-              <CardBody>
-                <VStack spacing={4}>
-                  <FormControl>
-                    <FormLabel>Expected Completion Date</FormLabel>
-                    <Input
-                      type="date"
-                      value={formData.expectedCompletionDate}
-                      onChange={(e) => handleInputChange('expectedCompletionDate', e.target.value)}
-                    />
-                  </FormControl>
+                    <FormControl isRequired>
+                      <FormLabel fontWeight="semibold">Interest Rate (%)</FormLabel>
+                                              <NumberInput
+                          name="interestRate"
+                          value={formData.interestRate}
+                          onChange={(value) => handleInputChange('interestRate', value)}
+                          min={0}
+                          max={20}
+                          step={0.1}
+                          isDisabled={isSubmitting}
+                          size="md"
+                        >
+                        <NumberInputField placeholder="Enter interest rate" />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </FormControl>
 
-                  <FormControl>
-                    <FormLabel>Notes</FormLabel>
-                    <Textarea
-                      placeholder="Add any additional notes or special requirements"
-                      value={formData.notes}
-                      onChange={(e) => handleInputChange('notes', e.target.value)}
-                      rows={4}
-                    />
+                    <FormControl isRequired>
+                      <FormLabel fontWeight="semibold">EMI Amount</FormLabel>
+                                              <NumberInput
+                          name="emiAmount"
+                          value={formData.emiAmount}
+                          onChange={(value) => handleInputChange('emiAmount', value)}
+                          min={0}
+                          isDisabled={isSubmitting}
+                          size="md"
+                        >
+                        <NumberInputField placeholder="Enter EMI amount" />
+                        <NumberInputStepper>
+                          <NumberIncrementStepper />
+                          <NumberDecrementStepper />
+                        </NumberInputStepper>
+                      </NumberInput>
+                    </FormControl>
+                  </SimpleGrid>
+                )}
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Payment Terms */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiSettings color="teal.500" size={20} />
+                <Heading size="md" color="teal.700">Payment Terms</Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              <VStack spacing={4}>
+                <FormControl isRequired>
+                  <FormLabel fontWeight="semibold">Payment Terms</FormLabel>
+                  <Select
+                    name="paymentTerms"
+                    value={formData.paymentTerms}
+                    onChange={(e) => handleInputChange('paymentTerms', e.target.value)}
+                    isDisabled={isSubmitting}
+                    size="md"
+                  >
+                    <option value="FULL_PAYMENT">Full Payment</option>
+                    <option value="INSTALLMENTS">Installments</option>
+                    <option value="MILESTONE">Milestone Based</option>
+                  </Select>
+                </FormControl>
+
+                {formData.paymentTerms === 'INSTALLMENTS' && (
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="semibold">Number of Installments</FormLabel>
+                    <NumberInput
+                      name="installmentCount"
+                      value={formData.installmentCount}
+                      onChange={(value) => handleInputChange('installmentCount', value)}
+                      min={2}
+                      max={60}
+                      isDisabled={isSubmitting}
+                      size="md"
+                    >
+                      <NumberInputField placeholder="Enter number of installments" />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
+                    <FormHelperText>Minimum 2 installments required</FormHelperText>
                   </FormControl>
-                </VStack>
-              </CardBody>
-            </Card>
-          </VStack>
-        </SimpleGrid>
+                )}
+
+                <FormControl isRequired>
+                  <FormLabel fontWeight="semibold">Booking Status</FormLabel>
+                  <Select
+                    name="bookingStatus"
+                    value={formData.bookingStatus}
+                    onChange={(e) => handleInputChange('bookingStatus', e.target.value)}
+                    isDisabled={isSubmitting}
+                    size="md"
+                  >
+                    <option value="PENDING">Pending</option>
+                    <option value="CONFIRMED">Confirmed</option>
+                    <option value="REJECTED">Rejected</option>
+                    <option value="COMPLETED">Completed</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </Select>
+                  <FormHelperText>Select the initial booking status</FormHelperText>
+                </FormControl>
+              </VStack>
+            </CardBody>
+          </Card>
+        </VStack>
       </form>
 
-      {/* Summary Card */}
-      <Card bg={bgColor} border="1px" borderColor={borderColor} mt={8}>
-        <CardHeader>
-          <Heading size="md">Booking Summary</Heading>
-        </CardHeader>
-        <CardBody>
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6}>
-            <Box textAlign="center">
-              <Text fontSize="sm" color="gray.600">Total Value</Text>
-              <Text fontSize="2xl" fontWeight="bold" color="green.600">
-                ${(formData.totalPropertyValue || 0).toLocaleString()}
-              </Text>
-            </Box>
-            <Box textAlign="center">
-              <Text fontSize="sm" color="gray.600">Down Payment</Text>
-              <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-                ${(formData.downPayment || 0).toLocaleString()}
-              </Text>
-            </Box>
-            <Box textAlign="center">
-              <Text fontSize="sm" color="gray.600">Loan Amount</Text>
-              <Text fontSize="2xl" fontWeight="bold" color="purple.600">
-                ${calculateLoanAmount().toLocaleString()}
-              </Text>
-            </Box>
-          </SimpleGrid>
-        </CardBody>
-      </Card>
+      {/* Form Footer - Standard pattern like other forms */}
+      <Box 
+        mt={8} 
+        p={6} 
+        bg="white" 
+        borderTop="1px solid" 
+        borderColor="gray.200"
+        borderRadius="lg"
+        shadow="sm"
+      >
+        <Flex justify="flex-end" align="center">
+          <HStack spacing={4}>
+            <Button
+              variant="ghost"
+              size="lg"
+              onClick={() => navigate('/purchase-bookings/all')}
+              isDisabled={isSubmitting}
+              leftIcon={<FiX />}
+            >
+              Cancel
+            </Button>
+            <Button
+              colorScheme="brand"
+              size="lg"
+              type="submit"
+              form="purchase-booking-form"
+              isLoading={isSubmitting}
+              loadingText="Creating..."
+              leftIcon={<FiSave />}
+              px={8}
+            >
+              Create Booking
+            </Button>
+          </HStack>
+        </Flex>
+      </Box>
+
+      {/* Success Modal */}
+      <Modal isOpen={isOpen} onClose={onClose} size="xl" isCentered>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader color="green.600">
+            <HStack>
+              <FiCheckCircle />
+              <Text>Purchase Booking Created Successfully!</Text>
+            </HStack>
+          </ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            {createdBooking && (
+              <VStack spacing={4} align="stretch">
+                <Alert status="success" borderRadius="md">
+                  <AlertIcon />
+                  <Box>
+                    <AlertTitle>Booking ID: {createdBooking._id}</AlertTitle>
+                    <AlertDescription>
+                      Your purchase booking has been created and is now pending approval.
+                    </AlertDescription>
+                  </Box>
+                </Alert>
+                
+                <Card>
+                  <CardBody>
+                    <VStack spacing={3} align="stretch">
+                      <HStack justify="space-between">
+                        <Text fontWeight="semibold">Status:</Text>
+                        <Badge colorScheme="yellow" size="lg">{createdBooking.bookingStatus}</Badge>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text fontWeight="semibold">Total Value:</Text>
+                        <Text>${createdBooking.totalPropertyValue?.toLocaleString()}</Text>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text fontWeight="semibold">Down Payment:</Text>
+                        <Text>${createdBooking.downPayment?.toLocaleString()}</Text>
+                      </HStack>
+                      <HStack justify="space-between">
+                        <Text fontWeight="semibold">Loan Amount:</Text>
+                        <Text>${createdBooking.loanAmount?.toLocaleString()}</Text>
+                      </HStack>
+                      {createdBooking.installmentSchedule && (
+                        <Box>
+                          <Text fontWeight="semibold" mb={2}>Installment Schedule:</Text>
+                          <Text fontSize="sm" color="gray.600">
+                            {createdBooking.installmentSchedule.length} installments of ${Math.round(createdBooking.installmentSchedule[0]?.amount || 0).toLocaleString()} each
+                          </Text>
+                        </Box>
+                      )}
+                    </VStack>
+                  </CardBody>
+                </Card>
+              </VStack>
+            )}
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" onClick={handleSuccessModalClose}>
+              View All Bookings
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

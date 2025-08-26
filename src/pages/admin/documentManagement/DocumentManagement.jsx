@@ -182,24 +182,12 @@ const DocumentManagement = () => {
 
   const handlePageChange = (newPage) => {
     const totalPages = Math.ceil(filteredDocuments.length / pageSize);
-    console.log('DocumentManagement: handlePageChange called', {
-      newPage,
-      totalPages,
-      filteredDocumentsLength: filteredDocuments.length,
-      pageSize,
-      currentPage
-    });
     if (newPage > 0 && newPage <= totalPages) {
       setCurrentPage(newPage);
     }
   };
 
-  const handlePageSizeChange = (newSize) => {
-    console.log('DocumentManagement: handlePageSizeChange called', {
-      oldSize: pageSize,
-      newSize,
-      currentPage
-    });
+  const handlePageSizeChange = (newSize) => { 
     setPageSize(newSize);
     setCurrentPage(1);
   };
@@ -649,15 +637,7 @@ const DocumentManagement = () => {
               const startIndex = (currentPage - 1) * pageSize;
               const endIndex = currentPage * pageSize;
               const documentsToShow = filteredDocuments.slice(startIndex, endIndex);
-              console.log('DocumentManagement: Document slicing', {
-                startIndex,
-                endIndex,
-                pageSize,
-                currentPage,
-                totalDocuments: filteredDocuments.length,
-                documentsToShow: documentsToShow.length,
-                sliceRange: `${startIndex} to ${endIndex}`
-              });
+             
               return documentsToShow.map(renderDocumentCard);
             })()}
           </SimpleGrid>
@@ -667,13 +647,7 @@ const DocumentManagement = () => {
       {/* Pagination */}
       {filteredDocuments.length > 0 && (
         <Box mt={6}>
-          {console.log('DocumentManagement: Rendering pagination', {
-            currentPage,
-            totalPages: Math.ceil(filteredDocuments.length / pageSize),
-            filteredDocumentsLength: filteredDocuments.length,
-            pageSize,
-            totalItems: filteredDocuments.length
-          })}
+         
           <CommonPagination
             currentPage={currentPage}
             totalPages={Math.ceil(filteredDocuments.length / pageSize)}

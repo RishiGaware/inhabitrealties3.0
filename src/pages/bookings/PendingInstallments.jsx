@@ -1,561 +1,588 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   Box,
   Flex,
   Text,
   Button,
   HStack,
-  VStack,
   Badge,
-  Tooltip,
-  IconButton,
-  Card,
-  CardBody,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
-  Progress,
-  useColorModeValue,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
-  Alert,
-  AlertIcon,
-  AlertTitle,
-  AlertDescription,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
+  useToast,
   useDisclosure,
-  FormControl,
-  FormLabel,
-  Input,
-  Select,
-  Textarea,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
+  IconButton,
 } from '@chakra-ui/react';
-import { FiEye, FiEdit, FiDollarSign, FiCalendar, FiClock, FiAlertTriangle, FiCheckCircle, FiPlus } from 'react-icons/fi';
+import { FiDownload, FiEye, FiEdit, FiTrash2 } from 'react-icons/fi';
+import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
+import CommonTable from '../../components/common/Table/CommonTable';
+import CommonPagination from '../../components/common/pagination/CommonPagination';
+import TableContainer from '../../components/common/Table/TableContainer';
+import SearchAndFilter from '../../components/common/SearchAndFilter';
+import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
+import Loader from '../../components/common/Loader';
+import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import PurchaseBookingForm from '../../components/common/PurchaseBookingForm';
+import PurchaseBookingViewer from '../../components/common/PurchaseBookingViewer';
+import { ROUTES } from '../../utils/constants';
+import api from '../../services/api';
 
 const PendingInstallments = () => {
-  const navigate = useNavigate();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  
-  const { isOpen: isPaymentModalOpen, onOpen: onPaymentModalOpen, onClose: onPaymentModalClose } = useDisclosure();
-  const [selectedInstallment, setSelectedInstallment] = useState(null);
-  const [paymentForm, setPaymentForm] = useState({
-    amount: '',
-    paymentMode: 'BANK_TRANSFER',
-    notes: '',
-  });
+  const toast = useToast();
 
-  // Mock data for pending installments
+  // State management
   const [pendingInstallments, setPendingInstallments] = useState([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    totalAmount: 0,
-    overdue: 0,
-    dueThisWeek: 0,
-    dueThisMonth: 0,
-  });
+  const [filteredInstallments, setFilteredInstallments] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [isDeleteLoading, setIsDeleteLoading] = useState(false);
+  const [installmentToDelete, setInstallmentToDelete] = useState(null);
+  const [selectedInstallment, setSelectedInstallment] = useState(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [formMode, setFormMode] = useState('add');
+  const [isFormLoading, setIsFormLoading] = useState(false);
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
 
+  // Filter options
+  const filterOptions = {
+    status: [
+      { value: 'PENDING', label: 'Pending' },
+      { value: 'CONFIRMED', label: 'Confirmed' },
+      { value: 'REJECTED', label: 'Rejected' },
+      { value: 'COMPLETED', label: 'Completed' },
+      { value: 'CANCELLED', label: 'Cancelled' }
+    ]
+  };
+
+  // Fetch data from real API
   useEffect(() => {
-    // Mock data for pending installments
-    const mockInstallments = [
-      {
-        _id: 'inst_1',
-        bookingId: 'PURCHASE-2024-001',
-        customerName: 'John Smith',
-        propertyTitle: 'Luxury Apartment Downtown',
-        installmentNumber: 3,
-        dueDate: '2024-02-15',
-        amount: 45000,
-        status: 'PENDING',
-        daysOverdue: 0,
-        lateFees: 0,
-        salespersonName: 'Alex Thompson',
-        customerPhone: '+1234567890',
-        customerEmail: 'john@example.com',
-      },
-      {
-        _id: 'inst_2',
-        bookingId: 'PURCHASE-2024-002',
-        customerName: 'Sarah Johnson',
-        propertyTitle: 'Modern Villa Suburbs',
-        installmentNumber: 2,
-        dueDate: '2024-02-10',
-        amount: 52000,
-        status: 'OVERDUE',
-        daysOverdue: 5,
-        lateFees: 2600,
-        salespersonName: 'Lisa Davis',
-        customerPhone: '+1234567891',
-        customerEmail: 'sarah@example.com',
-      },
-      {
-        _id: 'inst_3',
-        bookingId: 'PURCHASE-2024-003',
-        customerName: 'Mike Wilson',
-        propertyTitle: 'Premium Condo',
-        installmentNumber: 5,
-        dueDate: '2024-02-20',
-        amount: 28000,
-        status: 'PENDING',
-        daysOverdue: 0,
-        lateFees: 0,
-        salespersonName: 'Robert Brown',
-        customerPhone: '+1234567892',
-        customerEmail: 'mike@example.com',
-      },
-      {
-        _id: 'inst_4',
-        bookingId: 'PURCHASE-2024-004',
-        customerName: 'Emily Davis',
-        propertyTitle: 'Executive Penthouse',
-        installmentNumber: 1,
-        dueDate: '2024-02-05',
-        amount: 75000,
-        status: 'OVERDUE',
-        daysOverdue: 10,
-        lateFees: 7500,
-        salespersonName: 'Alex Thompson',
-        customerPhone: '+1234567893',
-        customerEmail: 'emily@example.com',
-      },
-      {
-        _id: 'inst_5',
-        bookingId: 'PURCHASE-2024-005',
-        customerName: 'David Brown',
-        propertyTitle: 'Garden Villa',
-        installmentNumber: 4,
-        dueDate: '2024-02-25',
-        amount: 38000,
-        status: 'PENDING',
-        daysOverdue: 0,
-        lateFees: 0,
-        salespersonName: 'Lisa Davis',
-        customerPhone: '+1234567894',
-        customerEmail: 'david@example.com',
-      },
-    ];
-
-    setPendingInstallments(mockInstallments);
-    
-    // Calculate stats
-    const total = mockInstallments.length;
-    const totalAmount = mockInstallments.reduce((sum, inst) => sum + inst.amount, 0);
-    const overdue = mockInstallments.filter(inst => inst.status === 'OVERDUE').length;
-    const dueThisWeek = mockInstallments.filter(inst => {
-      const dueDate = new Date(inst.dueDate);
-      const today = new Date();
-      const diffTime = dueDate - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays >= 0 && diffDays <= 7;
-    }).length;
-    const dueThisMonth = mockInstallments.filter(inst => {
-      const dueDate = new Date(inst.dueDate);
-      const today = new Date();
-      const diffTime = dueDate - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays >= 0 && diffDays <= 30;
-    }).length;
-
-    setStats({ total, totalAmount, overdue, dueThisWeek, dueThisMonth });
+    fetchPendingInstallments();
   }, []);
 
-  const getStatusColor = (status, daysOverdue) => {
-    if (status === 'OVERDUE') return 'red';
-    if (daysOverdue <= 7) return 'orange';
-    return 'yellow';
+  const fetchPendingInstallments = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Use the configured API service
+      const response = await api.get('/purchase-bookings/reports/pending-installments');
+      
+      // Handle the actual API response format
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        setPendingInstallments(response.data.data);
+        setFilteredInstallments(response.data.data);
+      } else {
+        setPendingInstallments([]);
+        setFilteredInstallments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching pending installments:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch pending installments",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      setPendingInstallments([]);
+      setFilteredInstallments([]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const getStatusText = (status, daysOverdue) => {
-    if (status === 'OVERDUE') return `OVERDUE (${daysOverdue} days)`;
-    if (daysOverdue <= 7) return 'DUE SOON';
-    return 'PENDING';
+  // Filter and search functionality
+  useEffect(() => {
+    let filtered = pendingInstallments;
+
+    if (searchTerm) {
+      filtered = filtered.filter(installment =>
+        (installment.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (installment.propertyId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (installment.customerId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (installment.assignedSalespersonId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (installment.installmentSchedule?.installmentNumber?.toString().includes(searchTerm) || false)
+      );
+    }
+
+    if (statusFilter) {
+      filtered = filtered.filter(installment => installment.bookingStatus === statusFilter);
+    }
+
+    setFilteredInstallments(filtered);
+    setCurrentPage(1);
+  }, [pendingInstallments, searchTerm, statusFilter]);
+
+  // Table columns configuration
+  const columns = [
+    {
+      key: 'installmentSchedule.installmentNumber',
+      label: 'Installment #',
+      render: (value, row) => (
+        <Text color="gray.700" fontWeight="semibold">
+          {row.installmentSchedule?.installmentNumber || 'N/A'}
+        </Text>
+      ),
+      width: "100px"
+    },
+    {
+      key: 'bookingId',
+      label: 'Booking ID',
+      render: (value) => (
+        <Text color="blue.600" fontWeight="semibold" fontSize="sm">
+          {value || 'N/A'}
+        </Text>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'propertyId',
+      label: 'Property ID',
+      render: (value) => (
+        <Text color="gray.600" fontSize="xs" fontFamily="mono">
+          {value ? value.substring(0, 8) + '...' : 'N/A'}
+        </Text>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'customerId',
+      label: 'Customer ID',
+      render: (value) => (
+        <Text color="gray.600" fontSize="xs" fontFamily="mono">
+          {value ? value.substring(0, 8) + '...' : 'N/A'}
+        </Text>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'assignedSalespersonId',
+      label: 'Salesperson ID',
+      render: (value) => (
+        <Text color="gray.600" fontSize="xs" fontFamily="mono">
+          {value ? value.substring(0, 8) + '...' : 'N/A'}
+        </Text>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'bookingStatus',
+      label: 'Booking Status',
+      render: (value) => (
+        <Badge
+          colorScheme={
+            value === 'CONFIRMED' ? 'green' :
+            value === 'PENDING' ? 'yellow' :
+            value === 'REJECTED' ? 'red' :
+            value === 'COMPLETED' ? 'blue' : 'gray'
+          }
+          variant="solid"
+          fontSize="xs"
+        >
+          {value?.replace(/_/g, ' ') || 'N/A'}
+        </Badge>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'totalPropertyValue',
+      label: 'Property Value',
+      render: (value) => (
+        <Text color="gray.700" fontWeight="semibold">
+          ${value ? parseFloat(value).toLocaleString() : '0'}
+        </Text>
+      ),
+      width: "130px"
+    },
+    {
+      key: 'downPayment',
+      label: 'Down Payment',
+      render: (value) => (
+        <Text color="gray.700" fontWeight="semibold">
+          ${value ? parseFloat(value).toLocaleString() : '0'}
+        </Text>
+      ),
+      width: "130px"
+    },
+    {
+      key: 'loanAmount',
+      label: 'Loan Amount',
+      render: (value) => (
+        <Text color="gray.700" fontWeight="semibold">
+          ${value ? parseFloat(value).toLocaleString() : '0'}
+        </Text>
+      ),
+      width: "130px"
+    },
+    {
+      key: 'installmentSchedule.amount',
+      label: 'Installment Amount',
+      render: (value, row) => (
+        <Text color="green.600" fontWeight="semibold">
+          ${row.installmentSchedule?.amount ? parseFloat(row.installmentSchedule.amount).toLocaleString() : '0'}
+        </Text>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'installmentSchedule.dueDate',
+      label: 'Due Date',
+      render: (value, row) => (
+        <Text color="gray.700" fontSize="sm">
+          {row.installmentSchedule?.dueDate ? new Date(row.installmentSchedule.dueDate).toLocaleDateString() : 'N/A'}
+        </Text>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'installmentSchedule.status',
+      label: 'Installment Status',
+      render: (value, row) => (
+        <Badge
+          colorScheme={
+            row.installmentSchedule?.status === 'PAID' ? 'green' :
+            row.installmentSchedule?.status === 'PENDING' ? 'yellow' :
+            row.installmentSchedule?.status === 'OVERDUE' ? 'red' :
+            row.installmentSchedule?.status === 'PARTIALLY_PAID' ? 'blue' : 'gray'
+          }
+          variant="solid"
+          fontSize="xs"
+        >
+          {row.installmentSchedule?.status?.replace(/_/g, ' ') || 'N/A'}
+        </Badge>
+      ),
+      width: "140px"
+    },
+    {
+      key: 'paymentTerms',
+      label: 'Payment Terms',
+      render: (value) => (
+        <Text color="gray.700" noOfLines={1} maxW="100px">
+          {value || 'N/A'}
+        </Text>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'installmentCount',
+      label: 'Total Installments',
+      render: (value) => (
+        <Text color="gray.700" fontWeight="semibold">
+          {value || '0'}
+        </Text>
+      ),
+      width: "130px"
+    },
+    {
+      key: 'isFinanced',
+      label: 'Financed',
+      render: (value) => (
+        <Badge
+          colorScheme={value ? 'green' : 'gray'}
+          variant="solid"
+          fontSize="xs"
+        >
+          {value ? 'Yes' : 'No'}
+        </Badge>
+      ),
+      width: "100px"
+    },
+    {
+      key: 'createdAt',
+      label: 'Created Date',
+      render: (value) => (
+        <Text color="gray.700" fontSize="sm">
+          {value ? new Date(value).toLocaleDateString() : 'N/A'}
+        </Text>
+      ),
+      width: "120px"
+    },
+  ];
+
+  // Row actions - matching UserManagement style
+  const renderRowActions = (installment) => (
+    <HStack spacing={2}>
+      <IconButton
+        key="view"
+        aria-label="View installment"
+        icon={<FiEye />}
+        size="sm"
+        onClick={() => handleView(installment._id)}
+        colorScheme="blue"
+        variant="outline"
+      />
+      <IconButton
+        key="edit"
+        aria-label="Edit installment"
+        icon={<EditIcon />}
+        size="sm"
+        onClick={() => handleEdit(installment._id)}
+        colorScheme="brand"
+        variant="outline"
+      />
+    </HStack>
+  );
+
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  // Handle filters
+  const handleFilterChange = (key, value) => {
+    if (key === 'status') {
+      setStatusFilter(value);
+    }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setStatusFilter('');
+    setSearchTerm('');
   };
 
-  const getDaysUntil = (dateString) => {
-    const today = new Date();
-    const targetDate = new Date(dateString);
-    const diffTime = targetDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  // Handle add new installment
+  const handleAddNew = () => {
+    setSelectedInstallment(null);
+    setFormMode('add');
+    setIsFormOpen(true);
   };
 
-  const handleRecordPayment = (installment) => {
+  // Handle edit installment
+  const handleEdit = (id) => {
+    const installment = pendingInstallments.find(item => item._id === id);
+    if (installment) {
+      setSelectedInstallment(installment);
+      setFormMode('edit');
+      setIsFormOpen(true);
+    }
+  };
+
+  // Handle view installment
+  const handleView = (id) => {
+    const installment = pendingInstallments.find(item => item._id === id);
+    if (installment) {
     setSelectedInstallment(installment);
-    setPaymentForm({
-      amount: installment.amount.toString(),
-      paymentMode: 'BANK_TRANSFER',
-      notes: '',
+      setIsViewerOpen(true);
+    }
+  };
+
+  // Handle delete installment
+  const handleDelete = (id) => {
+    const installment = pendingInstallments.find(item => item._id === id);
+    if (installment) {
+      setInstallmentToDelete(installment);
+      onDeleteOpen();
+    }
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!installmentToDelete) return;
+
+    try {
+      setIsDeleteLoading(true);
+      
+      // Delete API call would go here
+      // await api.delete(`/purchase-bookings/${installmentToDelete._id}`);
+      
+      toast({
+        title: "Success",
+        description: "Installment deleted successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
+      // Refresh data
+      fetchPendingInstallments();
+    } catch (error) {
+      console.error('Error deleting installment:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete installment",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsDeleteLoading(false);
+      onDeleteClose();
+      setInstallmentToDelete(null);
+    }
+  };
+
+  // Handle form submit
+  const handleFormSubmit = async (formData) => {
+    try {
+      setIsFormLoading(true);
+      
+      if (formMode === 'add') {
+        // Create API call would go here
+        // await api.post('/purchase-bookings/create', formData);
+        toast({
+          title: "Success",
+          description: "Installment created successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        // Update API call would go here
+        // await api.put(`/purchase-bookings/${selectedInstallment._id}`, formData);
+        toast({
+          title: "Success",
+          description: "Installment updated successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+
+      // Refresh data and close form
+      fetchPendingInstallments();
+      setIsFormOpen(false);
+      setSelectedInstallment(null);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save installment",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsFormLoading(false);
+    }
+  };
+
+  // Handle pagination
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(newPageSize);
+    setCurrentPage(1);
+  };
+
+  // Handle export
+  const handleExport = (format) => {
+    // Export functionality would go here
+    toast({
+      title: "Export",
+      description: `${format.toUpperCase()} export started`,
+      status: "info",
+      duration: 3000,
+      isClosable: true,
     });
-    onPaymentModalOpen();
   };
 
-  const handlePaymentSubmit = () => {
-    // Mock payment recording
-    const updatedInstallments = pendingInstallments.map(inst => 
-      inst._id === selectedInstallment._id 
-        ? { ...inst, status: 'PAID', paidDate: new Date().toISOString() }
-        : inst
-    );
-    
-    setPendingInstallments(updatedInstallments);
-    onPaymentModalClose();
-    
-    // Show success message
-    // You can add toast notification here
-  };
-
-  const handleContactCustomer = (installment) => {
-    // Mock contact action - could open email client or phone dialer
-    console.log(`Contacting ${installment.customerName} for installment ${installment.installmentNumber}`);
-  };
-
-  const handleSendReminder = (installment) => {
-    // Mock reminder action
-    console.log(`Sending reminder to ${installment.customerName} for installment ${installment.installmentNumber}`);
-  };
+  if (isLoading) {
+    return <Loader size="xl" label="Loading pending installments..." />;
+  }
 
   return (
     <Box p={6} bg="gray.50" minH="100vh">
       {/* Header */}
-      <Flex justify="space-between" align="center" mb={8}>
-        <VStack align="start" spacing={2}>
-          <Text fontSize="3xl" fontWeight="bold" color="gray.800">
+      <Flex justify="space-between" align="center" mb={6}>
+        <Text fontSize="2xl" fontWeight="bold" color="gray.800">
             Pending Installments
           </Text>
-          <Text fontSize="lg" color="gray.600">
-            Track and manage pending installment payments across all purchase bookings
-          </Text>
-        </VStack>
-        
+        <HStack spacing={3}>
         <Button
-          leftIcon={<FiPlus />}
-          onClick={() => navigate('/purchase-bookings/all')}
-          colorScheme="blue"
-          size="lg"
-        >
-          View All Bookings
+            leftIcon={<FiDownload />}
+            onClick={() => handleExport('csv')}
+            variant="outline"
+            colorScheme="green"
+            size="sm"
+          >
+            Export CSV
         </Button>
+          <CommonAddButton onClick={handleAddNew} />
+        </HStack>
       </Flex>
 
-      {/* Stats Cards */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 5 }} spacing={6} mb={8}>
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Total Pending</StatLabel>
-              <StatNumber fontSize="3xl" color="blue.600">{stats.total}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                8% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {}} // No API search needed
+        searchPlaceholder="Search by booking ID, property ID, customer ID, salesperson ID, or installment number..."
+        filters={{ status: statusFilter }}
+        onFilterChange={handleFilterChange}
+        onApplyFilters={() => {}} // No API filter needed
+        onClearFilters={handleClearFilters}
+        filterOptions={{
+          status: {
+            label: "Status",
+            placeholder: "Filter by status",
+            options: filterOptions.status
+          }
+        }}
+        title="Filter Pending Installments"
+        activeFiltersCount={(statusFilter ? 1 : 0) + (searchTerm ? 1 : 0)}
+      />
 
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Total Amount</StatLabel>
-              <StatNumber fontSize="2xl" color="green.600">
-                {formatCurrency(stats.totalAmount)}
-              </StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                12% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Overdue</StatLabel>
-              <StatNumber fontSize="3xl" color="red.600">{stats.overdue}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="decrease" />
-                15% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Due This Week</StatLabel>
-              <StatNumber fontSize="3xl" color="orange.600">{stats.dueThisWeek}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                3% from last week
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Due This Month</StatLabel>
-              <StatNumber fontSize="3xl" color="purple.600">{stats.dueThisMonth}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                7% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-      </SimpleGrid>
-
-      {/* Overdue Alert */}
-      {stats.overdue > 0 && (
-        <Alert status="error" mb={6} borderRadius="lg">
-          <AlertIcon />
-          <Box>
-            <AlertTitle>Overdue Installments!</AlertTitle>
-            <AlertDescription>
-              You have {stats.overdue} overdue installment(s) totaling {formatCurrency(
-                pendingInstallments
-                  .filter(inst => inst.status === 'OVERDUE')
-                  .reduce((sum, inst) => sum + inst.amount + inst.lateFees, 0)
-              )}. Please follow up with customers immediately.
-            </AlertDescription>
-          </Box>
-        </Alert>
-      )}
-
-      {/* Installments Table */}
-      <Card bg={bgColor} border="1px" borderColor={borderColor}>
-        <CardBody>
           <TableContainer>
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th>Booking ID</Th>
-                  <Th>Customer</Th>
-                  <Th>Property</Th>
-                  <Th>Installment</Th>
-                  <Th>Due Date</Th>
-                  <Th>Amount</Th>
-                  <Th>Status</Th>
-                  <Th>Salesperson</Th>
-                  <Th>Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {pendingInstallments.map((installment) => (
-                  <Tr key={installment._id}>
-                    <Td>
-                      <Text fontWeight="semibold" color="blue.600">
-                        {installment.bookingId}
-                      </Text>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontWeight="semibold">{installment.customerName}</Text>
-                        <Text fontSize="sm" color="gray.600">{installment.customerEmail}</Text>
-                        <Text fontSize="sm" color="gray.600">{installment.customerPhone}</Text>
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <Text fontSize="sm">{installment.propertyTitle}</Text>
-                    </Td>
-                    <Td>
-                      <Badge colorScheme="blue" variant="subtle">
-                        #{installment.installmentNumber}
-                      </Badge>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontSize="sm">{formatDate(installment.dueDate)}</Text>
-                        <Text fontSize="xs" color="gray.500">
-                          {getDaysUntil(installment.dueDate) < 0 
-                            ? `${Math.abs(getDaysUntil(installment.dueDate))} days ago`
-                            : `${getDaysUntil(installment.dueDate)} days left`
-                          }
-                        </Text>
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontWeight="semibold" color="green.600">
-                          {formatCurrency(installment.amount)}
-                        </Text>
-                        {installment.lateFees > 0 && (
-                          <Text fontSize="xs" color="red.600">
-                            +{formatCurrency(installment.lateFees)} late fees
-                          </Text>
-                        )}
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <Badge 
-                        colorScheme={getStatusColor(installment.status, installment.daysOverdue)} 
-                        variant="subtle"
-                      >
-                        {getStatusText(installment.status, installment.daysOverdue)}
-                      </Badge>
-                    </Td>
-                    <Td>
-                      <Text fontSize="sm">{installment.salespersonName}</Text>
-                    </Td>
-                    <Td>
-                      <HStack spacing={2}>
-                        <Tooltip label="Record Payment">
-                          <IconButton
-                            icon={<FiCheckCircle />}
-                            onClick={() => handleRecordPayment(installment)}
-                            variant="ghost"
-                            colorScheme="green"
-                            size="sm"
-                          />
-                        </Tooltip>
-                        <Tooltip label="Contact Customer">
-                          <IconButton
-                            icon={<FiEdit />}
-                            onClick={() => handleContactCustomer(installment)}
-                            variant="ghost"
-                            colorScheme="blue"
-                            size="sm"
-                          />
-                        </Tooltip>
-                        <Tooltip label="Send Reminder">
-                          <IconButton
-                            icon={<FiClock />}
-                            onClick={() => handleSendReminder(installment)}
-                            variant="ghost"
-                            colorScheme="orange"
-                            size="sm"
-                          />
-                        </Tooltip>
-                        <Tooltip label="View Details">
-                          <IconButton
-                            icon={<FiEye />}
-                            onClick={() => navigate(`/purchase-bookings/${installment.bookingId}`)}
-                            variant="ghost"
-                            colorScheme="purple"
-                            size="sm"
-                          />
-                        </Tooltip>
-                      </HStack>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
-          </TableContainer>
-        </CardBody>
-      </Card>
+        <CommonTable
+          columns={columns}
+          data={filteredInstallments.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
+          )}
+          rowActions={renderRowActions}
+          emptyStateMessage={!isLoading ? "No pending installments match your search." : undefined}
+        />
+        <CommonPagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredInstallments.length / pageSize)}
+          onPageChange={handlePageChange}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          totalItems={filteredInstallments.length}
+        />
+      </TableContainer>
 
-      {/* Payment Recording Modal */}
-      <Modal isOpen={isPaymentModalOpen} onClose={onPaymentModalClose} size="lg">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader>Record Installment Payment</ModalHeader>
-          <ModalBody>
-            {selectedInstallment && (
-              <VStack spacing={4} align="stretch">
-                <Box p={4} bg="gray.50" borderRadius="md">
-                  <Text fontSize="sm" color="gray.600">Customer</Text>
-                  <Text fontWeight="semibold">{selectedInstallment.customerName}</Text>
-                  <Text fontSize="sm" color="gray.600">Property: {selectedInstallment.propertyTitle}</Text>
-                  <Text fontSize="sm" color="gray.600">Installment #{selectedInstallment.installmentNumber}</Text>
-                </Box>
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={isDeleteOpen}
+        onClose={onDeleteClose}
+        onConfirm={confirmDelete}
+        isLoading={isDeleteLoading}
+        title="Delete Pending Installment"
+        message="Are you sure you want to delete this pending installment? This action cannot be undone."
+      />
 
-                <FormControl>
-                  <FormLabel>Payment Amount</FormLabel>
-                  <NumberInput
-                    value={paymentForm.amount}
-                    onChange={(value) => setPaymentForm(prev => ({ ...prev, amount: value }))}
-                    min={0}
-                    max={selectedInstallment.amount + selectedInstallment.lateFees}
-                  >
-                    <NumberInputField placeholder="Enter payment amount" />
-                    <NumberInputStepper>
-                      <NumberIncrementStepper />
-                      <NumberDecrementStepper />
-                    </NumberInputStepper>
-                  </NumberInput>
-                  <Text fontSize="sm" color="gray.600">
-                    Due: {formatCurrency(selectedInstallment.amount)}
-                    {selectedInstallment.lateFees > 0 && ` + Late Fees: ${formatCurrency(selectedInstallment.lateFees)}`}
-                  </Text>
-                </FormControl>
+      {/* Purchase Booking Form */}
+      <PurchaseBookingForm
+        isOpen={isFormOpen}
+        onClose={() => {
+          setIsFormOpen(false);
+          setSelectedInstallment(null);
+        }}
+        mode={formMode}
+        initialData={selectedInstallment}
+        onSubmit={handleFormSubmit}
+        isLoading={isFormLoading}
+      />
 
-                <FormControl>
-                  <FormLabel>Payment Mode</FormLabel>
-                  <Select
-                    value={paymentForm.paymentMode}
-                    onChange={(e) => setPaymentForm(prev => ({ ...prev, paymentMode: e.target.value }))}
-                  >
-                    <option value="BANK_TRANSFER">Bank Transfer</option>
-                    <option value="CASH">Cash</option>
-                    <option value="CHEQUE">Cheque</option>
-                    <option value="ONLINE">Online Payment</option>
-                    <option value="CARD">Card Payment</option>
-                  </Select>
-                </FormControl>
-
-                <FormControl>
-                  <FormLabel>Notes</FormLabel>
-                  <Textarea
-                    placeholder="Add any payment notes or reference numbers"
-                    value={paymentForm.notes}
-                    onChange={(e) => setPaymentForm(prev => ({ ...prev, notes: e.target.value }))}
-                    rows={3}
-                  />
-                </FormControl>
-              </VStack>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <HStack spacing={3}>
-              <Button variant="ghost" onClick={onPaymentModalClose}>
-                Cancel
-              </Button>
-              <Button colorScheme="green" onClick={handlePaymentSubmit}>
-                Record Payment
-              </Button>
-            </HStack>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Purchase Booking Viewer */}
+      <PurchaseBookingViewer
+        isOpen={isViewerOpen}
+        onClose={() => {
+          setIsViewerOpen(false);
+          setSelectedInstallment(null);
+        }}
+        bookingData={selectedInstallment}
+        onEdit={(installment) => {
+          setSelectedInstallment(installment);
+          setIsViewerOpen(false);
+          setFormMode('edit');
+          setIsFormOpen(true);
+        }}
+      />
     </Box>
   );
 };

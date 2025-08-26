@@ -11,9 +11,7 @@ const AboutUsWithBrochure = () => {
   const [contentRef, isContentVisible] = useOnScreen({ threshold: 0.2 });
   const [brochureRef, isBrochureVisible] = useOnScreen({ threshold: 0.2 });
 
-  // TEST: Simple console log to verify component is loading
-  console.log('AboutUsWithBrochure component is loading with brochure!');
-
+ 
   const handleBrochureDownload = () => {
     // Create different brochure content based on random selection
     const brochureTypes = [

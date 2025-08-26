@@ -32,6 +32,7 @@ const SearchableSelect = ({
   size = 'md',
   variant = 'outline',
   showClearButton = true,
+  name,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -120,6 +121,16 @@ const SearchableSelect = ({
 
   return (
     <Box position="relative" ref={containerRef} w="full">
+      {/* Hidden input for form validation */}
+      {name && (
+        <Input
+          type="hidden"
+          name={name}
+          value={value || ''}
+          required={isRequired}
+        />
+      )}
+      
       {label && (
         <Box 
           fontSize="sm" 
@@ -323,6 +334,7 @@ const SearchableSelect = ({
                   />
                   <Input
                     ref={inputRef}
+                    name={name}
                     placeholder={searchPlaceholder}
                     value={searchTerm}
                     onChange={handleInputChange}

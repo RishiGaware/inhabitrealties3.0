@@ -274,13 +274,11 @@ const PendingRents = () => {
 
   const handleContactSubmit = () => {
     // Mock contact action
-    console.log(`Contacting ${selectedContact.customerName} via ${contactForm.contactType}`);
     onContactModalClose();
   };
 
   const handleSendReminder = (rent) => {
     // Mock reminder action
-    console.log(`Sending reminder to ${rent.customerName} for rent payment`);
   };
 
 

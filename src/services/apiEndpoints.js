@@ -141,7 +141,7 @@ export const PURCHASE_BOOKING_ENDPOINTS = {
   // Core CRUD operations
   GET_ALL: '/purchase-booking/all',
   GET_BY_ID: (id) => `/purchase-booking/${id}`,
-  CREATE: '/purchase-booking/create',
+  CREATE: '/purchase-bookings/create',
   UPDATE: (id) => `/purchase-booking/update/${id}`,
   DELETE: (id) => `/purchase-booking/delete/${id}`,
   
@@ -156,7 +156,7 @@ export const PURCHASE_BOOKING_ENDPOINTS = {
   
   // Reports
   GET_REPORTS_PENDING_INSTALLMENTS: '/purchase-booking/reports/pending-installments',
-  GET_REPORTS_OVERDUE_INSTALLMENTS: '/purchase-booking/reports/overdue-installments',
+  GET_REPORTS_OVERDUE_INSTALLMENTS: '/purchase-bookings/reports/overdue-installments',
 };
 
 // Rental Booking Endpoints
