@@ -43,6 +43,7 @@ import RentalBookingManagement from '../pages/bookings/RentalBookingManagement';
 import AllPurchaseBookings from '../pages/bookings/AllPurchaseBookings';
 import MyAssignedBookings from '../pages/bookings/MyAssignedBookings';
 import CreateNewPurchase from '../pages/bookings/CreateNewPurchase';
+import EditPurchaseBooking from '../pages/bookings/EditPurchaseBooking';
 import PendingInstallments from '../pages/bookings/PendingInstallments';
 import OverdueInstallments from '../pages/bookings/OverdueInstallments';
 import AllRentalBookings from '../pages/bookings/AllRentalBookings';
@@ -139,6 +140,7 @@ export const ROUTES = [
   { name: 'purchaseAllBookings', path: '/purchase-bookings/all', component: AllPurchaseBookings, permissions: 'public' },
   { name: 'purchaseMyBookings', path: '/purchase-bookings/my-assigned', component: MyAssignedBookings, permissions: 'public' },
   { name: 'purchaseCreateNew', path: '/purchase-bookings/create', component: CreateNewPurchase, permissions: 'public' },
+  { name: 'purchaseEdit', path: '/purchase-bookings/edit/:id', component: EditPurchaseBooking, permissions: 'public' },
   { name: 'purchasePendingInstallments', path: '/purchase-bookings/pending-installments', component: PendingInstallments, permissions: 'public' },
   { name: 'purchaseOverdueInstallments', path: '/purchase-bookings/overdue-installments', component: OverdueInstallments, permissions: 'public' },
   

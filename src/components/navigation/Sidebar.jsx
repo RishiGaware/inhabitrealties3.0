@@ -76,9 +76,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
           "All Purchase Bookings",
           "My Assigned Bookings",
           "Create New Purchase",
-          "Installment Schedule",
-          "Pending Installments",
-          "Overdue Installments"
         ],
         key: "purchaseBookings"
       },
@@ -91,9 +88,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
           "All Rental Bookings",
           "My Assigned Rentals",
           "Create New Rental",
-          "Rent Schedule",
-          "Pending Rents",
-          "Overdue Rents"
         ],
         key: "rentalBookings"
       },
@@ -103,10 +97,9 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         title: "Payments", 
         icon: <FaMoneyBillWave />,
         subMenu: [
-          "Payment History",
-          "Record Payment",
-          "Payment Approval",
-          "Payment Reconciliation"
+          "All Payment History",
+          "Assigned Payment History",
+          "My Payment History"
         ],
         key: "payments"
       },
@@ -123,19 +116,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
           "Revenue Analysis"
         ],
         key: "financialReports"
-      },
-      
-      // **CORRECTED: Rent Management**
-      {
-        title: "Rent Management",
-        icon: <FaChartBar />,
-        subMenu: [
-          "Rent Roll",
-          "Lease Management",
-          "Rent Schedule",
-          "Overdue Rents"
-        ],
-        key: "rent"
       },
       
       // Post-Sale (keep as is)

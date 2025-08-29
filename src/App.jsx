@@ -77,6 +77,7 @@ import RentalBookingManagement from './pages/bookings/RentalBookingManagement';
 import AllPurchaseBookings from './pages/bookings/AllPurchaseBookings';
 import MyAssignedBookings from './pages/bookings/MyAssignedBookings';
 import CreateNewPurchase from './pages/bookings/CreateNewPurchase';
+import EditPurchaseBooking from './pages/bookings/EditPurchaseBooking';
 import PendingInstallments from './pages/bookings/PendingInstallments';
 import OverdueInstallments from './pages/bookings/OverdueInstallments';
 
@@ -209,6 +210,7 @@ const App = () => {
             <Route path={ROUTES.PURCHASE_ALL_BOOKINGS} element={<DashboardLayout><AllPurchaseBookings /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_MY_BOOKINGS} element={<DashboardLayout><MyAssignedBookings /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_CREATE_NEW} element={<DashboardLayout><CreateNewPurchase /></DashboardLayout>} />
+            <Route path={ROUTES.PURCHASE_EDIT} element={<DashboardLayout><EditPurchaseBooking /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_PENDING_INSTALLMENTS} element={<DashboardLayout><PendingInstallments /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_OVERDUE_INSTALLMENTS} element={<DashboardLayout><OverdueInstallments /></DashboardLayout>} />
             

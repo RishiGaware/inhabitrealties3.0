@@ -106,6 +106,7 @@ export const ROUTES = {
   PURCHASE_UPDATE_BOOKING: '/purchase-bookings/update/:id',
   PURCHASE_DELETE_BOOKING: '/purchase-bookings/delete/:id',
   PURCHASE_CREATE_NEW: '/purchase-bookings/create',
+  PURCHASE_EDIT: '/purchase-bookings/edit/:id',
   PURCHASE_INSTALLMENT_SCHEDULE: '/purchase-bookings/installment-schedule',
   PURCHASE_PENDING_INSTALLMENTS: '/purchase-bookings/pending-installments',
   PURCHASE_OVERDUE_INSTALLMENTS: '/purchase-bookings/overdue-installments',

@@ -6,117 +6,207 @@ import {
   Text,
   Button,
   HStack,
-  VStack,
   Badge,
-  Tooltip,
+  useToast,
   IconButton,
-  Card,
-  CardBody,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
-  Progress,
-  useColorModeValue,
+  Heading,
+  VStack,
 } from '@chakra-ui/react';
-import { FiEye, FiEdit, FiPlus, FiCalendar, FiDollarSign, FiHome, FiUser, FiClock } from 'react-icons/fi';
+import { FiDownload, FiEye, FiEdit } from 'react-icons/fi';
+import CommonTable from '../../components/common/Table/CommonTable';
+import CommonPagination from '../../components/common/pagination/CommonPagination';
+import TableContainer from '../../components/common/Table/TableContainer';
+import SearchAndFilter from '../../components/common/SearchAndFilter';
+import Loader from '../../components/common/Loader';
+import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import api from '../../services/api';
 
 const MyAssignedRentals = () => {
   const navigate = useNavigate();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const toast = useToast();
 
-  // Mock data for assigned rentals
-  const [assignedRentals, setAssignedRentals] = useState([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    active: 0,
-    pending: 0,
-    totalMonthlyRent: 0,
-    totalSecurityDeposit: 0,
-    monthlyTarget: 0,
-  });
+  // State management
+  const [bookings, setBookings] = useState([]);
+  const [filteredBookings, setFilteredBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
+  // Filter options - dynamically generated from API data
+  const filterOptions = {
+    status: []
+  };
+
+  // Generate status options dynamically from the actual data
   useEffect(() => {
-    // Mock data
-    const mockRentals = [
-      {
-        _id: 'rental_1',
-        rentalId: 'RENTAL-2024-001',
-        customerName: 'Alice Johnson',
-        propertyTitle: 'Modern Studio Apartment',
-        propertyType: 'APARTMENT',
-        status: 'ACTIVE',
-        monthlyRent: 2500,
-        securityDeposit: 5000,
-        leaseStart: '2024-01-01',
-        leaseEnd: '2024-12-31',
-        nextRentDue: '2024-03-01',
-        lastContact: '2024-01-25',
-        priority: 'HIGH'
-      },
-      {
-        _id: 'rental_2',
-        rentalId: 'RENTAL-2024-002',
-        customerName: 'Bob Smith',
-        propertyTitle: 'Downtown Loft',
-        propertyType: 'LOFT',
-        status: 'PENDING',
-        monthlyRent: 3500,
-        securityDeposit: 7000,
-        leaseStart: '2024-02-01',
-        leaseEnd: '2025-01-31',
-        nextRentDue: '2024-03-01',
-        lastContact: '2024-01-28',
-        priority: 'MEDIUM'
-      },
-      {
-        _id: 'rental_3',
-        rentalId: 'RENTAL-2024-003',
-        customerName: 'Carol Brown',
-        propertyTitle: 'Suburban House',
-        propertyType: 'HOUSE',
-        status: 'ACTIVE',
-        monthlyRent: 4500,
-        securityDeposit: 9000,
-        leaseStart: '2023-06-01',
-        leaseEnd: '2024-05-31',
-        nextRentDue: '2024-03-01',
-        lastContact: '2024-01-30',
-        priority: 'LOW'
-      },
-      {
-        _id: 'rental_4',
-        rentalId: 'RENTAL-2024-004',
-        customerName: 'David Wilson',
-        propertyTitle: 'Luxury Penthouse',
-        propertyType: 'PENTHOUSE',
-        status: 'ACTIVE',
-        monthlyRent: 8000,
-        securityDeposit: 16000,
-        leaseStart: '2023-09-01',
-        leaseEnd: '2024-08-31',
-        nextRentDue: '2024-03-01',
-        lastContact: '2024-01-22',
-        priority: 'HIGH'
-      }
-    ];
+    if (bookings.length > 0) {
+      const uniqueStatuses = [...new Set(bookings.map(booking => booking.rentalStatus))].filter(Boolean);
+      const statusOptions = [
+        { value: '', label: 'All Statuses' },
+        ...uniqueStatuses.map(status => ({
+          value: status,
+          label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        }))
+      ];
+      filterOptions.status = statusOptions;
+    } else {
+      // Set default options when no data is available
+      filterOptions.status = [
+        { value: '', label: 'All Statuses' }
+      ];
+    }
+  }, [bookings]);
 
-    setAssignedRentals(mockRentals);
-    
-    // Calculate stats
-    const total = mockRentals.length;
-    const active = mockRentals.filter(r => r.status === 'ACTIVE').length;
-    const pending = mockRentals.filter(r => r.status === 'PENDING').length;
-    const totalMonthlyRent = mockRentals.reduce((sum, r) => sum + r.monthlyRent, 0);
-    const totalSecurityDeposit = mockRentals.reduce((sum, r) => sum + r.securityDeposit, 0);
-    const monthlyTarget = 20000; // Mock target
-
-    setStats({ total, active, pending, totalMonthlyRent, totalSecurityDeposit, monthlyTarget });
+  // Fetch data from assigned rentals API
+  useEffect(() => {
+    fetchAssignedRentals();
   }, []);
 
+  const fetchAssignedRentals = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Use the assigned rentals API endpoint
+      // Note: You'll need to get the current user's ID from context or auth
+      const currentUserId = '68347215de3d56d44b9cbcad'; // This should come from user context
+      const response = await api.get(`/rental-bookings/assigned/${currentUserId}`);
+      
+      // Handle the actual API response format
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        setBookings(response.data.data);
+        setFilteredBookings(response.data.data);
+      } else {
+        setBookings([]);
+        setFilteredBookings([]);
+      }
+    } catch (error) {
+      console.error('Error fetching assigned rentals:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch assigned rentals",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      setBookings([]);
+      setFilteredBookings([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter and search functionality
+  useEffect(() => {
+    let filtered = bookings;
+
+    if (searchTerm) {
+      filtered = filtered.filter(booking =>
+        (booking.rentalId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
+      );
+    }
+
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(booking => booking.rentalStatus === statusFilter);
+    }
+
+    setFilteredBookings(filtered);
+    setCurrentPage(1); // Reset to first page when filtering
+  }, [searchTerm, statusFilter, bookings]);
+
+  // Table columns configuration - simplified and essential only
+  const columns = [
+    {
+      key: 'rentalId',
+      label: 'Rental ID',
+      render: (value, row) => (
+        <Text fontWeight="semibold" color="blue.600" noOfLines={1} maxW="150px">
+          {value || row._id?.slice(-8) || 'N/A'}
+        </Text>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'propertyName',
+      label: 'Property',
+      render: (_, row) => (
+        <VStack align="start" spacing={1}>
+          <Text color="gray.700" fontWeight="semibold" noOfLines={1} maxW="150px">
+            {row.propertyId?.name || 'N/A'}
+          </Text>
+          <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="150px">
+            {row.propertyId?.propertyAddress?.city || 'N/A'}
+          </Text>
+        </VStack>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'customerName',
+      label: 'Customer',
+      render: (_, row) => (
+        <VStack align="start" spacing={1}>
+          <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
+            {row.customerId ? `${row.customerId.firstName || ''} ${row.customerId.lastName || ''}`.trim() : 'N/A'}
+          </Text>
+          <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="120px">
+            {row.customerId?.email || 'N/A'}
+          </Text>
+        </VStack>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'monthlyRent',
+      label: 'Monthly Rent',
+      render: (_, row) => (
+        <Text color="gray.700" fontWeight="semibold" fontSize="sm">
+          ₹{row.monthlyRent ? parseFloat(row.monthlyRent).toLocaleString() : '0'}
+        </Text>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'leaseTerms',
+      label: 'Lease Terms',
+      render: (_, row) => {
+        const getLeaseTermsColor = (terms) => {
+          switch (terms) {
+            case 'SHORT_TERM': return 'green';
+            case 'LONG_TERM': return 'blue';
+            case 'MONTH_TO_MONTH': return 'purple';
+            default: return 'gray';
+          }
+        };
+
+        return (
+          <VStack align="start" spacing={1}>
+            <Badge
+              colorScheme={getLeaseTermsColor(row.leaseTerms)}
+              variant="subtle"
+              fontSize="xs"
+            >
+              {row.leaseTerms?.replace(/_/g, ' ') || 'N/A'}
+            </Badge>
+            {row.leaseDuration && (
+              <Text color="gray.600" fontSize="xs" fontWeight="medium">
+                {row.leaseDuration} months
+              </Text>
+            )}
+          </VStack>
+        );
+      },
+      width: "120px"
+    },
+    {
+      key: 'rentalStatus',
+      label: 'Status',
+      render: (value) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'ACTIVE': return 'green';
@@ -127,279 +217,216 @@ const MyAssignedRentals = () => {
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'HIGH': return 'red';
-      case 'MEDIUM': return 'orange';
-      case 'LOW': return 'green';
-      default: return 'gray';
+        return (
+          <Badge
+            colorScheme={getStatusColor(value)}
+            variant="solid"
+            fontSize="xs"
+          >
+            {value?.replace(/_/g, ' ') || 'N/A'}
+          </Badge>
+        );
+      },
+      width: "100px"
+    },
+  ];
+
+  // Row actions - matching MyAssignedBookings style
+  const renderRowActions = (booking) => (
+    <HStack spacing={2}>
+      <IconButton
+        key="view"
+        aria-label="View rental booking"
+        icon={<FiEye />}
+        size="sm"
+        onClick={() => handleView(booking._id)}
+        colorScheme="blue"
+        variant="outline"
+      />
+      <IconButton
+        key="edit"
+        aria-label="Edit rental booking"
+        icon={<FiEdit />}
+        size="sm"
+        onClick={() => handleEdit(booking._id)}
+        colorScheme="brand"
+        variant="outline"
+      />
+    </HStack>
+  );
+
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
+  };
+
+  // Handle filters
+  const handleFilterChange = (key, value) => {
+    if (key === 'status') {
+      setStatusFilter(value);
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setStatusFilter('');
+    setSearchTerm('');
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  // Handle view rental booking
+  const handleView = (id) => {
+    const booking = bookings.find(b => b._id === id);
+    if (booking) {
+      // Navigate to view page or open modal
+      navigate(`/rental-bookings/view/${id}`, { 
+        state: { bookingData: booking } 
+      });
+    }
   };
 
-  const getDaysUntil = (dateString) => {
-    const today = new Date();
-    const targetDate = new Date(dateString);
-    const diffTime = targetDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  // Handle edit rental booking
+  const handleEdit = (id) => {
+    const booking = bookings.find(b => b._id === id);
+    if (booking) {
+      // Pass the booking data directly to avoid API call
+      navigate(`/rental-bookings/edit/${id}`, { 
+        state: { bookingData: booking } 
+      });
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= Math.ceil(filteredBookings.length / pageSize)) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
+  // Handle export
+  const handleExport = async (format) => {
+    try {
+      // Create CSV content from the actual data
+      const exportData = filteredBookings.map(booking => ({
+        'Rental ID': booking.rentalId || booking._id?.slice(-8) || 'N/A',
+        'Property': booking.propertyId?.name || 'N/A',
+        'Customer': `${booking.customerId?.firstName || ''} ${booking.customerId?.lastName || ''}`.trim() || 'N/A',
+        'Monthly Rent': `₹${parseFloat(booking.monthlyRent || 0).toLocaleString()}`,
+        'Lease Terms': booking.leaseTerms || 'N/A',
+        'Status': booking.rentalStatus || 'N/A'
+      }));
+
+      // Generate CSV
+      const csvContent = [
+        Object.keys(exportData[0]).join(','),
+        ...exportData.map(row => Object.values(row).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my_assigned_rentals_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export successful",
+        description: `Assigned rentals exported as ${format.toUpperCase()}`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export assigned rentals",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
-    <Box p={6} bg="gray.50" minH="100vh">
-      {/* Header */}
-      <Flex justify="space-between" align="center" mb={8}>
-        <VStack align="start" spacing={2}>
-          <Text fontSize="3xl" fontWeight="bold" color="gray.800">
+    <Box p={{ base: 3, md: 6 }} bg="gray.50" minH="100vh">
+      {/* Loader at the top, non-blocking */}
+      {isLoading && <Loader size="xl" />}
+      
+      <Flex justify="space-between" align="center" mb={{ base: 4, md: 6 }} direction={{ base: 'column', md: 'row' }} gap={{ base: 3, md: 0 }}>
+        <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
             My Assigned Rentals
-          </Text>
-          <Text fontSize="lg" color="gray.600">
-            Manage your assigned rental properties and track performance
-          </Text>
-        </VStack>
-        
+        </Heading>
+        <HStack spacing={3}>
         <Button
-          leftIcon={<FiPlus />}
-          onClick={() => navigate('/rental-bookings/create')}
-          colorScheme="blue"
-          size="lg"
-          px={8}
-        >
-          New Rental
-        </Button>
-      </Flex>
-
-      {/* Stats Cards */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6} mb={8}>
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Total Rentals</StatLabel>
-              <StatNumber fontSize="3xl" color="blue.600">{stats.total}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                15% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Active</StatLabel>
-              <StatNumber fontSize="3xl" color="green.600">{stats.active}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                8% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Pending</StatLabel>
-              <StatNumber fontSize="3xl" color="yellow.600">{stats.pending}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="decrease" />
-                12% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Monthly Rent</StatLabel>
-              <StatNumber fontSize="2xl" color="purple.600">
-                {formatCurrency(stats.totalMonthlyRent)}
-              </StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                20% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-      </SimpleGrid>
-
-      {/* Monthly Target Progress */}
-      <Card bg={bgColor} border="1px" borderColor={borderColor} mb={8}>
-        <CardBody>
-          <Flex justify="space-between" align="center" mb={4}>
-            <VStack align="start" spacing={1}>
-              <Text fontSize="lg" fontWeight="semibold" color="gray.800">
-                Monthly Rental Target
-              </Text>
-              <Text fontSize="sm" color="gray.600">
-                Target: {formatCurrency(stats.monthlyTarget)}
-              </Text>
-            </VStack>
-            <Text fontSize="2xl" fontWeight="bold" color="blue.600">
-              {Math.round((stats.totalMonthlyRent / stats.monthlyTarget) * 100)}%
-            </Text>
-          </Flex>
-          <Progress 
-            value={(stats.totalMonthlyRent / stats.monthlyTarget) * 100} 
-            colorScheme="blue" 
-            size="lg" 
-            borderRadius="full"
-          />
-        </CardBody>
-      </Card>
-
-      {/* Rentals Grid */}
-      <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={6}>
-        {assignedRentals.map((rental) => (
-          <Card 
-            key={rental._id} 
-            bg={bgColor} 
-            border="1px" 
-            borderColor={borderColor}
-            _hover={{ transform: 'translateY(-2px)', shadow: 'lg' }}
-            transition="all 0.2s"
+            leftIcon={<FiDownload />}
+            onClick={() => handleExport('csv')}
+            variant="outline"
+            colorScheme="green"
+            size="sm"
           >
-            <CardBody>
-              {/* Header */}
-              <Flex justify="space-between" align="start" mb={4}>
-                <VStack align="start" spacing={1}>
-                  <Text fontSize="lg" fontWeight="bold" color="gray.800">
-                    {rental.rentalId}
-                  </Text>
-                  <Text fontSize="sm" color="gray.600">
-                    {rental.customerName}
-                  </Text>
-                </VStack>
-                <HStack spacing={2}>
-                  <Badge colorScheme={getStatusColor(rental.status)} variant="subtle">
-                    {rental.status}
-                  </Badge>
-                  <Badge colorScheme={getPriorityColor(rental.priority)} variant="subtle">
-                    {rental.priority}
-                  </Badge>
+            Export CSV
+        </Button>
+          <Button
+            leftIcon={<FiEdit />}
+            onClick={() => navigate('/rental-bookings/all')}
+            variant="outline"
+            colorScheme="blue" 
+            size="sm"
+          >
+            View All Rentals
+          </Button>
                 </HStack>
               </Flex>
 
-              {/* Property Info */}
-              <Box mb={4}>
-                <Text fontSize="md" fontWeight="semibold" color="gray.700" mb={2}>
-                  {rental.propertyTitle}
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  Lease: {formatDate(rental.leaseStart)} - {formatDate(rental.leaseEnd)}
-                </Text>
-              </Box>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {}} // No API search needed
+        searchPlaceholder="Search assigned rentals..."
+        filters={{ status: statusFilter }}
+        onFilterChange={handleFilterChange}
+        onApplyFilters={() => {}} // No API filter needed
+        onClearFilters={handleClearFilters}
+        filterOptions={{
+          status: {
+            label: "Status",
+            placeholder: "Filter by status",
+            options: filterOptions.status
+          }
+        }}
+        title="Filter Assigned Rentals"
+        activeFiltersCount={(statusFilter ? 1 : 0) + (searchTerm ? 1 : 0)}
+      />
 
-              {/* Financial Info */}
-              <SimpleGrid columns={2} spacing={4} mb={4}>
-                <Box>
-                  <Text fontSize="sm" color="gray.600">Monthly Rent</Text>
-                  <Text fontSize="lg" fontWeight="bold" color="green.600">
-                    {formatCurrency(rental.monthlyRent)}
-                  </Text>
-                </Box>
-                <Box>
-                  <Text fontSize="sm" color="gray.600">Security Deposit</Text>
-                  <Text fontSize="lg" fontWeight="bold" color="blue.600">
-                    {formatCurrency(rental.securityDeposit)}
-                  </Text>
-                </Box>
-                <Box>
-                  <Text fontSize="sm" color="gray.600">Next Rent Due</Text>
-                  <Text fontSize="lg" fontWeight="bold" color="purple.600">
-                    {formatDate(rental.nextRentDue)}
-                  </Text>
-                </Box>
-                <Box>
-                  <Text fontSize="sm" color="gray.600">Days Until</Text>
-                  <Text fontSize="lg" fontWeight="bold" color={getDaysUntil(rental.nextRentDue) < 7 ? 'red.600' : 'gray.600'}>
-                    {getDaysUntil(rental.nextRentDue)} days
-                  </Text>
-                </Box>
-              </SimpleGrid>
-
-              {/* Last Contact */}
-              <Box mb={4} p={3} bg="gray.50" borderRadius="md">
-                <Text fontSize="sm" color="gray.600">
-                  Last Contact: {formatDate(rental.lastContact)}
-                </Text>
-              </Box>
-
-              {/* Actions */}
-              <HStack spacing={3} justify="center">
-                <Tooltip label="View Details">
-                  <IconButton
-                    icon={<FiEye />}
-                    onClick={() => navigate(`/rental-bookings/${rental._id}`)}
-                    variant="ghost"
-                    colorScheme="blue"
-                    size="sm"
-                  />
-                </Tooltip>
-                <Tooltip label="Edit Rental">
-                  <IconButton
-                    icon={<FiEdit />}
-                    onClick={() => navigate(`/rental-bookings/update/${rental._id}`)}
-                    variant="ghost"
-                    colorScheme="green"
-                    size="sm"
-                  />
-                </Tooltip>
-                <Button
-                  size="sm"
-                  colorScheme="blue"
-                  variant="outline"
-                  leftIcon={<FiCalendar />}
-                >
-                  Schedule Follow-up
-                </Button>
-              </HStack>
-            </CardBody>
-          </Card>
-        ))}
-      </SimpleGrid>
-
-      {/* Empty State */}
-      {assignedRentals.length === 0 && (
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody textAlign="center" py={12}>
-            <VStack spacing={4}>
-              <Text fontSize="xl" color="gray.500">
-                No assigned rentals yet
-              </Text>
-              <Text color="gray.400">
-                Start by creating a new rental booking or wait for assignments
-              </Text>
-              <Button
-                leftIcon={<FiPlus />}
-                onClick={() => navigate('/rental-bookings/create')}
-                colorScheme="blue"
-              >
-                Create New Rental
-              </Button>
-            </VStack>
-          </CardBody>
-        </Card>
-      )}
+      <TableContainer>
+        <CommonTable
+          columns={columns}
+          data={filteredBookings.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
+          )}
+          rowActions={renderRowActions}
+          emptyStateMessage={!isLoading ? "No assigned rentals match your search." : undefined}
+        />
+        <CommonPagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredBookings.length / pageSize)}
+          onPageChange={handlePageChange}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          totalItems={filteredBookings.length}
+        />
+      </TableContainer>
     </Box>
   );
 };

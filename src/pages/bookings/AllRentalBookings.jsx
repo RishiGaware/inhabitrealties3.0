@@ -6,125 +6,210 @@ import {
   Text,
   Button,
   HStack,
-  VStack,
   Badge,
-  Tooltip,
+  useToast,
   IconButton,
-  Card,
-  CardBody,
-  SimpleGrid,
-  Stat,
-  StatLabel,
-  StatNumber,
-  StatHelpText,
-  StatArrow,
-  useColorModeValue,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  TableContainer,
-  Input,
-  Select,
-  InputGroup,
-  InputLeftElement,
+  Heading,
+  VStack,
 } from '@chakra-ui/react';
-import { FiEye, FiEdit, FiTrash2, FiPlus, FiSearch, FiFilter, FiDownload, FiHome, FiUser, FiCalendar, FiDollarSign } from 'react-icons/fi';
+import { FiDownload, FiEye, FiEdit } from 'react-icons/fi';
+import CommonTable from '../../components/common/Table/CommonTable';
+import CommonPagination from '../../components/common/pagination/CommonPagination';
+import TableContainer from '../../components/common/Table/TableContainer';
+import SearchAndFilter from '../../components/common/SearchAndFilter';
+import Loader from '../../components/common/Loader';
+import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import api from '../../services/api';
 
 const AllRentalBookings = () => {
   const navigate = useNavigate();
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const toast = useToast();
 
-  // State
-  const [rentalBookings, setRentalBookings] = useState([]);
+  // State management
+  const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [propertyTypeFilter, setPropertyTypeFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
-  // Mock data
+  // Filter options - dynamically generated from API data
+  const filterOptions = {
+    status: []
+  };
+
+  // Generate status options dynamically from the actual data
   useEffect(() => {
-    const mockRentals = [
-      {
-        _id: 'rental_1',
-        rentalId: 'RENTAL-2024-001',
-        customerName: 'Alice Johnson',
-        propertyTitle: 'Modern Studio Apartment',
-        propertyType: 'APARTMENT',
-        status: 'ACTIVE',
-        monthlyRent: 2500,
-        securityDeposit: 5000,
-        leaseStart: '2024-01-01',
-        leaseEnd: '2024-12-31',
-        nextRentDue: '2024-03-01',
-        salespersonName: 'Sarah Wilson',
-        customerPhone: '+1234567890',
-        customerEmail: 'alice@example.com',
-      },
-      {
-        _id: 'rental_2',
-        rentalId: 'RENTAL-2024-002',
-        customerName: 'Bob Smith',
-        propertyTitle: 'Downtown Loft',
-        propertyType: 'LOFT',
-        status: 'PENDING',
-        monthlyRent: 3500,
-        securityDeposit: 7000,
-        leaseStart: '2024-02-01',
-        leaseEnd: '2025-01-31',
-        nextRentDue: '2024-03-01',
-        salespersonName: 'Mike Davis',
-        customerPhone: '+1234567891',
-        customerEmail: 'bob@example.com',
-      },
-      {
-        _id: 'rental_3',
-        rentalId: 'RENTAL-2024-003',
-        customerName: 'Carol Brown',
-        propertyTitle: 'Suburban House',
-        propertyType: 'HOUSE',
-        status: 'ACTIVE',
-        monthlyRent: 4500,
-        securityDeposit: 9000,
-        leaseStart: '2023-06-01',
-        leaseEnd: '2024-05-31',
-        nextRentDue: '2024-03-01',
-        salespersonName: 'Lisa Johnson',
-        customerPhone: '+1234567892',
-        customerEmail: 'carol@example.com',
-      },
-    ];
+    if (bookings.length > 0) {
+      const uniqueStatuses = [...new Set(bookings.map(booking => booking.rentalStatus))].filter(Boolean);
+      const statusOptions = [
+        { value: '', label: 'All Statuses' },
+        ...uniqueStatuses.map(status => ({
+          value: status,
+          label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        }))
+      ];
+      filterOptions.status = statusOptions;
+    } else {
+      // Set default options when no data is available
+      filterOptions.status = [
+        { value: '', label: 'All Statuses' }
+      ];
+    }
+  }, [bookings]);
 
-    setRentalBookings(mockRentals);
-    setFilteredBookings(mockRentals);
+  // Fetch data from rental bookings API
+  useEffect(() => {
+    fetchRentalBookings();
   }, []);
 
-  // Filter and search
+  const fetchRentalBookings = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Use the rental bookings API endpoint
+      const response = await api.get('/rental-bookings/all');
+      
+      // Handle the actual API response format
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
+        setBookings(response.data.data);
+        setFilteredBookings(response.data.data);
+      } else if (response.data && Array.isArray(response.data)) {
+        // Handle case where data is directly in response.data
+        setBookings(response.data);
+        setFilteredBookings(response.data);
+      } else {
+        console.warn('Unexpected API response format:', response);
+        setBookings([]);
+        setFilteredBookings([]);
+      }
+    } catch (error) {
+      console.error('Error fetching rental bookings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to fetch rental bookings",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      setBookings([]);
+      setFilteredBookings([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Filter and search functionality
   useEffect(() => {
-    let filtered = rentalBookings;
+    let filtered = bookings;
 
     if (searchTerm) {
-      filtered = filtered.filter(rental =>
-        rental.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rental.rentalId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        rental.propertyTitle.toLowerCase().includes(searchTerm.toLowerCase())
+      filtered = filtered.filter(booking =>
+        (booking.rentalId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
       );
     }
 
-    if (statusFilter !== 'all') {
-      filtered = filtered.filter(rental => rental.status === statusFilter);
-    }
-
-    if (propertyTypeFilter !== 'all') {
-      filtered = filtered.filter(rental => rental.propertyType === propertyTypeFilter);
+    if (statusFilter && statusFilter !== 'all') {
+      filtered = filtered.filter(booking => booking.rentalStatus === statusFilter);
     }
 
     setFilteredBookings(filtered);
-  }, [searchTerm, statusFilter, propertyTypeFilter, rentalBookings]);
+    setCurrentPage(1); // Reset to first page when filtering
+  }, [searchTerm, statusFilter, bookings]);
 
+  // Table columns configuration - simplified and essential only
+  const columns = [
+    {
+      key: 'rentalId',
+      label: 'Rental ID',
+      render: (value, row) => (
+        <Text fontWeight="semibold" color="blue.600" noOfLines={1} maxW="150px">
+          {value || row._id?.slice(-8) || 'N/A'}
+        </Text>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'propertyName',
+      label: 'Property',
+      render: (_, row) => (
+        <VStack align="start" spacing={1}>
+          <Text color="gray.700" fontWeight="semibold" noOfLines={1} maxW="150px">
+            {row.propertyId?.name || 'N/A'}
+          </Text>
+          <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="150px">
+            {row.propertyId?.propertyAddress?.city || 'N/A'}
+          </Text>
+        </VStack>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'customerName',
+      label: 'Customer',
+      render: (_, row) => (
+        <VStack align="start" spacing={1}>
+          <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
+            {row.customerId ? `${row.customerId.firstName || ''} ${row.customerId.lastName || ''}`.trim() : 'N/A'}
+          </Text>
+          <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="120px">
+            {row.customerId?.email || 'N/A'}
+          </Text>
+        </VStack>
+      ),
+      width: "150px"
+    },
+    {
+      key: 'monthlyRent',
+      label: 'Monthly Rent',
+      render: (_, row) => (
+        <Text color="gray.700" fontWeight="semibold" fontSize="sm">
+          ₹{row.monthlyRent ? parseFloat(row.monthlyRent).toLocaleString() : '0'}
+        </Text>
+      ),
+      width: "120px"
+    },
+    {
+      key: 'leaseTerms',
+      label: 'Lease Terms',
+      render: (_, row) => {
+        const getLeaseTermsColor = (terms) => {
+          switch (terms) {
+            case 'SHORT_TERM': return 'green';
+            case 'LONG_TERM': return 'blue';
+            case 'MONTH_TO_MONTH': return 'purple';
+            default: return 'gray';
+          }
+        };
+
+        return (
+          <VStack align="start" spacing={1}>
+            <Badge
+              colorScheme={getLeaseTermsColor(row.leaseTerms)}
+              variant="subtle"
+              fontSize="xs"
+            >
+              {row.leaseTerms?.replace(/_/g, ' ') || 'N/A'}
+            </Badge>
+            {row.leaseDuration && (
+              <Text color="gray.600" fontSize="xs" fontWeight="medium">
+                {row.leaseDuration} months
+              </Text>
+            )}
+          </VStack>
+        );
+      },
+      width: "120px"
+    },
+    {
+      key: 'rentalStatus',
+      label: 'Status',
+      render: (value) => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'ACTIVE': return 'green';
@@ -135,321 +220,213 @@ const AllRentalBookings = () => {
     }
   };
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
+        return (
+          <Badge
+            colorScheme={getStatusColor(value)}
+            variant="solid"
+            fontSize="xs"
+          >
+            {value?.replace(/_/g, ' ') || 'N/A'}
+          </Badge>
+        );
+      },
+      width: "100px"
+    },
+  ];
+
+  // Row actions - matching AllPurchaseBookings style
+  const renderRowActions = (booking) => (
+    <HStack spacing={2}>
+      <IconButton
+        key="view"
+        aria-label="View rental booking"
+        icon={<FiEye />}
+        size="sm"
+        onClick={() => handleView(booking._id)}
+        colorScheme="blue"
+        variant="outline"
+      />
+      <IconButton
+        key="edit"
+        aria-label="Edit rental booking"
+        icon={<FiEdit />}
+        size="sm"
+        onClick={() => handleEdit(booking._id)}
+        colorScheme="brand"
+        variant="outline"
+      />
+    </HStack>
+  );
+
+  // Handle search
+  const handleSearch = (value) => {
+    setSearchTerm(value);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+  // Handle filters
+  const handleFilterChange = (key, value) => {
+    if (key === 'status') {
+      setStatusFilter(value);
+    }
   };
 
-  const getDaysUntil = (dateString) => {
-    const today = new Date();
-    const targetDate = new Date(dateString);
-    const diffTime = targetDate - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setStatusFilter('');
+    setSearchTerm('');
   };
 
-  // Calculate stats
-  const stats = {
-    total: rentalBookings.length,
-    active: rentalBookings.filter(r => r.status === 'ACTIVE').length,
-    pending: rentalBookings.filter(r => r.status === 'PENDING').length,
-    totalMonthlyRent: rentalBookings.reduce((sum, r) => sum + r.monthlyRent, 0),
-    totalSecurityDeposit: rentalBookings.reduce((sum, r) => sum + r.securityDeposit, 0),
+  // Handle add new rental booking
+  const handleAddNew = () => {
+    navigate('/rental-bookings/create');
+  };
+
+  // Handle view rental booking
+  const handleView = (id) => {
+    const booking = bookings.find(b => b._id === id);
+    if (booking) {
+      // Navigate to view page or open modal
+      navigate(`/rental-bookings/view/${id}`, { 
+        state: { bookingData: booking } 
+      });
+    }
+  };
+
+  // Handle edit rental booking
+  const handleEdit = (id) => {
+    const booking = bookings.find(b => b._id === id);
+    if (booking) {
+      // Pass the booking data directly to avoid API call
+      navigate(`/rental-bookings/edit/${id}`, { 
+        state: { bookingData: booking } 
+      });
+    }
+  };
+
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= Math.ceil(filteredBookings.length / pageSize)) {
+      setCurrentPage(newPage);
+    }
+  };
+
+  // Handle page size change
+  const handlePageSizeChange = (newSize) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
+  // Handle export
+  const handleExport = async (format) => {
+    try {
+      // Create CSV content from the actual data
+      const exportData = filteredBookings.map(booking => ({
+        'Rental ID': booking.rentalId || booking._id?.slice(-8) || 'N/A',
+        'Property': booking.propertyId?.name || 'N/A',
+        'Customer': `${booking.customerId?.firstName || ''} ${booking.customerId?.lastName || ''}`.trim() || 'N/A',
+        'Monthly Rent': `₹${parseFloat(booking.monthlyRent || 0).toLocaleString()}`,
+        'Lease Terms': booking.leaseTerms || 'N/A',
+        'Status': booking.rentalStatus || 'N/A'
+      }));
+
+      // Generate CSV
+      const csvContent = [
+        Object.keys(exportData[0]).join(','),
+        ...exportData.map(row => Object.values(row).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `rental_bookings_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export successful",
+        description: `Rental bookings exported as ${format.toUpperCase()}`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({
+        title: "Export failed",
+        description: "Failed to export rental bookings",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
-    <Box p={6} bg="gray.50" minH="100vh">
-      {/* Header */}
-      <Flex justify="space-between" align="center" mb={8}>
-        <VStack align="start" spacing={2}>
-          <Text fontSize="3xl" fontWeight="bold" color="gray.800">
+    <Box p={{ base: 3, md: 6 }} bg="gray.50" minH="100vh">
+      {/* Loader at the top, non-blocking */}
+      {isLoading && <Loader size="xl" />}
+      
+      <Flex justify="space-between" align="center" mb={{ base: 4, md: 6 }} direction={{ base: 'column', md: 'row' }} gap={{ base: 3, md: 0 }}>
+        <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
             All Rental Bookings
-          </Text>
-          <Text fontSize="lg" color="gray.600">
-            Manage and monitor all property rental bookings
-          </Text>
-        </VStack>
-        
+        </Heading>
         <HStack spacing={3}>
           <Button
             leftIcon={<FiDownload />}
+            onClick={() => handleExport('csv')}
             variant="outline"
             colorScheme="green"
             size="sm"
           >
-            Export
+            Export CSV
           </Button>
-          <Button
-            leftIcon={<FiPlus />}
-            onClick={() => navigate('/rental-bookings/create')}
-            colorScheme="blue"
-            size="lg"
-          >
-            New Rental
-          </Button>
+          <CommonAddButton onClick={handleAddNew} />
         </HStack>
       </Flex>
 
-      {/* Stats Cards */}
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 5 }} spacing={6} mb={8}>
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Total Rentals</StatLabel>
-              <StatNumber fontSize="3xl" color="blue.600">{stats.total}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                8% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
+      {/* Search and Filter Section */}
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {}} // No API search needed
+        searchPlaceholder="Search rental bookings..."
+        filters={{ status: statusFilter }}
+        onFilterChange={handleFilterChange}
+        onApplyFilters={() => {}} // No API filter needed
+        onClearFilters={handleClearFilters}
+        filterOptions={{
+          status: {
+            label: "Status",
+            placeholder: "Filter by status",
+            options: filterOptions.status
+          }
+        }}
+        title="Filter Rental Bookings"
+        activeFiltersCount={(statusFilter ? 1 : 0) + (searchTerm ? 1 : 0)}
+      />
 
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Active</StatLabel>
-              <StatNumber fontSize="3xl" color="green.600">{stats.active}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                12% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Pending</StatLabel>
-              <StatNumber fontSize="3xl" color="yellow.600">{stats.pending}</StatNumber>
-              <StatHelpText>
-                <StatArrow type="decrease" />
-                5% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Monthly Rent</StatLabel>
-              <StatNumber fontSize="2xl" color="purple.600">
-                {formatCurrency(stats.totalMonthlyRent)}
-              </StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                15% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-
-        <Card bg={bgColor} border="1px" borderColor={borderColor}>
-          <CardBody>
-            <Stat>
-              <StatLabel color="gray.600">Security Deposits</StatLabel>
-              <StatNumber fontSize="2xl" color="teal.600">
-                {formatCurrency(stats.totalSecurityDeposit)}
-              </StatNumber>
-              <StatHelpText>
-                <StatArrow type="increase" />
-                10% from last month
-              </StatHelpText>
-            </Stat>
-          </CardBody>
-        </Card>
-      </SimpleGrid>
-
-      {/* Search and Filters */}
-      <Card bg={bgColor} border="1px" borderColor={borderColor} mb={6}>
-        <CardBody>
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4}>
-            <InputGroup>
-              <InputLeftElement pointerEvents="none">
-                <FiSearch color="gray.300" />
-              </InputLeftElement>
-              <Input
-                placeholder="Search by customer, rental ID, or property..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </InputGroup>
-
-            <Select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="ACTIVE">Active</option>
-              <option value="PENDING">Pending</option>
-              <option value="EXPIRED">Expired</option>
-              <option value="CANCELLED">Cancelled</option>
-            </Select>
-
-            <Select
-              value={propertyTypeFilter}
-              onChange={(e) => setPropertyTypeFilter(e.target.value)}
-            >
-              <option value="all">All Property Types</option>
-              <option value="APARTMENT">Apartment</option>
-              <option value="HOUSE">House</option>
-              <option value="LOFT">Loft</option>
-              <option value="VILLA">Villa</option>
-            </Select>
-          </SimpleGrid>
-        </CardBody>
-      </Card>
-
-      {/* Rentals Table */}
-      <Card bg={bgColor} border="1px" borderColor={borderColor}>
-        <CardBody>
           <TableContainer>
-            <Table variant="simple">
-              <Thead>
-                <Tr>
-                  <Th>Rental ID</Th>
-                  <Th>Customer</Th>
-                  <Th>Property</Th>
-                  <Th>Status</Th>
-                  <Th>Monthly Rent</Th>
-                  <Th>Lease Period</Th>
-                  <Th>Next Rent Due</Th>
-                  <Th>Salesperson</Th>
-                  <Th>Actions</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {filteredBookings.map((rental) => (
-                  <Tr key={rental._id}>
-                    <Td>
-                      <Text fontWeight="semibold" color="blue.600">
-                        {rental.rentalId}
-                      </Text>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontWeight="semibold">{rental.customerName}</Text>
-                        <Text fontSize="sm" color="gray.600">{rental.customerEmail}</Text>
-                        <Text fontSize="sm" color="gray.600">{rental.customerPhone}</Text>
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontSize="sm">{rental.propertyTitle}</Text>
-                        <Badge colorScheme="blue" variant="subtle">
-                          {rental.propertyType}
-                        </Badge>
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <Badge colorScheme={getStatusColor(rental.status)} variant="subtle">
-                        {rental.status}
-                      </Badge>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontWeight="semibold" color="green.600">
-                          {formatCurrency(rental.monthlyRent)}
-                        </Text>
-                        <Text fontSize="xs" color="gray.500">
-                          Deposit: {formatCurrency(rental.securityDeposit)}
-                        </Text>
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontSize="sm">Start: {formatDate(rental.leaseStart)}</Text>
-                        <Text fontSize="sm">End: {formatDate(rental.leaseEnd)}</Text>
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <VStack align="start" spacing={1}>
-                        <Text fontSize="sm">{formatDate(rental.nextRentDue)}</Text>
-                        <Text fontSize="xs" color={getDaysUntil(rental.nextRentDue) < 7 ? 'red.500' : 'gray.500'}>
-                          {getDaysUntil(rental.nextRentDue)} days left
-                        </Text>
-                      </VStack>
-                    </Td>
-                    <Td>
-                      <Text fontSize="sm">{rental.salespersonName}</Text>
-                    </Td>
-                    <Td>
-                      <HStack spacing={2}>
-                        <Tooltip label="View Details">
-                          <IconButton
-                            icon={<FiEye />}
-                            onClick={() => navigate(`/rental-bookings/${rental._id}`)}
-                            variant="ghost"
-                            colorScheme="blue"
-                            size="sm"
-                          />
-                        </Tooltip>
-                        <Tooltip label="Edit">
-                          <IconButton
-                            icon={<FiEdit />}
-                            onClick={() => navigate(`/rental-bookings/update/${rental._id}`)}
-                            variant="ghost"
-                            colorScheme="green"
-                            size="sm"
-                          />
-                        </Tooltip>
-                        <Tooltip label="Delete">
-                          <IconButton
-                            icon={<FiTrash2 />}
-                            variant="ghost"
-                            colorScheme="red"
-                            size="sm"
-                          />
-                        </Tooltip>
-                      </HStack>
-                    </Td>
-                  </Tr>
-                ))}
-              </Tbody>
-            </Table>
+        <CommonTable
+          columns={columns}
+          data={filteredBookings.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
+          )}
+          rowActions={renderRowActions}
+          emptyStateMessage={!isLoading ? "No rental bookings match your search." : undefined}
+        />
+        <CommonPagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredBookings.length / pageSize)}
+          onPageChange={handlePageChange}
+          pageSize={pageSize}
+          onPageSizeChange={handlePageSizeChange}
+          totalItems={filteredBookings.length}
+        />
           </TableContainer>
-        </CardBody>
-      </Card>
-
-      {/* Empty State */}
-      {filteredBookings.length === 0 && (
-        <Card bg={bgColor} border="1px" borderColor={borderColor} mt={6}>
-          <CardBody textAlign="center" py={12}>
-            <VStack spacing={4}>
-              <Text fontSize="xl" color="gray.500">
-                No rental bookings found
-              </Text>
-              <Text color="gray.400">
-                {searchTerm || statusFilter !== 'all' || propertyTypeFilter !== 'all' 
-                  ? 'Try adjusting your search or filters'
-                  : 'Start by creating a new rental booking'
-                }
-              </Text>
-              <Button
-                leftIcon={<FiPlus />}
-                onClick={() => navigate('/rental-bookings/create')}
-                colorScheme="blue"
-              >
-                Create New Rental
-              </Button>
-            </VStack>
-          </CardBody>
-        </Card>
-      )}
     </Box>
   );
 };
