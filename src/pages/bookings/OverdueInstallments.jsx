@@ -50,7 +50,6 @@ const OverdueInstallments = () => {
       { value: 'PENDING', label: 'Pending' },
       { value: 'OVERDUE', label: 'Overdue' },
       { value: 'PAID', label: 'Paid' },
-      { value: 'PARTIALLY_PAID', label: 'Partially Paid' }
     ]
   };
 

@@ -562,7 +562,6 @@ const SalesList = () => {
                     >
                       <option value="">Select Payment Status</option>
                       <option value="pending">Pending</option>
-                      <option value="partial">Partial</option>
                       <option value="paid">Paid</option>
                     </Select>
                   </FormControl>

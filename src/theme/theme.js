@@ -135,6 +135,13 @@ const theme = extendTheme({
         focusBorderColor: 'brand.primary',
       },
     },
+    Toast: {
+      defaultProps: {
+        position: 'top-right',
+        duration: 3000,
+        isClosable: true,
+      },
+    },
   },
   styles: {
     global: {
@@ -143,6 +150,10 @@ const theme = extendTheme({
         color: 'ui.text',
       },
     },
+  },
+  config: {
+    initialColorMode: 'light',
+    useSystemColorMode: false,
   },
 });
 

@@ -71,9 +71,9 @@ export const AuthProvider = ({ children }) => {
     if (!role) return false;
     
     const rolePermissions = {
-      'ADMIN': ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'paymentHistory', 'paymentReports', 'rent', 'postSale', 'client', 'settings'],
-      'SALES': ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'paymentHistory', 'postSale', 'client', 'settings'],
-      'EXECUTIVE': ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'paymentHistory', 'paymentReports', 'rent', 'postSale', 'client', 'settings'],
+      'ADMIN': ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'rent', 'postSale', 'client', 'settings'],
+      'SALES': ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'postSale', 'client', 'settings'],
+      'EXECUTIVE': ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'rent', 'postSale', 'client', 'settings'],
       'CLIENT': ['dashboard', 'client', 'settings']
     };
     

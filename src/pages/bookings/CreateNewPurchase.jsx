@@ -868,7 +868,6 @@ const CreateNewPurchase = () => {
                   >
                     <option value="FULL_PAYMENT">Full Payment</option>
                     <option value="INSTALLMENTS">Installments</option>
-                    <option value="MILESTONE">Milestone Based</option>
                   </Select>
                 </FormControl>
 

@@ -213,7 +213,6 @@ const PurchaseBookingForm = ({
                   >
                     <option value="INSTALLMENTS">Installments</option>
                     <option value="FULL_PAYMENT">Full Payment</option>
-                    <option value="PARTIAL_PAYMENT">Partial Payment</option>
                   </Select>
                 </FormControl>
 

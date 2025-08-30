@@ -104,19 +104,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "payments"
       },
       
-      // **CORRECTED: Financial Reports**
-      {
-        title: "Financial Reports", 
-        icon: <FaChartBar />,
-        subMenu: [
-          "Payment Summary",
-          "Pending Payments",
-          "Overdue Payments",
-          "Collection Reports",
-          "Revenue Analysis"
-        ],
-        key: "financialReports"
-      },
+
       
       // Post-Sale (keep as is)
       {
@@ -209,18 +197,11 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'overdue-rents': ROUTES.RENTAL_OVERDUE_RENTS
     },
     'payments': {
-      'payment-history': ROUTES.PAYMENTS_HISTORY,
-      'record-payment': ROUTES.PAYMENTS_RECORD,
-      'payment-approval': ROUTES.PAYMENTS_APPROVAL,
-      'payment-reconciliation': ROUTES.PAYMENTS_RECONCILIATION
+      'all-payment-history': ROUTES.PAYMENT_HISTORY_ALL,
+      'assigned-payment-history': ROUTES.PAYMENT_HISTORY_ASSIGNED,
+      'my-payment-history': ROUTES.PAYMENT_HISTORY_MY,
     },
-    'financialReports': {
-      'payment-summary': ROUTES.PAYMENT_REPORTS_SUMMARY,
-      'pending-payments': ROUTES.PAYMENT_REPORTS_PENDING,
-      'overdue-payments': ROUTES.PAYMENT_REPORTS_OVERDUE,
-      'collection-reports': ROUTES.PAYMENT_REPORTS_COLLECTION,
-      'revenue-analysis': ROUTES.PAYMENT_REPORTS_REVENUE
-    },
+
     'rent': {
       'rent-roll': ROUTES.RENT_ROLL,
       'lease-management': ROUTES.LEASE_MANAGEMENT,

@@ -586,7 +586,6 @@ const EditPurchaseBooking = () => {
                     <option value="PENDING">Pending</option>
                     <option value="PAID">Paid</option>
                     <option value="OVERDUE">Overdue</option>
-                    <option value="PARTIAL">Partial</option>
                   </Select>
                 </FormControl>
 

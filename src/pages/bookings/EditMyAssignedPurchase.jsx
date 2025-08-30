@@ -90,7 +90,6 @@ const EditMyAssignedPurchase = () => {
       case 'PAID': return 'green';
       case 'PENDING': return 'yellow';
       case 'OVERDUE': return 'red';
-      case 'PARTIAL': return 'orange';
       default: return 'gray';
     }
   };

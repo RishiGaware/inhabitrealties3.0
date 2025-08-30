@@ -14,17 +14,17 @@ export const ROLE_PERMISSIONS = {
   [USER_ROLES.ADMIN]: {
     name: 'Admin',
     description: 'Full system access with all permissions',
-    canAccess: ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'payments', 'paymentHistory', 'financialReports', 'rent', 'postSale', 'client', 'settings']
+    canAccess: ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'payments', 'rent', 'postSale', 'client', 'settings']
   },
   [USER_ROLES.SALES]: {
     name: 'Sales',
     description: 'Sales personnel with limited access',
-    canAccess: ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'bookings', 'payments', 'paymentHistory', 'postSale', 'client', 'settings']
+    canAccess: ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'bookings', 'payments', 'postSale', 'client', 'settings']
   },
   [USER_ROLES.EXECUTIVE]: {
     name: 'Executive',
     description: 'Executive with financial overview and approvals',
-    canAccess: ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'payments', 'paymentHistory', 'financialReports', 'rent', 'postSale', 'client', 'settings']
+    canAccess: ['dashboard', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'payments', 'rent', 'postSale', 'client', 'settings']
   },
   [USER_ROLES.CLIENT]: {
     name: 'Client',
@@ -133,37 +133,10 @@ export const ROUTES = {
   RENTAL_PENDING_RENTS: '/rental-bookings/pending-rents',
   RENTAL_OVERDUE_RENTS: '/rental-bookings/overdue-rents',
 
-  // Payments Routes
-  PAYMENTS_INSTALLMENTS: '/payments/installments',
-  PAYMENTS_HISTORY: '/payments/payment-history',
-  PAYMENTS_DUE: '/payments/due-payments',
-  PAYMENTS_HISTORY_ENHANCED: '/payments/payment-history-enhanced',
-  PAYMENTS_REPORTS: '/payments/reports',
-  PAYMENTS_FILTERING: '/payments/filtering',
-  
-  // Payment Management Routes (New)
-  PAYMENTS_RECORD: '/payments/record',
-  PAYMENTS_APPROVAL: '/payments/approval',
-  PAYMENTS_RECONCILIATION: '/payments/reconciliation',
-  
   // Payment History Routes
   PAYMENT_HISTORY_ALL: '/payment-history/all',
-  PAYMENT_HISTORY_DETAILS: '/payment-history/details',
-  PAYMENT_HISTORY_RECORD: '/payment-history/record',
-  
-  // Payment Reports Routes
-  PAYMENT_REPORTS_SUMMARY: '/payment-reports/summary',
-  PAYMENT_REPORTS_PENDING: '/payment-reports/pending',
-  PAYMENT_REPORTS_OVERDUE: '/payment-reports/overdue',
-  PAYMENT_REPORTS_COLLECTION: '/payment-reports/collection',
-  PAYMENT_REPORTS_REVENUE: '/payment-reports/revenue',
-
-  // Financial Reports Routes (New)
-  FINANCIAL_PAYMENT_SUMMARY: '/financial-reports/payment-summary',
-  FINANCIAL_PENDING_PAYMENTS: '/financial-reports/pending-payments',
-  FINANCIAL_OVERDUE_PAYMENTS: '/financial-reports/overdue-payments',
-  FINANCIAL_COLLECTION_REPORTS: '/financial-reports/collection-reports',
-  FINANCIAL_REVENUE_ANALYSIS: '/financial-reports/revenue-analysis',
+  PAYMENT_HISTORY_ASSIGNED: '/payment-history/assigned',
+  PAYMENT_HISTORY_MY: '/payment-history/my',
 
   // Rent Management Routes
   RENT_ROLL: '/rent/rent-roll',
