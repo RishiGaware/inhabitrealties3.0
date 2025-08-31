@@ -41,7 +41,11 @@ const EditPurchaseBooking = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const toast = useToast();
+  const toast = useToast({
+    position: 'top-right',
+    duration: 3000,
+    isClosable: true,
+  });
   
   // State management
   const [booking, setBooking] = useState(null);
@@ -256,9 +260,9 @@ const EditPurchaseBooking = () => {
       {/* Header */}
       <VStack spacing={{ base: 3, md: 4, lg: 6 }} align="stretch" mb={{ base: 4, md: 6 }}>
         <Flex justify="center" align="center">
-          <Heading as="h1" fontSize={{ base: 'xl', sm: '2xl', md: '3xl' }} fontWeight="bold" textAlign="center">
-            Edit Purchase Booking
-          </Heading>
+        <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
+        Edit Purchase Booking
+        </Heading>
         </Flex>
 
         {/* Booking ID and Status */}

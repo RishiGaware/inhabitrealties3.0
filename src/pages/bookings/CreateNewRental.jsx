@@ -167,18 +167,6 @@ const CreateNewRental = () => {
       setProperties(publishedProperties);
       setCustomers(publishedCustomers);
 
-      // Show info toast if using mock data
-      if (
-        propertiesData.data?.length === 0 ||
-        customersData.data?.length === 0
-      ) {
-        toast(
-          "Using sample data for demonstration. Connect to backend for real data.",
-          {
-            icon: "ℹ️",
-          }
-        );
-      }
     } catch (error) {
       console.error("Error in fetchInitialData:", error);
       // Set mock data as fallback

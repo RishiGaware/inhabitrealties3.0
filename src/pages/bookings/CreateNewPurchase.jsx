@@ -54,14 +54,22 @@ import {
   FiCheckCircle,
   FiMapPin,
   FiInfo,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { purchaseBookingService } from "../../services/paymentManagement/purchaseBookingService";
 import { fetchProperties } from "../../services/propertyService";
-import { fetchUsersWithParams } from "../../services/usermanagement/userService";
+import { fetchUsers } from "../../services/usermanagement/userService";
 import { fetchRoles } from "../../services/rolemanagement/roleService";
 import toast from "react-hot-toast";
 import Loader from "../../components/common/Loader";
 import SearchableSelect from "../../components/common/SearchableSelect";
+import DocumentUpload from "../../components/common/DocumentUpload";
+
+// Helper function to validate MongoDB ObjectId
+const isValidObjectId = (id) => {
+  if (!id || typeof id !== 'string') return false;
+  return /^[0-9a-fA-F]{24}$/.test(id);
+};
 
 const CreateNewPurchase = () => {
   const navigate = useNavigate();
@@ -79,6 +87,7 @@ const CreateNewPurchase = () => {
   const [formData, setFormData] = useState({
     propertyId: "",
     customerId: "",
+    assignedSalespersonId: "", // Add this required field
     totalPropertyValue: "",
     downPayment: "",
     paymentTerms: "INSTALLMENTS",
@@ -94,9 +103,16 @@ const CreateNewPurchase = () => {
   // Data for dropdowns
   const [properties, setProperties] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [salespeople, setSalespeople] = useState([]); // Add salespeople data
 
   // Selected property details
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Document upload state
+  const [selectedFiles, setSelectedFiles] = useState([]);
+
+  // Form validation state
+  const [showErrors, setShowErrors] = useState(false);
 
   // Success modal state
   const [createdBooking, setCreatedBooking] = useState(null);
@@ -105,182 +121,110 @@ const CreateNewPurchase = () => {
     fetchInitialData();
   }, []);
 
+  // Reset error display when form data changes significantly
+  useEffect(() => {
+    if (showErrors && (formData.propertyId || formData.customerId || formData.assignedSalespersonId)) {
+      setShowErrors(false);
+    }
+  }, [formData.propertyId, formData.customerId, formData.assignedSalespersonId, showErrors]);
+
   const fetchInitialData = async () => {
     setIsDataLoading(true);
     try {
       // Step 1: Fetch roles first to get role IDs
-      let rolesData;
-      try {
-        rolesData = await fetchRoles();
-      } catch (error) {
-        console.warn("Failed to fetch roles, using mock data:", error);
-        rolesData = { data: [] };
-      }
+      const rolesData = await fetchRoles();
+      console.log('Roles data:', rolesData);
 
       // Step 2: Fetch properties
-      let propertiesData;
-      try {
-        propertiesData = await fetchProperties();
-      } catch (error) {
-        console.warn("Failed to fetch properties, using mock data:", error);
-        propertiesData = { data: [] };
-      }
+      const propertiesData = await fetchProperties();
+      console.log('Properties data:', propertiesData);
 
-      // Step 3: Fetch customers (users with USER role)
+      // Step 3: Fetch all users and filter by role
+      const allUsersData = await fetchUsers();
+      console.log('All users data:', allUsersData);
+
+      // Filter users by role on the frontend
       let customersData = { data: [] };
-      if (rolesData.data && rolesData.data.length > 0) {
+      let salespeopleData = { data: [] };
+
+      if (rolesData.data && rolesData.data.length > 0 && allUsersData.data) {
         const userRole = rolesData.data.find((role) => role.name === "USER");
+        const salesRole = rolesData.data.find((role) => role.name === "SALES");
+        
+        console.log('Found USER role:', userRole);
+        console.log('Found SALES role:', salesRole);
+
         if (userRole) {
-          try {
-            customersData = await fetchUsersWithParams({
-              roleId: userRole._id,
-              published: true,
-            });
-          } catch (error) {
-            console.warn("Failed to fetch customers, using mock data:", error);
+          customersData.data = allUsersData.data.filter(user => 
+            user.role === userRole._id && user.published === true
+          );
+        }
+
+        if (salesRole) {
+          salespeopleData.data = allUsersData.data.filter(user => 
+            user.role === salesRole._id && user.published === true
+          );
+        }
+
+        // Fallback: If no SALES role users, try EXECUTIVE role users for testing
+        if (salespeopleData.data.length === 0) {
+          const executiveRole = rolesData.data.find((role) => role.name === "EXECUTIVE");
+          if (executiveRole) {
+            console.log('No SALES users found, using EXECUTIVE users as fallback');
+            salespeopleData.data = allUsersData.data.filter(user => 
+              user.role === executiveRole._id && user.published === true
+            );
           }
         }
+
+        console.log('Filtered customers:', customersData);
+        console.log('Filtered salespeople:', salespeopleData);
       }
 
+      // Use only real data from backend
+      const publishedProperties = propertiesData.data?.filter((prop) => prop.published) || [];
+      const publishedCustomers = customersData.data || [];
+      const publishedSalespeople = salespeopleData.data || [];
 
+      console.log('Final processed data:', {
+        properties: publishedProperties.length,
+        customers: publishedCustomers.length,
+        salespeople: publishedSalespeople.length
+      });
 
-      // Use real data if available, otherwise fall back to mock data
-      let publishedProperties =
-        propertiesData.data?.filter((prop) => prop.published) || [];
-      let publishedCustomers = customersData.data || [];
-
-      // If no real data, use mock data
+      // Check if we have the minimum required data
       if (publishedProperties.length === 0) {
-        publishedProperties = [
-          {
-            _id: "prop_1",
-            name: "Luxury Apartment Downtown",
-            address: "123 Main St, Downtown",
-            price: 8500000,
-            type: "APARTMENT",
-            published: true,
-          },
-          {
-            _id: "prop_2",
-            name: "Modern Villa Suburbs",
-            address: "456 Oak Ave, Suburbs",
-            price: 12000000,
-            type: "VILLA",
-            published: true,
-          },
-          {
-            _id: "prop_3",
-            name: "Premium Condo",
-            address: "789 Business District",
-            price: 6500000,
-            type: "APARTMENT",
-            published: true,
-          },
-        ];
+        toast.error("No properties available. Please add properties first.");
+        return;
       }
 
       if (publishedCustomers.length === 0) {
-        publishedCustomers = [
-          {
-            _id: "cust_1",
-            firstName: "John",
-            lastName: "Smith",
-            email: "john@example.com",
-            phone: "+1234567890",
-            published: true,
-          },
-          {
-            _id: "cust_2",
-            firstName: "Sarah",
-            lastName: "Johnson",
-            email: "sarah@example.com",
-            phone: "+1234567891",
-            published: true,
-          },
-          {
-            _id: "cust_3",
-            firstName: "Mike",
-            lastName: "Wilson",
-            email: "mike@example.com",
-            phone: "+1234567892",
-            published: true,
-          },
-        ];
+        toast.error("No customers available. Please add customers first.");
+        return;
       }
 
-
+      if (publishedSalespeople.length === 0) {
+        console.warn("No users with SALES role found. Available roles:", rolesData.data?.map(r => r.name));
+        console.warn("All users have role:", allUsersData.data?.map(u => ({ id: u._id, role: u.role, email: u.email })));
+        
+        // Show more specific error message
+        const availableRoles = rolesData.data?.map(r => r.name).join(', ') || 'none';
+        toast.error(`No salespeople available. Available roles: ${availableRoles}. Users need to have the SALES role assigned.`);
+        return;
+      }
 
       setProperties(publishedProperties);
       setCustomers(publishedCustomers);
+      setSalespeople(publishedSalespeople);
 
-      // Show info toast if using mock data
-      if (
-        propertiesData.data?.length === 0 ||
-        customersData.data?.length === 0
-      ) {
-        toast(
-          "Using sample data for demonstration. Connect to backend for real data.",
-          {
-            icon: "ℹ️",
-          }
-        );
-      }
     } catch (error) {
       console.error("Error in fetchInitialData:", error);
-      // Set mock data as fallback
-      setProperties([
-        {
-          _id: "prop_1",
-          name: "Luxury Apartment Downtown",
-          address: "123 Main St, Downtown",
-          price: 8500000,
-          type: "APARTMENT",
-          published: true,
-        },
-        {
-          _id: "prop_2",
-          name: "Modern Villa Suburbs",
-          address: "456 Oak Ave, Suburbs",
-          price: 12000000,
-          type: "VILLA",
-          published: true,
-        },
-        {
-          _id: "prop_3",
-          name: "Premium Condo",
-          address: "789 Business District",
-          price: 6500000,
-          type: "APARTMENT",
-          published: true,
-        },
-      ]);
-      setCustomers([
-        {
-          _id: "cust_1",
-          firstName: "John",
-          lastName: "Smith",
-          email: "john@example.com",
-          phone: "+1234567890",
-          published: true,
-        },
-        {
-          _id: "cust_2",
-          firstName: "Sarah",
-          lastName: "Johnson",
-          email: "sarah@example.com",
-          phone: "+1234567891",
-          published: true,
-        },
-        {
-          _id: "cust_3",
-          firstName: "Mike",
-          lastName: "Wilson",
-          email: "mike@example.com",
-          phone: "+1234567892",
-          published: true,
-        },
-      ]);
-
+      toast.error("Failed to load required data. Please check your connection and try again.");
+      
+      // Set empty arrays to prevent form from rendering with invalid data
+      setProperties([]);
+      setCustomers([]);
+      setSalespeople([]);
     } finally {
       setIsDataLoading(false);
     }
@@ -288,6 +232,11 @@ const CreateNewPurchase = () => {
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    
+    // Hide errors for this field when user starts typing/selecting
+    if (value && showErrors) {
+      setShowErrors(false);
+    }
   };
 
   const handlePropertyChange = (propertyId) => {
@@ -299,6 +248,11 @@ const CreateNewPurchase = () => {
         propertyId,
         totalPropertyValue: property.price,
       }));
+      
+      // Hide errors when property is selected
+      if (showErrors) {
+        setShowErrors(false);
+      }
     } else {
       setSelectedProperty(null);
       setFormData((prev) => ({
@@ -316,9 +270,28 @@ const CreateNewPurchase = () => {
         ...prev,
         customerId,
       }));
+      
+      // Hide errors when customer is selected
+      if (showErrors) {
+        setShowErrors(false);
+      }
     }
   };
 
+  const handleSalespersonChange = (salespersonId) => {
+    const salesperson = salespeople.find((s) => s._id === salespersonId);
+    if (salesperson) {
+      setFormData((prev) => ({
+        ...prev,
+        assignedSalespersonId: salespersonId,
+      }));
+      
+      // Hide errors when salesperson is selected
+      if (showErrors) {
+        setShowErrors(false);
+      }
+    }
+  };
 
 
   const formatAddress = (property) => {
@@ -363,12 +336,18 @@ const CreateNewPurchase = () => {
 
     if (!formData.propertyId) errors.push("Property selection is required");
     if (!formData.customerId) errors.push("Customer selection is required");
+    if (!formData.assignedSalespersonId) errors.push("Salesperson assignment is required");
     if (!formData.totalPropertyValue || formData.totalPropertyValue <= 0)
       errors.push("Valid property value is required");
     if (!formData.downPayment || formData.downPayment <= 0)
       errors.push("Valid down payment is required");
     if (formData.downPayment >= formData.totalPropertyValue)
       errors.push("Down payment must be less than total property value");
+
+    // Validate ObjectId format
+    if (!isValidObjectId(formData.propertyId)) errors.push("Invalid property ID format");
+    if (!isValidObjectId(formData.customerId)) errors.push("Invalid customer ID format");
+    if (!isValidObjectId(formData.assignedSalespersonId)) errors.push("Invalid salesperson ID format");
 
     if (formData.isFinanced) {
       if (!formData.bankName)
@@ -395,60 +374,82 @@ const CreateNewPurchase = () => {
   const isFormValid = () => {
     return formData.propertyId && 
            formData.customerId && 
+           formData.assignedSalespersonId && 
            formData.totalPropertyValue && 
-           formData.downPayment;
+           formData.downPayment &&
+           properties.length > 0 &&
+           customers.length > 0 &&
+           salespeople.length > 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if we have the required data loaded
+    if (properties.length === 0 || customers.length === 0 || salespeople.length === 0) {
+      toast.error("Required data not loaded. Please refresh the page and try again.");
+      return;
+    }
+
     // Check if SearchableSelect components have values
-    if (!formData.propertyId || !formData.customerId) {
+    if (!formData.propertyId || !formData.customerId || !formData.assignedSalespersonId) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Validate ObjectId format before submission
+    if (!isValidObjectId(formData.propertyId) || 
+        !isValidObjectId(formData.customerId) || 
+        !isValidObjectId(formData.assignedSalespersonId)) {
+      toast.error("Invalid ID format detected. Please refresh and try again.");
       return;
     }
 
     const validationErrors = validateForm();
     if (validationErrors.length > 0) {
+      setShowErrors(true); // Show errors after form submission attempt
       toast.error(validationErrors.join(", "));
       return;
     }
 
     setIsSubmitting(true);
     try {
-      // Prepare the API payload
-      const payload = {
-        propertyId: formData.propertyId,
-        customerId: formData.customerId,
-        bookingStatus: formData.bookingStatus,
-        totalPropertyValue: parseFloat(formData.totalPropertyValue),
-        downPayment: parseFloat(formData.downPayment),
-        paymentTerms: formData.paymentTerms,
-        installmentCount:
-          formData.paymentTerms === "INSTALLMENTS"
-            ? parseInt(formData.installmentCount)
-            : undefined,
-        isFinanced: formData.isFinanced,
-        bankName: formData.isFinanced ? formData.bankName : undefined,
-        loanTenure: formData.isFinanced
-          ? parseInt(formData.loanTenure)
-          : undefined,
-        interestRate: formData.isFinanced
-          ? parseFloat(formData.interestRate)
-          : undefined,
-        emiAmount: formData.isFinanced
-          ? parseFloat(formData.emiAmount)
-          : undefined,
-      };
+      // Create FormData for file uploads
+      const formDataToSend = new FormData();
 
-      // Remove undefined values
-      Object.keys(payload).forEach(
-        (key) => payload[key] === undefined && delete payload[key]
-      );
+      // Add all form fields
+      formDataToSend.append('propertyId', formData.propertyId);
+      formDataToSend.append('customerId', formData.customerId);
+      formDataToSend.append('assignedSalespersonId', formData.assignedSalespersonId);
+      formDataToSend.append('bookingStatus', formData.bookingStatus);
+      formDataToSend.append('totalPropertyValue', formData.totalPropertyValue);
+      formDataToSend.append('downPayment', formData.downPayment);
+      formDataToSend.append('paymentTerms', formData.paymentTerms);
+      
+      if (formData.paymentTerms === "INSTALLMENTS") {
+        formDataToSend.append('installmentCount', formData.installmentCount);
+      }
 
-      const response = await purchaseBookingService.createPurchaseBooking(
-        payload
-      );
+      if (formData.isFinanced) {
+        formDataToSend.append('isFinanced', 'true');
+        formDataToSend.append('bankName', formData.bankName);
+        formDataToSend.append('loanTenure', formData.loanTenure);
+        formDataToSend.append('interestRate', formData.interestRate);
+        formDataToSend.append('emiAmount', formData.emiAmount);
+      } else {
+        formDataToSend.append('isFinanced', 'false');
+      }
+
+      // Add documents if any are selected
+      if (selectedFiles.length > 0) {
+        selectedFiles.forEach((fileObj, index) => {
+          formDataToSend.append('documents', fileObj.file);
+          formDataToSend.append(`documentTypes[${index}]`, fileObj.documentType);
+        });
+      }
+
+      // Use the service to create the booking with documents
+      const response = await purchaseBookingService.createPurchaseBooking(formDataToSend);
 
       // Show success modal
       setCreatedBooking(response.data);
@@ -470,6 +471,7 @@ const CreateNewPurchase = () => {
     setFormData({
       propertyId: "",
       customerId: "",
+      assignedSalespersonId: "",
       totalPropertyValue: "",
       downPayment: "",
       paymentTerms: "INSTALLMENTS",
@@ -482,6 +484,8 @@ const CreateNewPurchase = () => {
       bookingStatus: "CONFIRMED",
     });
     setSelectedProperty(null);
+    setSelectedFiles([]); // Reset selected files
+    setShowErrors(false); // Reset error display state
   };
 
   const handleSuccessModalClose = () => {
@@ -511,6 +515,45 @@ const CreateNewPurchase = () => {
           size="xl"
           label="Loading roles, properties, and customers..."
         />
+      </Box>
+    );
+  }
+
+  // Show error state if no data is available
+  if (properties.length === 0 || customers.length === 0 || salespeople.length === 0) {
+    return (
+      <Box
+        p={6}
+        bg="gray.50"
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <VStack spacing={4} textAlign="center">
+          <Text fontSize="xl" fontWeight="bold" color="red.600">
+            Required Data Not Available
+          </Text>
+          <Text color="gray.600">
+            {properties.length === 0 && "• No properties available"}
+          </Text>
+          <Text color="gray.600">
+            {customers.length === 0 && "• No customers available"}
+          </Text>
+          <Text color="gray.600">
+            {salespeople.length === 0 && "• No salespeople available"}
+          </Text>
+          <Text color="gray.500" fontSize="sm">
+            Please ensure you have properties, customers, and salespeople in your system before creating purchase bookings.
+          </Text>
+          <Button
+            colorScheme="blue"
+            onClick={() => window.location.reload()}
+            leftIcon={<FiRefreshCw />}
+          >
+            Refresh Page
+          </Button>
+        </VStack>
       </Box>
     );
   }
@@ -554,7 +597,7 @@ const CreateNewPurchase = () => {
                 <FormHelperText>
                   Search and select from available properties
                 </FormHelperText>
-                {!formData.propertyId && (
+                {showErrors && !formData.propertyId && (
                   <Text color="red.500" fontSize="sm" mt={1}>
                     Property selection is required
                   </Text>
@@ -670,7 +713,7 @@ const CreateNewPurchase = () => {
                 <FormHelperText>
                   Search and select from registered customers
                 </FormHelperText>
-                {!formData.customerId && (
+                {showErrors && !formData.customerId && (
                   <Text color="red.500" fontSize="sm" mt={1}>
                     Customer selection is required
                   </Text>
@@ -679,6 +722,46 @@ const CreateNewPurchase = () => {
             </CardBody>
           </Card>
 
+          {/* Salesperson Assignment */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiUser color="purple.500" size={20} />
+                <Heading size="md" color="purple.700">
+                  Assign Salesperson
+                </Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              <FormControl isRequired>
+                <FormLabel fontWeight="semibold">Assign Salesperson</FormLabel>
+                <SearchableSelect
+                  name="assignedSalespersonId"
+                  placeholder="Search and choose a salesperson"
+                  value={formData.assignedSalespersonId}
+                  onChange={handleSalespersonChange}
+                  options={salespeople.map(salesperson => ({
+                    value: salesperson._id,
+                    label: `${salesperson.firstName || ""} ${
+                      salesperson.lastName || ""
+                    }`.trim()
+                      ? `${salesperson.firstName} ${salesperson.lastName} - ${salesperson.email}`
+                      : `Unknown Salesperson - ${salesperson.email}`
+                  }))}
+                  isDisabled={isSubmitting}
+                  isRequired={true}
+                />
+                <FormHelperText>
+                  Assign a salesperson to manage this booking
+                </FormHelperText>
+                {showErrors && !formData.assignedSalespersonId && (
+                  <Text color="red.500" fontSize="sm" mt={1}>
+                    Salesperson assignment is required
+                  </Text>
+                )}
+              </FormControl>
+            </CardBody>
+          </Card>
 
 
           {/* Financial Details */}
@@ -923,6 +1006,38 @@ const CreateNewPurchase = () => {
               </VStack>
             </CardBody>
           </Card>
+
+          {/* Document Upload */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiInfo color="purple.500" size={20} />
+                <Heading size="md" color="purple.700">
+                  Upload Documents
+                </Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              <DocumentUpload
+                files={selectedFiles}
+                onFilesChange={setSelectedFiles}
+                maxFiles={10}
+                maxFileSize={10 * 1024 * 1024} // 10MB
+                allowedTypes={['pdf']} // Only PDF files allowed
+                documentTypes={[
+                  'ID_PROOF', 
+                  'ADDRESS_PROOF', 
+                  'INCOME_PROOF', 
+                  'PROPERTY_DOCUMENTS', 
+                  'AGREEMENT_DOCUMENTS', 
+                  'OTHER'
+                ]}
+                isDisabled={isSubmitting}
+                title="Supporting Documents (PDF Only)"
+                description="Upload PDF documents like ID proof, address proof, income proof, property documents, or agreements. Only PDF files are accepted."
+              />
+            </CardBody>
+          </Card>
         </VStack>
       </form>
 
@@ -1078,6 +1193,55 @@ const CreateNewPurchase = () => {
                                   </VStack>
                                   <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="bold" color="blue.600">
                                     ₹{installment.amount?.toLocaleString()}
+                                  </Text>
+                                </HStack>
+                              ))}
+                            </Box>
+                          </VStack>
+                        </Box>
+                      )}
+
+                      {/* Uploaded Documents Information */}
+                      {createdBooking.documents && createdBooking.documents.length > 0 && (
+                        <Box>
+                          <Text fontWeight="semibold" mb={3} fontSize={{ base: 'md', md: 'lg' }} color="gray.700">
+                            📎 Uploaded Documents
+                          </Text>
+                          <VStack spacing={2} align="stretch">
+                            <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" textAlign="center">
+                              {createdBooking.documents.length} document(s) uploaded successfully
+                            </Text>
+                            <Box 
+                              maxH={{ base: "150px", md: "200px" }} 
+                              overflowY="auto" 
+                              border="1px" 
+                              borderColor="gray.200" 
+                              borderRadius="lg" 
+                              p={3}
+                              bg="gray.50"
+                            >
+                              {createdBooking.documents.map((document, index) => (
+                                <HStack 
+                                  key={document._id || index} 
+                                  justify="space-between" 
+                                  py={2} 
+                                  px={2}
+                                  borderBottom={index < createdBooking.documents.length - 1 ? "1px solid" : "none"} 
+                                  borderColor="gray.200"
+                                  bg="white"
+                                  borderRadius="md"
+                                  _hover={{ bg: "gray.50" }}
+                                >
+                                  <VStack align="start" spacing={0}>
+                                    <Text fontSize={{ base: 'xs', md: 'sm' }} fontWeight="medium">
+                                      {document.originalName}
+                                    </Text>
+                                    <Text fontSize="xs" color="gray.500">
+                                      Type: {document.documentType?.replace(/_/g, ' ')}
+                                    </Text>
+                                  </VStack>
+                                  <Text fontSize="xs" color="green.600" fontWeight="medium">
+                                    ✓ Uploaded
                                   </Text>
                                 </HStack>
                               ))}

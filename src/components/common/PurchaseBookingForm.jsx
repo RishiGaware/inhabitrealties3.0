@@ -36,7 +36,11 @@ const PurchaseBookingForm = ({
   onSubmit,
   isLoading = false 
 }) => {
-  const toast = useToast();
+  const toast = useToast({
+    position: 'top-right',
+    duration: 3000,
+    isClosable: true,
+  });
 
   // Form state
   const [formData, setFormData] = useState({
@@ -155,9 +159,10 @@ const PurchaseBookingForm = ({
     <Modal isOpen={isOpen} onClose={handleClose} size="xl">
       <ModalOverlay />
       <ModalContent>
-        <ModalHeader>
-          {mode === 'add' ? 'Create New Purchase Booking' : 'Edit Purchase Booking'}
-        </ModalHeader>
+
+      <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
+      {mode === 'add' ? 'Create New Purchase Booking' : 'Edit Purchase Booking'}
+      </Heading>
         <ModalBody>
           <form onSubmit={handleSubmit}>
             <VStack spacing={4} align="stretch">

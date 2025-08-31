@@ -22,11 +22,16 @@ import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 
 import PurchaseBookingViewer from '../../components/common/PurchaseBookingViewer';
-import api from '../../services/api';
+import PurchaseBookingEditForm from '../../components/common/PurchaseBookingEditForm';
+import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
 
 const AllPurchaseBookings = () => {
   const navigate = useNavigate();
-  const toast = useToast();
+  const toast = useToast({
+    position: 'top-right',
+    duration: 3000,
+    isClosable: true,
+  });
 
   // State management
   const [bookings, setBookings] = useState([]);
@@ -38,6 +43,8 @@ const AllPurchaseBookings = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [editingBooking, setEditingBooking] = useState(null);
 
   // Filter options - dynamically generated from API data
   const filterOptions = {
@@ -74,16 +81,16 @@ const AllPurchaseBookings = () => {
       setIsLoading(true);
       
       // Use the configured API service
-      const response = await api.get('/purchase-bookings/all');
+      const response = await purchaseBookingService.getAllPurchaseBookings();
       
       // Handle the actual API response format
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        setBookings(response.data.data);
-        setFilteredBookings(response.data.data);
-      } else if (response.data && Array.isArray(response.data)) {
-        // Handle case where data is directly in response.data
+      if (response && response.data && Array.isArray(response.data)) {
         setBookings(response.data);
         setFilteredBookings(response.data);
+      } else if (response && Array.isArray(response)) {
+        // Handle case where data is directly in response
+        setBookings(response);
+        setFilteredBookings(response);
       } else {
         console.warn('Unexpected API response format:', response);
         setBookings([]);
@@ -301,15 +308,26 @@ const AllPurchaseBookings = () => {
 
   // Handle edit booking
   const handleEdit = (id) => {
+    console.log('Edit button clicked for booking ID:', id);
     const booking = bookings.find(b => b._id === id);
+    console.log('Found booking:', booking);
     if (booking) {
-      // Pass the booking data directly to avoid API call
-      navigate(`/purchase-bookings/edit/${id}`, { 
-        state: { bookingData: booking } 
-      });
+      setEditingBooking(booking);
+      setIsEditFormOpen(true);
+      console.log('Edit form modal should now be open');
+    } else {
+      console.error('Booking not found for ID:', id);
     }
   };
 
+  // Handle edit form update
+  const handleEditFormUpdate = () => {
+    console.log('Edit form update triggered');
+    // Refresh the bookings data after update
+    fetchBookings();
+    setIsEditFormOpen(false);
+    setEditingBooking(null);
+  };
 
 
   // Handle page change
@@ -450,6 +468,20 @@ const AllPurchaseBookings = () => {
         }}
         bookingData={selectedBooking}
       />
+
+      {/* Purchase Booking Edit Form */}
+      <PurchaseBookingEditForm
+        isOpen={isEditFormOpen}
+        onClose={() => {
+          console.log('Edit form closing');
+          setIsEditFormOpen(false);
+          setEditingBooking(null);
+        }}
+        bookingData={editingBooking}
+        onUpdate={handleEditFormUpdate}
+      />
+      
+      
     </Box>
   );
 };

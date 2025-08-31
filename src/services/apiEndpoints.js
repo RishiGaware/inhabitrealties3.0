@@ -139,37 +139,44 @@ export const PAYMENT_HISTORY_ENDPOINTS = {
 // Purchase Booking Endpoints - Updated to match backend implementation
 export const PURCHASE_BOOKING_ENDPOINTS = {
   // Core CRUD operations
-  GET_ALL: '/purchase-booking/all',
-  GET_BY_ID: (id) => `/purchase-booking/${id}`,
+  GET_ALL: '/purchase-bookings/all',
+  GET_BY_ID: (id) => `/purchase-bookings/${id}`,
   CREATE: '/purchase-bookings/create',
-  UPDATE: (id) => `/purchase-booking/update/${id}`,
-  DELETE: (id) => `/purchase-booking/delete/${id}`,
+  UPDATE: (id) => `/purchase-bookings/update/${id}`,
+  DELETE: (id) => `/purchase-bookings/delete/${id}`,
   
   // User-specific operations
-  GET_MY_BOOKINGS: (userId) => `/purchase-booking/my-bookings/${userId}`,
-  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/purchase-booking/assigned/${salespersonId}`,
+  GET_MY_BOOKINGS: (userId) => `/purchase-bookings/my-bookings/${userId}`,
+  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/purchase-bookings/assigned/${salespersonId}`,
   
   // Installment operations
-  GET_INSTALLMENT_SCHEDULE: (id) => `/purchase-booking/${id}/installment-schedule`,
-  RECORD_INSTALLMENT: (id) => `/purchase-booking/${id}/record-installment`,
-  UPDATE_INSTALLMENT_STATUS: (id) => `/purchase-booking/${id}/update-installment-status`,
+  GET_INSTALLMENT_SCHEDULE: (id) => `/purchase-bookings/${id}/installment-schedule`,
+  RECORD_INSTALLMENT: (id) => `/purchase-bookings/${id}/record-installment`,
+  UPDATE_INSTALLMENT_STATUS: (id) => `/purchase-bookings/${id}/update-installment-status`,
   
   // Reports
-  GET_REPORTS_PENDING_INSTALLMENTS: '/purchase-booking/reports/pending-installments',
+  GET_REPORTS_PENDING_INSTALLMENTS: '/purchase-bookings/reports/pending-installments',
   GET_REPORTS_OVERDUE_INSTALLMENTS: '/purchase-bookings/reports/overdue-installments',
+  
+  // Additional operations
+  CONFIRM: (id) => `/purchase-bookings/confirm/${id}`,
+  ADD_DOCUMENTS: (id) => `/purchase-bookings/${id}/add-documents`,
+  DELETE_DOCUMENT: (id, documentId) => `/purchase-bookings/${id}/documents/${documentId}`,
+  UPDATE_DOCUMENT: (id, documentId) => `/purchase-bookings/${id}/documents/${documentId}`,
+  GET_DOCUMENT: (id, documentId) => `/purchase-bookings/${id}/documents/${documentId}`,
 };
 
 // Rental Booking Endpoints
 export const RENTAL_BOOKING_ENDPOINTS = {
-  GET_ALL: '/rental-booking/all',
-  GET_BY_BOOKING_TYPE: (bookingType) => `/rental-booking/booking-type/${bookingType}`,
-  CREATE: '/rental-booking/create',
-  GET_BY_ID: (id) => `/rental-booking/${id}`,
-  GET_RENT_SCHEDULE: (id) => `/rental-booking/${id}/rent-schedule`,
-  UPDATE: (id) => `/rental-booking/update/${id}`,
-  RECORD_RENT_PAYMENT: (id) => `/rental-booking/${id}/record-rent-payment`,
-  UPDATE_MONTH_STATUS: (id) => `/rental-booking/${id}/update-month-status`,
-  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/rental-booking/assigned/${salespersonId}`,
-  GET_REPORTS_PENDING_RENTS: '/rental-booking/reports/pending-rents',
-  GET_REPORTS_OVERDUE_RENTS: '/rental-booking/reports/overdue-rents',
+  GET_ALL: '/rental-bookings/all',
+  GET_BY_BOOKING_TYPE: (bookingType) => `/rental-bookings/booking-type/${bookingType}`,
+  CREATE: '/rental-bookings/create',
+  GET_BY_ID: (id) => `/rental-bookings/${id}`,
+  GET_RENT_SCHEDULE: (id) => `/rental-bookings/${id}/rent-schedule`,
+  UPDATE: (id) => `/rental-bookings/update/${id}`,
+  RECORD_RENT_PAYMENT: (id) => `/rental-bookings/${id}/record-rent-payment`,
+  UPDATE_MONTH_STATUS: (id) => `/rental-bookings/${id}/update-month-status`,
+  GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/rental-bookings/assigned/${salespersonId}`,
+  GET_REPORTS_PENDING_RENTS: '/rental-bookings/reports/pending-rents',
+  GET_REPORTS_OVERDUE_RENTS: '/rental-bookings/reports/overdue-rents',
 };
