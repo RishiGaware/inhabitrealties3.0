@@ -99,14 +99,14 @@ const NewLogin = () => {
               </div>
 
               <div>
-                <div className="flex justify-between items-center mb-2">
+                {/* <div className="flex justify-between items-center mb-2">
                   <label htmlFor="password" className="block text-xs sm:text-sm font-semibold text-gray-600" style={{ fontFamily: "'Inter', sans-serif" }}>
                     Password
                   </label>
                   <Link to="/forgot-password" className="text-xs sm:text-sm font-semibold text-purple-600 hover:text-purple-800 transition-colors" style={{ fontFamily: "'Inter', sans-serif" }}>
                     Forgot Password?
                   </Link>
-                </div>
+                </div> */}
                 <div className="flex items-center bg-gray-100 border border-gray-200 rounded-lg p-2.5 sm:p-3 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500 transition-all duration-300">
                   <FaLock className="text-gray-400 mx-2" />
                   <input
