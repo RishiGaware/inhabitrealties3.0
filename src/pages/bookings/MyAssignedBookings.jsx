@@ -11,8 +11,17 @@ import {
   IconButton,
   Heading,
   VStack,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+  Spinner,
+  Tooltip,
 } from '@chakra-ui/react';
-import { FiDownload, FiEye, FiEdit } from 'react-icons/fi';
+import { FiDownload, FiEye, FiEdit, FiX } from 'react-icons/fi';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
@@ -37,6 +46,11 @@ const MyAssignedBookings = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  
+  // PDF viewer modal
+  const { isOpen: isPdfViewerOpen, onOpen: onPdfViewerOpen, onClose: onPdfViewerClose } = useDisclosure();
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [pdfTitle, setPdfTitle] = useState('');
 
   // Filter options - dynamically generated from API data
   const filterOptions = {
@@ -234,6 +248,45 @@ const MyAssignedBookings = () => {
       },
       width: "100px"
     },
+    {
+      key: 'documents',
+      label: 'Documents',
+      render: (_, row) => {
+        const hasDocuments = row.documents && row.documents.length > 0 && row.documents.some(doc => doc.documentUrl);
+        const documentCount = hasDocuments ? row.documents.filter(doc => doc.documentUrl).length : 0;
+        
+        return (
+          <HStack spacing={2}>
+            {hasDocuments && (
+              <Tooltip label={`${documentCount} document(s) available`} placement="top">
+                <Badge colorScheme="blue" variant="subtle" size="sm" borderRadius="full" cursor="pointer">
+                  📄 {documentCount}
+                </Badge>
+              </Tooltip>
+            )}
+            {hasDocuments && (
+              <IconButton
+                size="xs"
+                colorScheme="purple"
+                variant="outline"
+                icon={<FiEye />}
+                onClick={() => {
+                  const pdfDoc = row.documents.find(doc => 
+                    doc.mimeType?.includes('pdf') || 
+                    doc.originalName?.toLowerCase().includes('.pdf')
+                  ) || row.documents[0];
+                  if (pdfDoc?.documentUrl) {
+                    handleViewPdf(pdfDoc.documentUrl, `${row.bookingId || row._id?.slice(-8)} - ${pdfDoc.originalName || 'Document'}`);
+                  }
+                }}
+                aria-label="View documents"
+              />
+            )}
+          </HStack>
+        );
+      },
+      width: "120px"
+    },
   ];
 
   // Row actions - matching AllPurchaseBookings style
@@ -296,6 +349,13 @@ const MyAssignedBookings = () => {
         state: { bookingData: booking } 
       });
     }
+  };
+
+  // Handle PDF viewing
+  const handleViewPdf = (url, title) => {
+    setPdfUrl(url);
+    setPdfTitle(title);
+    onPdfViewerOpen();
   };
 
   // Handle page change
@@ -432,6 +492,75 @@ const MyAssignedBookings = () => {
         }}
         bookingData={selectedBooking}
       />
+
+      {/* PDF Viewer Modal */}
+      <Modal isOpen={isPdfViewerOpen} onClose={onPdfViewerClose} size="6xl" isCentered>
+        <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
+        <ModalContent maxH="90vh" borderRadius="lg">
+          <ModalHeader bg="gray.50" borderBottom="1px" borderColor="gray.200">
+            <HStack justify="space-between" align="center">
+              <Text fontSize="lg" fontWeight="bold" color="gray.800" noOfLines={1}>
+                {pdfTitle}
+              </Text>
+              <IconButton
+                size="sm"
+                colorScheme="gray"
+                variant="ghost"
+                icon={<FiX />}
+                onClick={onPdfViewerClose}
+                aria-label="Close PDF viewer"
+              />
+            </HStack>
+          </ModalHeader>
+          
+          <ModalBody p={0} bg="gray.100">
+            <Box w="full" h="70vh" position="relative">
+              {pdfUrl ? (
+                <iframe
+                  src={pdfUrl}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 'none', borderRadius: '0 0 8px 8px' }}
+                  title={pdfTitle}
+                />
+              ) : (
+                <VStack spacing={4} align="center" justify="center" h="full">
+                  <Text fontSize="lg" color="gray.500">Loading PDF...</Text>
+                  <Spinner size="lg" color="blue.500" />
+                </VStack>
+              )}
+            </Box>
+          </ModalBody>
+          
+          <ModalFooter bg="gray.50" borderTop="1px" borderColor="gray.200" justifyContent="space-between">
+            <Button
+              size="sm"
+              colorScheme="blue"
+              variant="outline"
+              leftIcon={<FiDownload />}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = pdfUrl;
+                link.download = pdfTitle;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Download PDF
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="gray"
+              variant="outline"
+              onClick={onPdfViewerClose}
+            >
+              Close
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
   );
 };

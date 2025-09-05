@@ -6,13 +6,28 @@ import {
   FormLabel, Select, Input, Textarea, Divider, IconButton,
   Tabs, TabList, TabPanels, Tab, TabPanel, NumberInput, NumberInputField,
   NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper,
-  FormHelperText, Flex,
+  FormHelperText, Flex, Spinner, Tooltip,
 } from '@chakra-ui/react';
 import { FiSave, FiX, FiEdit, FiUpload, FiEye, FiDownload } from 'react-icons/fi';
 import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
 import DocumentUpload from './DocumentUpload';
 
 const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => {
+  // Expected installment data structure with documents:
+  // installment: {
+  //   installmentNumber: 1,
+  //   amount: 12000,
+  //   dueDate: "2025-01-15",
+  //   status: "PENDING",
+  //   documents: [
+  //     {
+  //       documentUrl: "https://res.cloudinary.com/doaqk3uzf/image/upload/v1/insightwaveit/purchase_booking_docs/PURC2025-08-31-be83ecd5-9b91-43b2-9e9b-9d9fe4d6bed8/1756663235565_cpwupcuuz1i?_a=BAMAK+fi0",
+  //       originalName: "payment_proof.pdf",
+  //       mimeType: "application/pdf",
+  //       documentType: "INSTALLMENT_PROOF"
+  //     }
+  //   ]
+  // }
   const toast = useToast({
     position: 'top-right',
     duration: 3000,
@@ -27,6 +42,11 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
   
   // Installment edit modal
   const { isOpen: isInstallmentModalOpen, onOpen: onInstallmentModalOpen, onClose: onInstallmentModalClose } = useDisclosure();
+  
+  // PDF viewer modal
+  const { isOpen: isPdfViewerOpen, onOpen: onPdfViewerOpen, onClose: onPdfViewerClose } = useDisclosure();
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [pdfTitle, setPdfTitle] = useState('');
 
   useEffect(() => {
     if (isOpen && bookingData) {
@@ -100,6 +120,12 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
   const handleEditInstallment = (installment) => {
     setSelectedInstallment(installment);
     onInstallmentModalOpen();
+  };
+
+  const handleViewPdf = (url, title) => {
+    setPdfUrl(url);
+    setPdfTitle(title);
+    onPdfViewerOpen();
   };
 
   const handleSave = async () => {
@@ -500,7 +526,17 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                             <Box key={installment._id || index} p={4} bg={installment.status === 'PAID' ? 'green.50' : 'white'} borderRadius="lg" border="1px" borderColor={installment.status === 'PAID' ? 'green.200' : installment.status === 'PENDING' ? 'yellow.200' : installment.status === 'OVERDUE' ? 'red.200' : 'gray.200'} _hover={{ transform: 'translateY(-2px)', boxShadow: 'md', transition: 'all 0.2s' }}>
                               <VStack spacing={3} align="stretch">
                                 <HStack justify="space-between" w="full">
-                                  <Text fontSize="sm" color="gray.600" fontWeight="medium">Installment {installment.installmentNumber}</Text>
+                                  <HStack spacing={2}>
+                                    <Text fontSize="sm" color="gray.600" fontWeight="medium">Installment {installment.installmentNumber}</Text>
+                                    {/* Document indicator */}
+                                    {booking?.documents && booking.documents.length > 0 && booking.documents.some(doc => doc.documentUrl) && (
+                                      <Tooltip label={`${booking.documents.filter(doc => doc.documentUrl).length} document(s) available`} placement="top">
+                                        <Badge colorScheme="blue" variant="subtle" size="xs" borderRadius="full" cursor="pointer">
+                                          📄 {booking.documents.filter(doc => doc.documentUrl).length}
+                                        </Badge>
+                                      </Tooltip>
+                                    )}
+                                  </HStack>
                                   <Badge colorScheme={installment.status === 'PAID' ? 'green' : installment.status === 'PENDING' ? 'yellow' : installment.status === 'OVERDUE' ? 'red' : 'gray'} variant="solid" size="sm" borderRadius="full">{installment.status}</Badge>
                                 </HStack>
                                 
@@ -519,14 +555,26 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                                     onClick={() => handleEditInstallment(installment)} 
                                     aria-label="Edit installment" 
                                   />
-                                  <IconButton 
-                                    size="sm" 
-                                    colorScheme="purple" 
-                                    variant="outline" 
-                                    icon={<FiEye />} 
-                                    onClick={() => {}} 
-                                    aria-label="View documents" 
-                                  />
+                                  {/* Show view button only if booking has documents */}
+                                  {booking?.documents && booking.documents.length > 0 && booking.documents.some(doc => doc.documentUrl) && (
+                                    <IconButton 
+                                      size="sm" 
+                                      colorScheme="purple" 
+                                      variant="outline" 
+                                      icon={<FiEye />} 
+                                      onClick={() => {
+                                        // Find the first PDF document or first document
+                                        const pdfDoc = booking.documents.find(doc => 
+                                          doc.mimeType?.includes('pdf') || 
+                                          doc.originalName?.toLowerCase().includes('.pdf')
+                                        ) || booking.documents[0];
+                                        if (pdfDoc?.documentUrl) {
+                                          handleViewPdf(pdfDoc.documentUrl, `Installment ${installment.installmentNumber} - ${pdfDoc.originalName || 'Document'}`);
+                                        }
+                                      }} 
+                                      aria-label="View documents" 
+                                    />
+                                  )}
                                 </HStack>
                               </VStack>
                             </Box>
@@ -604,9 +652,9 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                                     <HStack justify="space-between" align="center">
                                       <Box p={2} bg="orange.100" borderRadius="full">
                                         <Text fontSize={{ base: "lg", sm: "xl" }} color="orange.600">
-                                          {document.mimeType?.includes('pdf') ? '📄' : 
-                                           document.mimeType?.includes('doc') ? '📝' : 
-                                           document.mimeType?.includes('image') ? '🖼️' : '📎'}
+                                          {(document.mimeType?.includes('pdf') || document.originalName?.toLowerCase().includes('.pdf')) ? '📄' : 
+                                           (document.mimeType?.includes('doc') || document.originalName?.toLowerCase().includes('.doc')) ? '📝' : 
+                                           (document.mimeType?.includes('image') || document.originalName?.toLowerCase().match(/\.(jpg|jpeg|png|gif|bmp|webp)$/)) ? '🖼️' : '📎'}
                                         </Text>
                                       </Box>
                                       <Badge
@@ -649,11 +697,17 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                                         size={{ base: "xs", sm: "sm" }}
                                         colorScheme="blue"
                                         variant="outline"
-                                        onClick={() => window.open(document.documentUrl, '_blank')}
+                                        onClick={() => {
+                                          if (document.mimeType?.includes('pdf') || document.originalName?.toLowerCase().includes('.pdf')) {
+                                            handleViewPdf(document.documentUrl, document.originalName || 'Document');
+                                          } else {
+                                            window.open(document.documentUrl, '_blank');
+                                          }
+                                        }}
                                         leftIcon={<FiEye />}
                                         _hover={{ bg: 'blue.50', borderColor: 'blue.300' }}
                                       >
-                                        View
+                                        {(document.mimeType?.includes('pdf') || document.originalName?.toLowerCase().includes('.pdf')) ? 'View PDF' : 'View'}
                                       </Button>
                                       <Button
                                         size={{ base: "xs", sm: "sm" }}
@@ -710,7 +764,6 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
             </Tabs>
           </ModalBody>
 
-          
           {/* Form Footer - Standard pattern like other forms */}
           <Box
             mt={{ base: 6, md: 8 }}
@@ -746,12 +799,19 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
       </Modal>
 
       {/* Installment Edit Modal */}
-      <Modal isOpen={isInstallmentModalOpen} onClose={onInstallmentModalClose} size={{ base: "full", sm: "3xl", md: "4xl", lg: "5xl" }} isCentered>
+      <Modal isOpen={isInstallmentModalOpen} onClose={onInstallmentModalClose} size={{ base: "full", sm: "full", md: "4xl", lg: "5xl" }} isCentered={{ base: false, md: true }}>
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
-        <ModalContent mx={{ base: 2, sm: 0 }} maxH={{ base: "100vh", sm: "75vh" }} overflow="hidden">
-          <ModalHeader position="relative" p={{ base: 3, md: 4 }} bg="gray.50" borderBottom="1px" borderColor="gray.200">
-            <VStack align="start" spacing={2}>
-              <Heading size={{ base: "md", sm: "lg" }} color="gray.800">Edit Installment {selectedInstallment?.installmentNumber}</Heading>
+        <ModalContent 
+          mx={{ base: 0, sm: 0 }} 
+          my={{ base: 0, sm: 0 }}
+          maxH={{ base: "100vh", sm: "90vh" }}
+          borderRadius={{ base: 0, sm: "md" }}
+        >
+          <ModalHeader position="relative" p={{ base: 3, sm: 4 }} bg="gray.50" borderBottom="1px" borderColor="gray.200">
+            <VStack align="start" spacing={{ base: 1, sm: 2 }} w="full">
+              <Heading size={{ base: "sm", sm: "md", md: "lg" }} color="gray.800">
+                Edit Installment {selectedInstallment?.installmentNumber}
+              </Heading>
               <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600">
                 Amount: {selectedInstallment ? formatCurrency(selectedInstallment.amount) : 'N/A'}
               </Text>
@@ -761,7 +821,7 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
               top={{ base: 2, sm: 3, md: 4 }}
               right={{ base: 2, sm: 3, md: 4 }}
               variant="ghost"
-              size={{ base: "sm", md: "md" }}
+              size={{ base: "sm", sm: "md" }}
               onClick={onInstallmentModalClose}
               _hover={{ bg: 'red.50', color: 'red.600' }}
               color="gray.600"
@@ -770,79 +830,60 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
             </Button>
           </ModalHeader>
           
-          <ModalBody 
-            p={{ base: 3, md: 4 }} 
-            bg="gray.25" 
-            h="45vh"
-            data-modal-body
-          >
-            <Box 
-              h="full" 
-              overflowY="scroll" 
-              pr={2}
-              style={{
-                scrollbarWidth: '16px',
-                scrollbarColor: '#2b6cb0 #cbd5e0'
+          <ModalBody p={0} bg="gray.25">
+            <Box
+              p={{ base: 3, sm: 4, md: 6 }}
+              maxH={{ base: "calc(100vh - 140px)", sm: "calc(90vh - 140px)", md: "60vh" }}
+              minH={{ base: "calc(100vh - 140px)", sm: "calc(90vh - 140px)", md: "60vh" }}
+              overflowY="auto"
+              overflowX="hidden"
+              data-modal-body
+              position="relative"
+              onWheel={(e) => {
+                e.stopPropagation();
+                const target = e.currentTarget;
+                const delta = e.deltaY;
+                target.scrollTop += delta;
               }}
               css={{
-                '&::-webkit-scrollbar': { width: '16px' },
-                '&::-webkit-scrollbar-track': { background: '#cbd5e0', borderRadius: '8px' },
-                '&::-webkit-scrollbar-thumb': { background: '#2b6cb0', borderRadius: '8px', border: '2px solid #cbd5e0' },
-                '&::-webkit-scrollbar-thumb:hover': { background: '#2c5282' }
+                '&::-webkit-scrollbar': { width: '6px' },
+                '&::-webkit-scrollbar-track': { background: '#f1f5f9', borderRadius: '3px' },
+                '&::-webkit-scrollbar-thumb': { 
+                  background: '#3b82f6', 
+                  borderRadius: '3px',
+                  border: '1px solid #f1f5f9'
+                },
+                '&::-webkit-scrollbar-thumb:hover': { background: '#2563eb' },
+                'scrollbar-width': 'thin',
+                'scrollbar-color': '#3b82f6 #f1f5f9',
+                'overscroll-behavior': 'contain',
+                'touch-action': 'pan-y'
               }}
             >
-              {/* Scroll indicator at top */}
-              <Box p={3} bg="blue.100" borderRadius="md" textAlign="center" border="2px" borderColor="blue.400" shadow="md" mb={4}>
-                <Text fontSize="sm" color="blue.700" fontWeight="bold">
-                  📜 Scroll down to see all content including document upload
-                </Text>
-                <Text fontSize="xs" color="blue.600" mt={1}>
-                  Use the scrollbar on the right side to navigate
-                </Text>
-                <Text fontSize="xs" color="blue.600" mt={1} fontStyle="italic">
-                  Modal height: 75vh, Body height: 45vh, Content: {selectedInstallment ? 'Scrollable' : 'Loading...'}
-                </Text>
-                <Button 
-                  size="xs" 
-                  colorScheme="blue" 
-                  variant="outline" 
-                  mt={2}
-                  onClick={() => {
-                    const scrollBox = document.querySelector('[data-modal-body] .chakra-box');
-                    if (scrollBox) {
-                      scrollBox.scrollTop = scrollBox.scrollHeight;
-                      setTimeout(() => {
-                        scrollBox.scrollTop = 0;
-                      }, 500);
-                    }
-                  }}
-                >
-                  Test Scroll
-                </Button>
-              </Box>
             {selectedInstallment && (
-              <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+              <VStack spacing={{ base: 4, sm: 5, md: 6 }} align="stretch">
+
                 {/* Installment Details */}
-                <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="blue.100" shadow="sm">
-                  <HStack mb={3} align="center">
-                    <Box p={2} bg="blue.100" borderRadius="full">
-                      <Text fontSize="lg" color="blue.600">📅</Text>
+                <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="blue.100" shadow="sm">
+                  <HStack mb={{ base: 2, sm: 3 }} align="center">
+                    <Box p={{ base: 1, sm: 2 }} bg="blue.100" borderRadius="full">
+                      <Text fontSize={{ base: "md", sm: "lg" }} color="blue.600">📅</Text>
                     </Box>
-                    <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="blue.700">
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} fontWeight="semibold" color="blue.700">
                       Installment {selectedInstallment.installmentNumber} Details
                     </Text>
                   </HStack>
                   
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }}>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, sm: 4, md: 5 }}>
                     <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="blue.600" fontWeight="medium" mb={1}>Amount</Text>
-                      <Text fontSize={{ base: "sm", md: "md" }} fontWeight="bold" color="blue.700">
+                      <Text fontSize={{ base: "sm", sm: "sm", md: "md" }} color="blue.600" fontWeight="medium" mb={2}>Amount</Text>
+                      <Text fontSize={{ base: "lg", sm: "xl", md: "2xl" }} fontWeight="bold" color="blue.700">
                         {formatCurrency(selectedInstallment.amount)}
                       </Text>
                     </Box>
                     <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="blue.600" fontWeight="medium" mb={1}>Due Date</Text>
-                      <Text fontSize={{ base: "sm", md: "md" }} color="gray.700">
+                      <Text fontSize={{ base: "sm", sm: "sm", md: "md" }} color="blue.600" fontWeight="medium" mb={2}>Due Date</Text>
+                      <Text fontSize={{ base: "md", sm: "lg", md: "xl" }} color="gray.700">
                         {formatDate(selectedInstallment.dueDate)}
                       </Text>
                     </Box>
@@ -850,23 +891,24 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                 </Box>
 
                 {/* Edit Form */}
-                <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
-                  <HStack mb={3} align="center">
-                    <Box p={2} bg="green.100" borderRadius="full">
-                      <Text fontSize="lg" color="green.600">✏️</Text>
+                <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
+                  <HStack mb={{ base: 2, sm: 3 }} align="center">
+                    <Box p={{ base: 1, sm: 2 }} bg="green.100" borderRadius="full">
+                      <Text fontSize={{ base: "md", sm: "lg" }} color="green.600">✏️</Text>
                     </Box>
-                    <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="green.700">
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} fontWeight="semibold" color="green.700">
                       Edit Details
                     </Text>
                   </HStack>
                   
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }}>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 4, sm: 5, md: 6 }}>
                     <FormControl>
-                      <FormLabel fontSize={{ base: "xs", sm: "sm" }}>Status</FormLabel>
+                      <FormLabel fontSize={{ base: "sm", sm: "sm", md: "md" }} fontWeight="medium">Status</FormLabel>
                       <Select 
                         value={selectedInstallment.status} 
                         onChange={(e) => handleInstallmentStatusChange(selectedInstallment.installmentNumber, e.target.value)}
-                        size={{ base: "sm", md: "md" }}
+                        size={{ base: "md", sm: "md", md: "lg" }}
+                        fontSize={{ base: "sm", sm: "sm", md: "md" }}
                       >
                         <option value="PENDING">Pending</option>
                         <option value="PAID">Paid</option>
@@ -876,14 +918,14 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontSize={{ base: "xs", sm: "sm" }}>Late Fees</FormLabel>
+                      <FormLabel fontSize={{ base: "sm", sm: "sm", md: "md" }} fontWeight="medium">Late Fees</FormLabel>
                       <NumberInput 
                         value={selectedInstallment.lateFees || 0} 
                         onChange={(value) => handleLateFeesChange(selectedInstallment.installmentNumber, value)} 
                         min={0}
-                        size={{ base: "sm", md: "md" }}
+                        size={{ base: "md", sm: "md", md: "lg" }}
                       >
-                        <NumberInputField placeholder="Enter late fees" />
+                        <NumberInputField placeholder="Enter late fees" fontSize={{ base: "sm", sm: "sm", md: "md" }} />
                         <NumberInputStepper>
                           <NumberIncrementStepper />
                           <NumberDecrementStepper />
@@ -892,56 +934,44 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                     </FormControl>
                   </SimpleGrid>
 
-                  <FormControl mt={4}>
-                    <FormLabel fontSize={{ base: "xs", sm: "sm" }}>Notes</FormLabel>
+                  <FormControl mt={{ base: 4, sm: 5, md: 6 }}>
+                    <FormLabel fontSize={{ base: "sm", sm: "sm", md: "md" }} fontWeight="medium">Notes</FormLabel>
                     <Textarea 
                       value={selectedInstallment.notes || ''} 
                       onChange={(e) => handleNotesChange(selectedInstallment.installmentNumber, e.target.value)} 
                       placeholder="Add notes about this installment" 
-                      rows={2}
-                      size={{ base: "sm", md: "md" }}
+                      rows={{ base: 3, sm: 3, md: 4 }}
+                      size={{ base: "md", sm: "md", md: "lg" }}
+                      fontSize={{ base: "sm", sm: "sm", md: "md" }}
                     />
                   </FormControl>
                 </Box>
 
                 {/* Document Upload Section */}
-                <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="lg" border="2px" borderColor="orange.300" shadow="md" position="relative">
-                  {/* Scroll indicator at top */}
-                  <Box position="absolute" top="-10px" left="50%" transform="translateX(-50%)" bg="orange.400" color="white" px={3} py={1} borderRadius="full" fontSize="xs" fontWeight="bold" zIndex={1}>
-                    📎 Document Upload Section
-                  </Box>
-                  <HStack mb={3} align="center" justify="space-between">
+                <Box p={{ base: 4, sm: 5, md: 6 }} bg="white" borderRadius="lg" border="1px" borderColor="orange.200" shadow="sm">
+                  <HStack mb={{ base: 4, sm: 5, md: 6 }} align="center" justify="space-between" flexWrap="wrap">
                     <HStack align="center">
-                      <Box p={2} bg="orange.100" borderRadius="full">
-                        <Text fontSize="lg" color="orange.600">📎</Text>
+                      <Box p={{ base: 2, sm: 3 }} bg="orange.100" borderRadius="full">
+                        <Text fontSize={{ base: "lg", sm: "xl" }} color="orange.600">📎</Text>
                       </Box>
-                      <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="orange.700">
+                      <Text fontSize={{ base: "md", sm: "lg", md: "xl" }} fontWeight="semibold" color="orange.700">
                         Proof Documents
                       </Text>
                     </HStack>
-                    <Badge colorScheme="orange" variant="subtle" fontSize={{ base: "xs", sm: "sm" }} borderRadius="full">
+                    <Badge colorScheme="orange" variant="subtle" fontSize={{ base: "sm", sm: "md" }} borderRadius="full" px={3} py={1}>
                       Upload Proof
                     </Badge>
                   </HStack>
                   
-                  <VStack spacing={3} align="stretch">
-                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" textAlign="center">
+                  <VStack spacing={{ base: 4, sm: 5, md: 6 }} align="stretch">
+                    <Text fontSize={{ base: "sm", sm: "md", md: "lg" }} color="gray.600" textAlign="center" fontWeight="medium">
                       Upload payment proof documents for Installment {selectedInstallment?.installmentNumber}
                     </Text>
                     
-                    {/* Scroll indicator */}
-                    <Box p={3} bg="blue.100" borderRadius="md" textAlign="center" border="2px" borderColor="blue.300" shadow="sm">
-                      <Text fontSize="sm" color="blue.700" fontWeight="semibold">
-                        📜 Scroll down to see document upload options
-                      </Text>
-                      <Text fontSize="xs" color="blue.600" mt={1}>
-                        Use the scrollbar on the right to navigate
-                      </Text>
-                    </Box>
                     
-                    {/* Simple File Upload */}
+                    {/* File Upload */}
                     <FormControl>
-                      <FormLabel fontSize={{ base: "xs", sm: "sm" }}>Select Files</FormLabel>
+                      <FormLabel fontSize={{ base: "sm", sm: "md", md: "lg" }} fontWeight="medium">Select Files</FormLabel>
                       <Input
                         type="file"
                         multiple
@@ -959,27 +989,30 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                             });
                           }
                         }}
-                        p={3}
+                        p={{ base: 4, sm: 5, md: 6 }}
                         border="2px dashed"
                         borderColor="orange.300"
-                        borderRadius="md"
+                        borderRadius="lg"
                         bg="orange.50"
                         _hover={{ borderColor: "orange.400", bg: "orange.100" }}
                         _focus={{ borderColor: "orange.500", boxShadow: "0 0 0 1px var(--chakra-colors-orange-500)" }}
                         cursor="pointer"
+                        fontSize={{ base: "sm", sm: "md", md: "lg" }}
+                        h={{ base: "60px", sm: "70px", md: "80px" }}
                       />
-                      <FormHelperText fontSize={{ base: "xs", sm: "xs" }} color="gray.500">
+                      <FormHelperText fontSize={{ base: "sm", sm: "sm", md: "md" }} color="gray.500" mt={2}>
                         Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 5 files, 10MB each)
                       </FormHelperText>
                     </FormControl>
 
                     {/* Document Type Selection */}
                     <FormControl>
-                      <FormLabel fontSize={{ base: "xs", sm: "sm" }}>Document Type</FormLabel>
+                      <FormLabel fontSize={{ base: "sm", sm: "md", md: "lg" }} fontWeight="medium">Document Type</FormLabel>
                       <Select 
                         placeholder="Select document type"
-                        size={{ base: "sm", md: "md" }}
+                        size={{ base: "md", sm: "md", md: "lg" }}
                         defaultValue="INSTALLMENT_PROOF"
+                        fontSize={{ base: "sm", sm: "md", md: "lg" }}
                       >
                         <option value="INSTALLMENT_PROOF">Installment Proof</option>
                         <option value="PAYMENT_RECEIPT">Payment Receipt</option>
@@ -992,7 +1025,7 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
 
                     {/* Upload Button */}
                     <Button
-                      size={{ base: "sm", md: "md" }}
+                      size={{ base: "md", sm: "lg", md: "xl" }}
                       colorScheme="green"
                       variant="solid"
                       leftIcon={<FiUpload />}
@@ -1006,81 +1039,99 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                         });
                       }}
                       w="full"
+                      h={{ base: "50px", sm: "55px", md: "60px" }}
+                      fontSize={{ base: "md", sm: "lg", md: "xl" }}
                       _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
                       transition="all 0.2s"
                     >
                       Upload Proof Documents
                     </Button>
-
-                    {/* Scroll to top button */}
-                    <Button
-                      size={{ base: "sm", md: "md" }}
-                      variant="outline"
-                      colorScheme="blue"
-                      onClick={() => {
-                        const modalBody = document.querySelector('[data-modal-body]');
-                        if (modalBody) {
-                          modalBody.scrollTo({ top: 0, behavior: 'smooth' });
-                        }
-                      }}
-                      w="full"
-                      _hover={{ bg: 'blue.50' }}
-                    >
-                      ↑ Scroll to Top
-                    </Button>
                   </VStack>
                 </Box>
               </VStack>
             )}
-            
-            {/* Scroll indicator at bottom */}
-            <Box p={3} bg="green.100" borderRadius="md" textAlign="center" border="2px" borderColor="green.400" shadow="md" mt={4}>
-              <Text fontSize="sm" color="green.700" fontWeight="bold">
-                ✅ You've reached the bottom of the content
-              </Text>
-              <Text fontSize="xs" color="green.600" mt={1}>
-                Use the scrollbar to go back up or click "Scroll to Top"
-              </Text>
             </Box>
-            
-            {/* Extra padding to ensure scrollability */}
-            <Box h="100px" bg="transparent" />
-            
-            {/* Force scrollable content */}
-            <Box p={4} bg="yellow.100" borderRadius="md" border="2px" borderColor="yellow.400">
-              <Text fontSize="sm" color="yellow.700" fontWeight="bold" textAlign="center">
-                🔍 This section ensures scrolling is possible
-              </Text>
-              <Text fontSize="xs" color="yellow.600" textAlign="center" mt={1}>
-                If you can see this, scrolling is working!
-              </Text>
-            </Box>
-            
-            {/* Additional content to force scrollbar */}
-            <Box p={4} bg="purple.100" borderRadius="md" border="2px" borderColor="purple.400" mt={4}>
-              <Text fontSize="sm" color="purple.700" fontWeight="bold" textAlign="center">
-                📋 Additional content area
-              </Text>
-              <Text fontSize="xs" color="purple.600" textAlign="center" mt={1}>
-                This helps ensure the modal content is long enough to scroll
-              </Text>
-            </Box>
-              </Box>
-            </ModalBody>
-          
-           
+          </ModalBody>
 
-
-          <ModalFooter p={{ base: 3, md: 4 }} bg="gray.50" borderTop="1px" borderColor="gray.200">
-            <HStack spacing={3} w="full" justify="flex-end">
+          <ModalFooter p={{ base: 2, sm: 3, md: 4 }} bg="gray.50" borderTop="1px" borderColor="gray.200">
+            <HStack spacing={{ base: 2, sm: 3 }} w="full" justify="flex-end">
               <Button 
                 variant="ghost" 
                 onClick={onInstallmentModalClose}
-                size="md"
+                size={{ base: "sm", sm: "md" }}
               >
                 Close
               </Button>
             </HStack>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
+      {/* PDF Viewer Modal */}
+      <Modal isOpen={isPdfViewerOpen} onClose={onPdfViewerClose} size="6xl" isCentered>
+        <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
+        <ModalContent maxH="90vh" borderRadius="lg">
+          <ModalHeader bg="gray.50" borderBottom="1px" borderColor="gray.200">
+            <HStack justify="space-between" align="center">
+              <Text fontSize="lg" fontWeight="bold" color="gray.800" noOfLines={1}>
+                {pdfTitle}
+              </Text>
+              <IconButton
+                size="sm"
+                colorScheme="gray"
+                variant="ghost"
+                icon={<FiX />}
+                onClick={onPdfViewerClose}
+                aria-label="Close PDF viewer"
+              />
+            </HStack>
+          </ModalHeader>
+          
+          <ModalBody p={0} bg="gray.100">
+            <Box w="full" h="70vh" position="relative">
+              {pdfUrl ? (
+                <iframe
+                  src={pdfUrl}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 'none', borderRadius: '0 0 8px 8px' }}
+                  title={pdfTitle}
+                />
+              ) : (
+                <VStack spacing={4} align="center" justify="center" h="full">
+                  <Text fontSize="lg" color="gray.500">Loading PDF...</Text>
+                  <Spinner size="lg" color="blue.500" />
+                </VStack>
+              )}
+            </Box>
+          </ModalBody>
+          
+          <ModalFooter bg="gray.50" borderTop="1px" borderColor="gray.200" justifyContent="space-between">
+            <Button
+              size="sm"
+              colorScheme="blue"
+              variant="outline"
+              leftIcon={<FiDownload />}
+              onClick={() => {
+                const link = document.createElement('a');
+                link.href = pdfUrl;
+                link.download = pdfTitle;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+              }}
+            >
+              Download PDF
+            </Button>
+            <Button
+              size="sm"
+              colorScheme="gray"
+              variant="outline"
+              onClick={onPdfViewerClose}
+            >
+              Close
+            </Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
