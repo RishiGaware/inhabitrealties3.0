@@ -11,17 +11,8 @@ import {
   IconButton,
   Heading,
   VStack,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-  useDisclosure,
-  Spinner,
-  Tooltip,
 } from '@chakra-ui/react';
-import { FiDownload, FiEye, FiEdit, FiX } from 'react-icons/fi';
+import { FiDownload, FiEye, FiEdit } from 'react-icons/fi';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
@@ -29,8 +20,9 @@ import SearchAndFilter from '../../components/common/SearchAndFilter';
 import Loader from '../../components/common/Loader';
 
 import PurchaseBookingViewer from '../../components/common/PurchaseBookingViewer';
+import PurchaseBookingEditForm from '../../components/common/PurchaseBookingEditForm';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
-import api from '../../services/api';
+import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
 
 const MyAssignedBookings = () => {
   const navigate = useNavigate();
@@ -46,11 +38,8 @@ const MyAssignedBookings = () => {
   const [pageSize, setPageSize] = useState(10);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  
-  // PDF viewer modal
-  const { isOpen: isPdfViewerOpen, onOpen: onPdfViewerOpen, onClose: onPdfViewerClose } = useDisclosure();
-  const [pdfUrl, setPdfUrl] = useState('');
-  const [pdfTitle, setPdfTitle] = useState('');
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [editingBooking, setEditingBooking] = useState(null);
 
   // Filter options - dynamically generated from API data
   const filterOptions = {
@@ -89,13 +78,18 @@ const MyAssignedBookings = () => {
       // Use the assigned bookings API endpoint
       // Note: You'll need to get the current user's ID from context or auth
       const currentUserId = '68347215de3d56d44b9cbcad'; // This should come from user context
-      const response = await api.get(`/purchase-bookings/assigned/${currentUserId}`);
+      const response = await purchaseBookingService.getPurchaseBookingsBySalesperson(currentUserId);
       
       // Handle the actual API response format
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        setBookings(response.data.data);
-        setFilteredBookings(response.data.data);
+      if (response && response.data && Array.isArray(response.data)) {
+        setBookings(response.data);
+        setFilteredBookings(response.data);
+      } else if (response && Array.isArray(response)) {
+        // Handle case where data is directly in response
+        setBookings(response);
+        setFilteredBookings(response);
       } else {
+        console.warn('Unexpected API response format:', response);
         setBookings([]);
         setFilteredBookings([]);
       }
@@ -248,45 +242,6 @@ const MyAssignedBookings = () => {
       },
       width: "100px"
     },
-    {
-      key: 'documents',
-      label: 'Documents',
-      render: (_, row) => {
-        const hasDocuments = row.documents && row.documents.length > 0 && row.documents.some(doc => doc.documentUrl);
-        const documentCount = hasDocuments ? row.documents.filter(doc => doc.documentUrl).length : 0;
-        
-        return (
-          <HStack spacing={2}>
-            {hasDocuments && (
-              <Tooltip label={`${documentCount} document(s) available`} placement="top">
-                <Badge colorScheme="blue" variant="subtle" size="sm" borderRadius="full" cursor="pointer">
-                  📄 {documentCount}
-                </Badge>
-              </Tooltip>
-            )}
-            {hasDocuments && (
-              <IconButton
-                size="xs"
-                colorScheme="purple"
-                variant="outline"
-                icon={<FiEye />}
-                onClick={() => {
-                  const pdfDoc = row.documents.find(doc => 
-                    doc.mimeType?.includes('pdf') || 
-                    doc.originalName?.toLowerCase().includes('.pdf')
-                  ) || row.documents[0];
-                  if (pdfDoc?.documentUrl) {
-                    handleViewPdf(pdfDoc.documentUrl, `${row.bookingId || row._id?.slice(-8)} - ${pdfDoc.originalName || 'Document'}`);
-                  }
-                }}
-                aria-label="View documents"
-              />
-            )}
-          </HStack>
-        );
-      },
-      width: "120px"
-    },
   ];
 
   // Row actions - matching AllPurchaseBookings style
@@ -340,22 +295,32 @@ const MyAssignedBookings = () => {
     }
   };
 
+  // Handle add new booking
+  const handleAddNew = () => {
+    navigate('/purchase-bookings/create');
+  };
+
   // Handle edit booking
   const handleEdit = (id) => {
+    console.log('Edit button clicked for booking ID:', id);
     const booking = bookings.find(b => b._id === id);
+    console.log('Found booking:', booking);
     if (booking) {
-      // Pass the booking data directly to avoid API call
-      navigate(`/purchase-bookings/edit/${id}`, { 
-        state: { bookingData: booking } 
-      });
+      setEditingBooking(booking);
+      setIsEditFormOpen(true);
+      console.log('Edit form modal should now be open');
+    } else {
+      console.error('Booking not found for ID:', id);
     }
   };
 
-  // Handle PDF viewing
-  const handleViewPdf = (url, title) => {
-    setPdfUrl(url);
-    setPdfTitle(title);
-    onPdfViewerOpen();
+  // Handle edit form update
+  const handleEditFormUpdate = () => {
+    console.log('Edit form update triggered');
+    // Refresh the bookings data after update
+    fetchAssignedBookings();
+    setIsEditFormOpen(false);
+    setEditingBooking(null);
   };
 
   // Handle page change
@@ -438,7 +403,7 @@ const MyAssignedBookings = () => {
           >
             Export CSV
           </Button>
-          <CommonAddButton onClick={() => navigate('/purchase-bookings/create')} />
+          <CommonAddButton onClick={handleAddNew} />
         </HStack>
       </Flex>
 
@@ -493,74 +458,17 @@ const MyAssignedBookings = () => {
         bookingData={selectedBooking}
       />
 
-      {/* PDF Viewer Modal */}
-      <Modal isOpen={isPdfViewerOpen} onClose={onPdfViewerClose} size="6xl" isCentered>
-        <ModalOverlay bg="blackAlpha.800" backdropFilter="blur(10px)" />
-        <ModalContent maxH="90vh" borderRadius="lg">
-          <ModalHeader bg="gray.50" borderBottom="1px" borderColor="gray.200">
-            <HStack justify="space-between" align="center">
-              <Text fontSize="lg" fontWeight="bold" color="gray.800" noOfLines={1}>
-                {pdfTitle}
-              </Text>
-              <IconButton
-                size="sm"
-                colorScheme="gray"
-                variant="ghost"
-                icon={<FiX />}
-                onClick={onPdfViewerClose}
-                aria-label="Close PDF viewer"
-              />
-            </HStack>
-          </ModalHeader>
-          
-          <ModalBody p={0} bg="gray.100">
-            <Box w="full" h="70vh" position="relative">
-              {pdfUrl ? (
-                <iframe
-                  src={pdfUrl}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 'none', borderRadius: '0 0 8px 8px' }}
-                  title={pdfTitle}
-                />
-              ) : (
-                <VStack spacing={4} align="center" justify="center" h="full">
-                  <Text fontSize="lg" color="gray.500">Loading PDF...</Text>
-                  <Spinner size="lg" color="blue.500" />
-                </VStack>
-              )}
-            </Box>
-          </ModalBody>
-          
-          <ModalFooter bg="gray.50" borderTop="1px" borderColor="gray.200" justifyContent="space-between">
-            <Button
-              size="sm"
-              colorScheme="blue"
-              variant="outline"
-              leftIcon={<FiDownload />}
-              onClick={() => {
-                const link = document.createElement('a');
-                link.href = pdfUrl;
-                link.download = pdfTitle;
-                link.target = '_blank';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-              }}
-            >
-              Download PDF
-            </Button>
-            <Button
-              size="sm"
-              colorScheme="gray"
-              variant="outline"
-              onClick={onPdfViewerClose}
-            >
-              Close
-            </Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {/* Purchase Booking Edit Form */}
+      <PurchaseBookingEditForm
+        isOpen={isEditFormOpen}
+        onClose={() => {
+          console.log('Edit form closing');
+          setIsEditFormOpen(false);
+          setEditingBooking(null);
+        }}
+        bookingData={editingBooking}
+        onUpdate={handleEditFormUpdate}
+      />
     </Box>
   );
 };
