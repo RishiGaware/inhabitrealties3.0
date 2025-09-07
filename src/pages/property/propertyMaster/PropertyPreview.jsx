@@ -525,7 +525,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                   </Flex>
                   
                   <Text 
-                    fontSize={{ base: "2xl", sm: "3xl", md: "4xl" }} 
+                    fontSize={{ base: "lg", sm: "xl", md: "2xl" }} 
                     fontWeight="bold" 
                     color="brand.500"
                     bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
@@ -560,7 +560,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                 />
                 
                 <Text 
-                  fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
+                  fontSize={{ base: "md", sm: "lg", md: "xl" }}
                   fontWeight="bold" 
                   color={textColor} 
                   mb={{ base: 4, sm: 6, md: 8 }}
@@ -619,7 +619,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         <Icon as={FaBed} size={{ base: 20, sm: 24, md: 28 }} />
                       </Circle>
                       <Text 
-                        fontSize={{ base: "xl", sm: "2xl", md: "3xl" }}
+                        fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
                         fontWeight="bold" 
                         color={textColor}
                         mb={2}
@@ -688,7 +688,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         <Icon as={FaBath} size={{ base: 20, sm: 24, md: 28 }} />
                       </Circle>
                       <Text 
-                        fontSize={{ base: "xl", sm: "2xl", md: "3xl" }}
+                        fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
                         fontWeight="bold" 
                         color={textColor}
                         mb={2}
@@ -757,7 +757,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         <Icon as={FaRuler} size={{ base: 20, sm: 24, md: 28 }} />
                       </Circle>
                       <Text 
-                        fontSize={{ base: "xl", sm: "2xl", md: "3xl" }}
+                        fontSize={{ base: "lg", sm: "xl", md: "2xl" }}
                         fontWeight="bold" 
                         color={textColor}
                         mb={2}
