@@ -107,16 +107,16 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
 
       
       // Post-Sale (keep as is)
-      {
-        title: "Post-Sale",
-        icon: <FaHandshake />,
-        subMenu: [
-          "Referrals",
-          "Rewards",
-          "Points"
-        ],
-        key: "postSale"
-      },
+      // {
+      //   title: "Post-Sale",
+      //   icon: <FaHandshake />,
+      //   subMenu: [
+      //     "Referrals",
+      //     "Rewards",
+      //     "Points"
+      //   ],
+      //   key: "postSale"
+      // },
       
       // Client Portal (keep as is)
       { 

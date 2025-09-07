@@ -35,10 +35,14 @@ import {
   ModalBody,
   ModalFooter,
 } from '@chakra-ui/react';
-import { FiSave, FiX, FiHome, FiUser, FiCalendar, FiCheckCircle, FiInfo } from 'react-icons/fi';
+import { FiSave, FiX, FiHome, FiUser, FiCalendar, FiCheckCircle, FiInfo, FiRefreshCw } from 'react-icons/fi';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import Loader from '../../components/common/Loader';
-import api from '../../services/api';
+import DocumentUpload from '../../components/common/DocumentUpload';
+import { rentalBookingService } from '../../services/paymentManagement/rentalBookingService';
+import { fetchProperties } from '../../services/propertyService';
+import { fetchUsers } from '../../services/usermanagement/userService';
+import { fetchRoles } from '../../services/rolemanagement/roleService';
 
 const CreateNewRental = () => {
   const navigate = useNavigate();
@@ -49,25 +53,27 @@ const CreateNewRental = () => {
   const [formData, setFormData] = useState({
     propertyId: "",
     customerId: "",
+    assignedSalespersonId: "",
+    startDate: "",
+    endDate: "",
     monthlyRent: "",
     securityDeposit: "",
-    leaseStart: "",
-    leaseEnd: "",
-    leaseDuration: "",
-    leaseTerms: "LONG_TERM",
-    utilitiesIncluded: false,
-    parkingIncluded: false,
-    petFriendly: false,
+    maintenanceCharges: "",
+    advanceRent: "",
+    rentDueDate: "",
     notes: "",
-    rentalStatus: "PENDING",
   });
 
   // Data for dropdowns
   const [properties, setProperties] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [salespersons, setSalespersons] = useState([]);
 
   // Selected property details
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Document upload state
+  const [selectedFiles, setSelectedFiles] = useState([]);
 
   // Success modal state
   const [createdRental, setCreatedRental] = useState(null);
@@ -78,150 +84,100 @@ const CreateNewRental = () => {
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchInitialData = async () => {
     setIsDataLoading(true);
     try {
-      // Fetch properties
-      let propertiesData;
-      try {
-        propertiesData = await api.get('/properties/all');
-      } catch (error) {
-        console.warn("Failed to fetch properties, using mock data:", error);
-        propertiesData = { data: [] };
-      }
+      // Step 1: Fetch roles first to get role IDs
+      const rolesData = await fetchRoles();
+      console.log('Roles data:', rolesData);
 
-      // Fetch customers (users with USER role)
+      // Step 2: Fetch properties
+      const propertiesData = await fetchProperties();
+      console.log('Properties data:', propertiesData);
+
+      // Step 3: Fetch all users and filter by role
+      const allUsersData = await fetchUsers();
+      console.log('All users data:', allUsersData);
+
+      // Filter users by role on the frontend
       let customersData = { data: [] };
-      try {
-        customersData = await api.get('/users/all');
-      } catch (error) {
-        console.warn("Failed to fetch customers, using mock data:", error);
+      let salespersonsData = { data: [] };
+
+      if (rolesData.data && rolesData.data.length > 0 && allUsersData.data) {
+        const userRole = rolesData.data.find((role) => role.name === "USER");
+        const salesRole = rolesData.data.find((role) => role.name === "SALES");
+        const executiveRole = rolesData.data.find((role) => role.name === "EXECUTIVE");
+        const adminRole = rolesData.data.find((role) => role.name === "ADMIN");
+        
+        console.log('Found USER role:', userRole);
+        console.log('Found SALES role:', salesRole);
+        console.log('Found EXECUTIVE role:', executiveRole);
+        console.log('Found ADMIN role:', adminRole);
+
+        if (userRole) {
+          customersData.data = allUsersData.data.filter(user => 
+            user.role === userRole._id && user.published === true
+          );
+        }
+
+        // For salespersons, include SALES, EXECUTIVE, and ADMIN roles
+        const salespersonRoles = [salesRole, executiveRole, adminRole].filter(Boolean);
+        if (salespersonRoles.length > 0) {
+          salespersonsData.data = allUsersData.data.filter(user => 
+            salespersonRoles.some(role => user.role === role._id) && user.published === true
+          );
+        }
+
+        console.log('Filtered customers:', customersData);
+        console.log('Filtered salespersons:', salespersonsData);
       }
 
-      // Use real data if available, otherwise fall back to mock data
-      let publishedProperties =
-        propertiesData.data?.filter((prop) => prop.published) || [];
-      let publishedCustomers = customersData.data || [];
+      // Use only real data from backend
+      const publishedProperties = propertiesData.data?.filter((prop) => prop.published) || [];
+      const publishedCustomers = customersData.data || [];
+      const publishedSalespersons = salespersonsData.data || [];
 
-      // If no real data, use mock data
+      console.log('Final processed data:', {
+        properties: publishedProperties.length,
+        customers: publishedCustomers.length,
+        salespersons: publishedSalespersons.length
+      });
+
+      // Check if we have the minimum required data
       if (publishedProperties.length === 0) {
-        publishedProperties = [
-          {
-            _id: "prop_1",
-            name: "Modern Studio Apartment",
-            address: "123 Main St, Downtown",
-            price: 25000,
-            type: "APARTMENT",
-            published: true,
-          },
-          {
-            _id: "prop_2",
-            name: "Downtown Loft",
-            address: "456 Oak Ave, Downtown",
-            price: 35000,
-            type: "LOFT",
-            published: true,
-          },
-          {
-            _id: "prop_3",
-            name: "Suburban House",
-            address: "789 Pine St, Suburbs",
-            price: 45000,
-            type: "HOUSE",
-            published: true,
-          },
-        ];
+        toast.error("No properties available. Please add properties first.");
+        return;
       }
 
       if (publishedCustomers.length === 0) {
-        publishedCustomers = [
-          {
-            _id: "cust_1",
-            firstName: "Alice",
-            lastName: "Johnson",
-            email: "alice@example.com",
-            phone: "+1234567890",
-            published: true,
-          },
-          {
-            _id: "cust_2",
-            firstName: "Bob",
-            lastName: "Smith",
-            email: "bob@example.com",
-            phone: "+1234567891",
-            published: true,
-          },
-          {
-            _id: "cust_3",
-            firstName: "Carol",
-            lastName: "Brown",
-            email: "carol@example.com",
-            phone: "+1234567892",
-            published: true,
-          },
-        ];
+        toast.error("No customers available. Please add customers first.");
+        return;
+      }
+
+      if (publishedSalespersons.length === 0) {
+        console.warn("No users with SALES/EXECUTIVE/ADMIN role found. Available roles:", rolesData.data?.map(r => r.name));
+        console.warn("All users have role:", allUsersData.data?.map(u => ({ id: u._id, role: u.role, email: u.email })));
+        
+        // Show more specific error message
+        const availableRoles = rolesData.data?.map(r => r.name).join(', ') || 'none';
+        toast.error(`No salespersons available. Available roles: ${availableRoles}. Users need to have the SALES, EXECUTIVE, or ADMIN role assigned.`);
+        return;
       }
 
       setProperties(publishedProperties);
       setCustomers(publishedCustomers);
+      setSalespersons(publishedSalespersons);
 
     } catch (error) {
       console.error("Error in fetchInitialData:", error);
-      // Set mock data as fallback
-      setProperties([
-        {
-          _id: "prop_1",
-          name: "Modern Studio Apartment",
-          address: "123 Main St, Downtown",
-          price: 25000,
-          type: "APARTMENT",
-          published: true,
-        },
-        {
-          _id: "prop_2",
-          name: "Downtown Loft",
-          address: "456 Oak Ave, Downtown",
-          price: 35000,
-          type: "LOFT",
-          published: true,
-        },
-        {
-          _id: "prop_3",
-          name: "Suburban House",
-          address: "789 Pine St, Suburbs",
-          price: 45000,
-          type: "HOUSE",
-          published: true,
-        },
-      ]);
-      setCustomers([
-        {
-          _id: "cust_1",
-          firstName: "Alice",
-          lastName: "Johnson",
-          email: "alice@example.com",
-          phone: "+1234567890",
-          published: true,
-        },
-        {
-          _id: "cust_2",
-          firstName: "Bob",
-          lastName: "Smith",
-          email: "bob@example.com",
-          phone: "+1234567891",
-          published: true,
-        },
-        {
-          _id: "cust_3",
-          firstName: "Carol",
-          lastName: "Brown",
-          email: "carol@example.com",
-          phone: "+1234567892",
-          published: true,
-        },
-      ]);
+      toast.error("Failed to load required data. Please check your connection and try again.");
+      
+      // Set empty arrays to prevent form from rendering with invalid data
+      setProperties([]);
+      setCustomers([]);
+      setSalespersons([]);
     } finally {
       setIsDataLoading(false);
     }
@@ -260,10 +216,20 @@ const CreateNewRental = () => {
     }
   };
 
+  const handleSalespersonChange = (salespersonId) => {
+    const salesperson = salespersons.find((s) => s._id === salespersonId);
+    if (salesperson) {
+      setFormData((prev) => ({
+        ...prev,
+        assignedSalespersonId: salespersonId,
+      }));
+    }
+  };
+
   const calculateLeaseDuration = () => {
-    if (formData.leaseStart && formData.leaseEnd) {
-      const start = new Date(formData.leaseStart);
-      const end = new Date(formData.leaseEnd);
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
       const diffTime = end - start;
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
       const months = Math.floor(diffDays / 30);
@@ -277,16 +243,18 @@ const CreateNewRental = () => {
 
     if (!formData.propertyId) errors.push("Property selection is required");
     if (!formData.customerId) errors.push("Customer selection is required");
+    if (!formData.assignedSalespersonId) errors.push("Salesperson selection is required");
     if (!formData.monthlyRent || formData.monthlyRent <= 0)
       errors.push("Valid monthly rent is required");
     if (!formData.securityDeposit || formData.securityDeposit <= 0)
       errors.push("Valid security deposit is required");
-    if (!formData.leaseStart) errors.push("Lease start date is required");
-    if (!formData.leaseEnd) errors.push("Lease end date is required");
+    if (!formData.startDate) errors.push("Lease start date is required");
+    if (!formData.endDate) errors.push("Lease end date is required");
+    if (!formData.rentDueDate) errors.push("Rent due date is required");
 
-    if (formData.leaseStart && formData.leaseEnd) {
-      const start = new Date(formData.leaseStart);
-      const end = new Date(formData.leaseEnd);
+    if (formData.startDate && formData.endDate) {
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
       if (end <= start) {
         errors.push("Lease end date must be after start date");
       }
@@ -299,17 +267,19 @@ const CreateNewRental = () => {
   const isFormValid = () => {
     return formData.propertyId && 
            formData.customerId && 
+           formData.assignedSalespersonId &&
            formData.monthlyRent && 
            formData.securityDeposit &&
-           formData.leaseStart &&
-           formData.leaseEnd;
+           formData.startDate &&
+           formData.endDate &&
+           formData.rentDueDate;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Check if SearchableSelect components have values
-    if (!formData.propertyId || !formData.customerId) {
+    if (!formData.propertyId || !formData.customerId || !formData.assignedSalespersonId) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -322,49 +292,35 @@ const CreateNewRental = () => {
 
     setIsSubmitting(true);
     try {
-      // Calculate lease duration
-      const duration = calculateLeaseDuration();
+      // Create FormData for file uploads
+      const formDataToSend = new FormData();
 
-      // Prepare the API payload (commented out for now until real API is implemented)
-      // const payload = {
-      //   propertyId: formData.propertyId,
-      //   customerId: formData.customerId,
-      //   monthlyRent: parseFloat(formData.monthlyRent),
-      //   securityDeposit: parseFloat(formData.securityDeposit),
-      //   leaseStart: formData.leaseStart,
-      //   leaseEnd: formData.leaseEnd,
-      //   leaseDuration: duration,
-      //   leaseTerms: formData.leaseTerms,
-      //   utilitiesIncluded: formData.utilitiesIncluded,
-      //   parkingIncluded: formData.parkingIncluded,
-      //   petFriendly: formData.petFriendly,
-      //   notes: formData.notes,
-      //   rentalStatus: formData.rentalStatus,
-      // };
+      // Add all form fields
+      formDataToSend.append('propertyId', formData.propertyId);
+      formDataToSend.append('customerId', formData.customerId);
+      formDataToSend.append('assignedSalespersonId', formData.assignedSalespersonId);
+      formDataToSend.append('startDate', formData.startDate);
+      formDataToSend.append('endDate', formData.endDate);
+      formDataToSend.append('monthlyRent', formData.monthlyRent);
+      formDataToSend.append('securityDeposit', formData.securityDeposit);
+      formDataToSend.append('maintenanceCharges', formData.maintenanceCharges || 0);
+      formDataToSend.append('advanceRent', formData.advanceRent || 0);
+      formDataToSend.append('rentDueDate', formData.rentDueDate);
+      formDataToSend.append('notes', formData.notes);
 
-      // Mock success response for now
-      const mockResponse = {
-        data: {
-          rentalId: `RENTAL-${new Date().getFullYear()}-${Date.now()}`,
-          propertyId: formData.propertyId,
-          customerId: formData.customerId,
-          monthlyRent: formData.monthlyRent,
-          securityDeposit: formData.securityDeposit,
-          leaseStart: formData.leaseStart,
-          leaseEnd: formData.leaseEnd,
-          leaseDuration: duration,
-          leaseTerms: formData.leaseTerms,
-          utilitiesIncluded: formData.utilitiesIncluded,
-          parkingIncluded: formData.parkingIncluded,
-          petFriendly: formData.petFriendly,
-          notes: formData.notes,
-          rentalStatus: formData.rentalStatus,
-          createdAt: new Date().toISOString(),
-        }
-      };
+      // Add documents if any are selected
+      if (selectedFiles.length > 0) {
+        selectedFiles.forEach((fileObj, index) => {
+          formDataToSend.append('documents', fileObj.file);
+          formDataToSend.append(`documentTypes[${index}]`, fileObj.documentType);
+        });
+      }
+
+      // Use the rental booking service with FormData
+      const response = await rentalBookingService.createRentalBooking(formDataToSend);
 
       // Show success modal
-      setCreatedRental(mockResponse.data);
+      setCreatedRental(response.data);
       onOpen();
 
       toast.success("Rental booking created successfully!");
@@ -383,26 +339,18 @@ const CreateNewRental = () => {
     setFormData({
       propertyId: "",
       customerId: "",
+      assignedSalespersonId: "",
+      startDate: "",
+      endDate: "",
       monthlyRent: "",
       securityDeposit: "",
-      leaseStart: "",
-      leaseEnd: "",
-      leaseDuration: "",
-      leaseTerms: "LONG_TERM",
-      utilitiesIncluded: false,
-      parkingIncluded: false,
-      petFriendly: false,
+      maintenanceCharges: "",
+      advanceRent: "",
+      rentDueDate: "",
       notes: "",
-      rentalStatus: "PENDING",
     });
     setSelectedProperty(null);
-  };
-
-  const handleSuccessModalClose = () => {
-    onClose();
-    setCreatedRental(null);
-    resetForm();
-    navigate("/rental-bookings/all");
+    setSelectedFiles([]); // Reset selected files
   };
 
   const handleModalClose = () => {
@@ -423,8 +371,47 @@ const CreateNewRental = () => {
       >
         <Loader
           size="xl"
-          label="Loading properties and customers..."
+          label="Loading roles, properties, and customers..."
         />
+      </Box>
+    );
+  }
+
+  // Show error state if no data is available
+  if (properties.length === 0 || customers.length === 0 || salespersons.length === 0) {
+    return (
+      <Box
+        p={6}
+        bg="gray.50"
+        minH="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <VStack spacing={4} textAlign="center">
+          <Text fontSize="xl" fontWeight="bold" color="red.600">
+            Required Data Not Available
+          </Text>
+          <Text color="gray.600">
+            {properties.length === 0 && "• No properties available"}
+          </Text>
+          <Text color="gray.600">
+            {customers.length === 0 && "• No customers available"}
+          </Text>
+          <Text color="gray.600">
+            {salespersons.length === 0 && "• No salespersons available"}
+          </Text>
+          <Text color="gray.500" fontSize="sm">
+            Please ensure you have properties, customers, and salespersons in your system before creating rental bookings.
+          </Text>
+          <Button
+            colorScheme="blue"
+            onClick={() => window.location.reload()}
+            leftIcon={<FiRefreshCw />}
+          >
+            Refresh Page
+          </Button>
+        </VStack>
       </Box>
     );
   }
@@ -441,6 +428,7 @@ const CreateNewRental = () => {
             Create New Rental Booking
         </Heading>
       </Flex>
+
 
       <form id="rental-booking-form" onSubmit={handleSubmit} noValidate>
         <VStack spacing={{ base: 4, md: 6 }} align="stretch">
@@ -578,6 +566,47 @@ const CreateNewRental = () => {
               </CardBody>
             </Card>
 
+          {/* Salesperson Selection */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+                <HStack>
+                <FiUser color="purple.500" size={20} />
+                <Heading size="md" color="purple.700">
+                  Salesperson Assignment
+                </Heading>
+                </HStack>
+              </CardHeader>
+            <CardBody pt={0}>
+                <FormControl isRequired>
+                <FormLabel fontWeight="semibold">Select Salesperson</FormLabel>
+                <SearchableSelect
+                  name="assignedSalespersonId"
+                  placeholder="Search and choose a salesperson"
+                  value={formData.assignedSalespersonId}
+                  onChange={handleSalespersonChange}
+                  options={salespersons.map(salesperson => ({
+                    value: salesperson._id,
+                    label: `${salesperson.firstName || ""} ${
+                      salesperson.lastName || ""
+                    }`.trim()
+                      ? `${salesperson.firstName} ${salesperson.lastName} - ${salesperson.email}`
+                      : `Unknown Salesperson - ${salesperson.email}`
+                  }))}
+                  isDisabled={isSubmitting}
+                  isRequired={true}
+                />
+                <FormHelperText>
+                  Search and select from available salespersons
+                </FormHelperText>
+                {!formData.assignedSalespersonId && (
+                  <Text color="red.500" fontSize="sm" mt={1}>
+                    Salesperson selection is required
+                  </Text>
+                )}
+                </FormControl>
+              </CardBody>
+            </Card>
+
           {/* Rental Details */}
           <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
             <CardHeader pb={3}>
@@ -639,11 +668,11 @@ const CreateNewRental = () => {
                   <FormControl isRequired>
                     <FormLabel fontWeight="semibold">Lease Start Date</FormLabel>
                     <Input
-                      name="leaseStart"
+                      name="startDate"
                       type="date"
-                      value={formData.leaseStart}
+                      value={formData.startDate}
                       onChange={(e) =>
-                        handleInputChange("leaseStart", e.target.value)
+                        handleInputChange("startDate", e.target.value)
                       }
                       isDisabled={isSubmitting}
                       size="md"
@@ -653,11 +682,11 @@ const CreateNewRental = () => {
                   <FormControl isRequired>
                     <FormLabel fontWeight="semibold">Lease End Date</FormLabel>
                     <Input
-                      name="leaseEnd"
+                      name="endDate"
                       type="date"
-                      value={formData.leaseEnd}
+                      value={formData.endDate}
                       onChange={(e) =>
-                        handleInputChange("leaseEnd", e.target.value)
+                        handleInputChange("endDate", e.target.value)
                       }
                       isDisabled={isSubmitting}
                       size="md"
@@ -666,21 +695,29 @@ const CreateNewRental = () => {
                 </SimpleGrid>
 
                 <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
-                  <FormControl>
-                    <FormLabel fontWeight="semibold">Lease Terms</FormLabel>
-                    <Select
-                      name="leaseTerms"
-                      value={formData.leaseTerms}
-                      onChange={(e) =>
-                        handleInputChange("leaseTerms", e.target.value)
-                      }
+                  <FormControl isRequired>
+                    <FormLabel fontWeight="semibold">Rent Due Date</FormLabel>
+                    <NumberInput
+                      name="rentDueDate"
+                      value={formData.rentDueDate}
+                      onChange={(value) => handleInputChange("rentDueDate", value)}
+                      min={1}
+                      max={31}
                       isDisabled={isSubmitting}
                       size="md"
                     >
-                      <option value="SHORT_TERM">Short Term</option>
-                      <option value="LONG_TERM">Long Term</option>
-                      <option value="MONTH_TO_MONTH">Month to Month</option>
-                    </Select>
+                      <NumberInputField placeholder="Enter day of month (1-31)" />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
+                    <FormHelperText>Enter the day of the month when rent is due (1-31)</FormHelperText>
+                    {formData.rentDueDate && (
+                      <Text fontSize="sm" color="blue.600" mt={1}>
+                        Rent will be due on the {formData.rentDueDate}th of each month
+                      </Text>
+                    )}
                   </FormControl>
 
                   <FormControl>
@@ -696,58 +733,50 @@ const CreateNewRental = () => {
                   </FormControl>
                 </SimpleGrid>
 
-                <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={{ base: 3, md: 4 }} w="full">
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
                   <FormControl>
-                    <FormLabel>
-                      <HStack>
-                        <Text fontWeight="semibold">Utilities Included</Text>
-                        <Switch
-                          name="utilitiesIncluded"
-                          isChecked={formData.utilitiesIncluded}
-                          onChange={(e) =>
-                            handleInputChange("utilitiesIncluded", e.target.checked)
-                          }
-                          colorScheme="blue"
-                          isDisabled={isSubmitting}
-                        />
-                      </HStack>
-                    </FormLabel>
+                    <FormLabel fontWeight="semibold">Maintenance Charges (₹)</FormLabel>
+                    <NumberInput
+                      name="maintenanceCharges"
+                      value={formData.maintenanceCharges}
+                      onChange={(value) =>
+                        handleInputChange("maintenanceCharges", value)
+                      }
+                      min={0}
+                      isDisabled={isSubmitting}
+                      size="md"
+                    >
+                      <NumberInputField placeholder="Enter maintenance charges" />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
+                    <FormHelperText>Monthly maintenance charges (optional)</FormHelperText>
                   </FormControl>
 
                   <FormControl>
-                    <FormLabel>
-                      <HStack>
-                        <Text fontWeight="semibold">Parking Included</Text>
-                        <Switch
-                          name="parkingIncluded"
-                          isChecked={formData.parkingIncluded}
-                          onChange={(e) =>
-                            handleInputChange("parkingIncluded", e.target.checked)
-                          }
-                          colorScheme="blue"
-                          isDisabled={isSubmitting}
-                        />
-                      </HStack>
-                    </FormLabel>
-                  </FormControl>
-
-                  <FormControl>
-                    <FormLabel>
-                      <HStack>
-                        <Text fontWeight="semibold">Pet Friendly</Text>
-                        <Switch
-                          name="petFriendly"
-                          isChecked={formData.petFriendly}
-                          onChange={(e) =>
-                            handleInputChange("petFriendly", e.target.checked)
-                          }
-                          colorScheme="blue"
-                          isDisabled={isSubmitting}
-                        />
-                      </HStack>
-                    </FormLabel>
+                    <FormLabel fontWeight="semibold">Advance Rent (months)</FormLabel>
+                    <NumberInput
+                      name="advanceRent"
+                      value={formData.advanceRent}
+                      onChange={(value) =>
+                        handleInputChange("advanceRent", value)
+                      }
+                      min={0}
+                      isDisabled={isSubmitting}
+                      size="md"
+                    >
+                      <NumberInputField placeholder="Enter advance rent months" />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
+                    <FormHelperText>Number of months of advance rent paid (optional)</FormHelperText>
                   </FormControl>
                 </SimpleGrid>
+
 
                 <FormControl>
                   <FormLabel fontWeight="semibold">Additional Notes</FormLabel>
@@ -766,9 +795,42 @@ const CreateNewRental = () => {
               </CardBody>
             </Card>
 
+          {/* Document Upload */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={3}>
+              <HStack>
+                <FiInfo color="purple.500" size={20} />
+                <Heading size="md" color="purple.700">
+                  Upload Documents
+                </Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0}>
+              <DocumentUpload
+                files={selectedFiles}
+                onFilesChange={setSelectedFiles}
+                maxFiles={10}
+                maxFileSize={10 * 1024 * 1024} // 10MB
+                allowedTypes={['pdf']} // Only PDF files allowed
+                documentTypes={[
+                  'RENTAL_AGREEMENT', 
+                  'CONTRACT', 
+                  'ID_PROOF', 
+                  'ADDRESS_PROOF', 
+                  'INCOME_PROOF', 
+                  'BANK_STATEMENT', 
+                  'OTHER'
+                ]}
+                isDisabled={isSubmitting}
+                title="Rental Documents (PDF Only)"
+                description="Upload PDF documents like rental agreements, contracts, ID proof, address proof, income proof, bank statements, or other supporting documents. Only PDF files are accepted."
+              />
+            </CardBody>
+          </Card>
+
           {/* Submit Button */}
           <Box textAlign="center" pt={4}>
-            <HStack spacing={4} justify="center">
+            <HStack spacing={4} justify="flex-end">
               <Button
                 onClick={() => navigate('/rental-bookings/all')}
                 variant="ghost"
@@ -797,9 +859,22 @@ const CreateNewRental = () => {
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
         <ModalContent mx={{ base: 2, sm: 0 }} maxH={{ base: "100vh", sm: "90vh" }} overflow="hidden">
           <ModalHeader bg="green.500" color="white" borderRadius="lg">
-            <HStack>
-              <FiCheckCircle />
-              <Text>Rental Booking Created Successfully! 🎉</Text>
+            <HStack justify="space-between" w="full">
+              <HStack>
+                <FiCheckCircle />
+                <Text>Rental Booking Created Successfully! 🎉</Text>
+              </HStack>
+              <Button
+                variant="ghost"
+                color="white"
+                _hover={{ bg: "green.600" }}
+                onClick={handleModalClose}
+                size="sm"
+                p={1}
+                minW="auto"
+              >
+                <FiX size={20} />
+              </Button>
             </HStack>
           </ModalHeader>
           <ModalBody p={{ base: 4, md: 6 }}>
@@ -810,15 +885,15 @@ const CreateNewRental = () => {
                     <VStack spacing={4} align="stretch">
                       <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
                         <HStack justify="space-between" p={3} bg="blue.50" borderRadius="md">
-                          <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Rental ID:</Text>
+                          <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Booking ID:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
-                            {createdRental.rentalId}
+                            {createdRental.bookingId}
                           </Text>
                         </HStack>
                         <HStack justify="space-between" p={3} bg="purple.50" borderRadius="md">
                           <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Status:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
-                            {createdRental.rentalStatus}
+                            {createdRental.bookingStatus}
                           </Text>
                         </HStack>
                       </SimpleGrid>
@@ -842,13 +917,13 @@ const CreateNewRental = () => {
                         <HStack justify="space-between" p={3} bg="orange.50" borderRadius="md">
                           <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Lease Start:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
-                            {new Date(createdRental.leaseStart).toLocaleDateString()}
+                            {new Date(createdRental.startDate).toLocaleDateString()}
                           </Text>
                         </HStack>
                         <HStack justify="space-between" p={3} bg="red.50" borderRadius="md">
                           <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Lease End:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
-                            {new Date(createdRental.leaseEnd).toLocaleDateString()}
+                            {new Date(createdRental.endDate).toLocaleDateString()}
                           </Text>
                         </HStack>
                       </SimpleGrid>
@@ -856,52 +931,95 @@ const CreateNewRental = () => {
                       <HStack justify="space-between" p={3} bg="teal.50" borderRadius="md">
                         <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Lease Duration:</Text>
                         <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="bold" color="teal.600">
-                          {createdRental.leaseDuration} months
+                          {createdRental.duration} months
                         </Text>
                       </HStack>
 
                       <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
                         <HStack justify="space-between" p={3} bg="purple.50" borderRadius="md">
-                          <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Lease Terms:</Text>
+                          <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Rent Due Date:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
-                            {createdRental.leaseTerms?.replace(/_/g, ' ')}
-              </Text>
+                            {createdRental.rentDueDate}th of each month
+                          </Text>
                         </HStack>
                         <HStack justify="space-between" p={3} bg="yellow.50" borderRadius="md">
                           <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Created Date:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
                             {new Date(createdRental.createdAt).toLocaleDateString()}
-              </Text>
+                          </Text>
                         </HStack>
                       </SimpleGrid>
 
-                      {createdRental.utilitiesIncluded || createdRental.parkingIncluded || createdRental.petFriendly ? (
+                      {(createdRental.maintenanceCharges > 0 || createdRental.advanceRent > 0) && (
                         <Box>
                           <Text fontWeight="semibold" mb={3} fontSize={{ base: 'md', md: 'lg' }} color="gray.700">
-                            🏠 Property Features
-              </Text>
-                          <SimpleGrid columns={{ base: 1, sm: 3 }} spacing={3}>
-                            {createdRental.utilitiesIncluded && (
+                            💰 Additional Charges
+                          </Text>
+                          <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
+                            {createdRental.maintenanceCharges > 0 && (
                               <HStack justify="space-between" p={3} bg="green.50" borderRadius="md">
-                                <Text fontSize={{ base: 'sm', md: 'md' }}>Utilities:</Text>
-                                <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">Included</Text>
+                                <Text fontSize={{ base: 'sm', md: 'md' }}>Maintenance Charges:</Text>
+                                <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">₹{createdRental.maintenanceCharges?.toLocaleString()}/month</Text>
                               </HStack>
                             )}
-                            {createdRental.parkingIncluded && (
+                            {createdRental.advanceRent > 0 && (
                               <HStack justify="space-between" p={3} bg="blue.50" borderRadius="md">
-                                <Text fontSize={{ base: 'sm', md: 'md' }}>Parking:</Text>
-                                <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">Included</Text>
-                              </HStack>
-                            )}
-                            {createdRental.petFriendly && (
-                              <HStack justify="space-between" p={3} bg="orange.50" borderRadius="md">
-                                <Text fontSize={{ base: 'sm', md: 'md' }}>Pet Policy:</Text>
-                                <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">Pet Friendly</Text>
+                                <Text fontSize={{ base: 'sm', md: 'md' }}>Advance Rent:</Text>
+                                <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">{createdRental.advanceRent} months</Text>
                               </HStack>
                             )}
                           </SimpleGrid>
-            </Box>
-                      ) : null}
+                        </Box>
+                      )}
+
+                      {/* Uploaded Documents Information */}
+                      {createdRental.documents && createdRental.documents.length > 0 && (
+                        <Box>
+                          <Text fontWeight="semibold" mb={3} fontSize={{ base: 'md', md: 'lg' }} color="gray.700">
+                            📎 Uploaded Documents
+                          </Text>
+                          <VStack spacing={2} align="stretch">
+                            <Text fontSize={{ base: 'xs', md: 'sm' }} color="gray.600" textAlign="center">
+                              {createdRental.documents.length} document(s) uploaded successfully
+                            </Text>
+                            <Box 
+                              maxH={{ base: "150px", md: "200px" }} 
+                              overflowY="auto" 
+                              border="1px" 
+                              borderColor="gray.200" 
+                              borderRadius="lg" 
+                              p={3}
+                              bg="gray.50"
+                            >
+                              {createdRental.documents.map((document, index) => (
+                                <HStack 
+                                  key={document._id || index} 
+                                  justify="space-between" 
+                                  py={2} 
+                                  px={2}
+                                  borderBottom={index < createdRental.documents.length - 1 ? "1px solid" : "none"} 
+                                  borderColor="gray.200"
+                                  bg="white"
+                                  borderRadius="md"
+                                  _hover={{ bg: "gray.50" }}
+                                >
+                                  <VStack align="start" spacing={0}>
+                                    <Text fontSize={{ base: 'xs', md: 'sm' }} fontWeight="medium">
+                                      {document.originalName}
+                                    </Text>
+                                    <Text fontSize="xs" color="gray.500">
+                                      Type: {document.documentType?.replace(/_/g, ' ')}
+                                    </Text>
+                                  </VStack>
+                                  <Text fontSize="xs" color="green.600" fontWeight="medium">
+                                    ✓ Uploaded
+                                  </Text>
+                                </HStack>
+                              ))}
+                            </Box>
+                          </VStack>
+                        </Box>
+                      )}
                     </VStack>
         </CardBody>
       </Card>
@@ -911,11 +1029,11 @@ const CreateNewRental = () => {
           <ModalFooter bg="gray.50" borderTop="1px" borderColor="gray.200" p={{ base: 4, md: 6 }}>
             <Button 
               colorScheme="brand" 
-              onClick={handleSuccessModalClose}
+              // onClick={handleSuccessModalClose}
               size="md"
               leftIcon={<FiCheckCircle />}
-            >
-              View All Rentals
+            > 
+              Created Successfully
             </Button>
           </ModalFooter>
         </ModalContent>

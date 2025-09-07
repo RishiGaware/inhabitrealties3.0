@@ -179,4 +179,13 @@ export const RENTAL_BOOKING_ENDPOINTS = {
   GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/rental-bookings/assigned/${salespersonId}`,
   GET_REPORTS_PENDING_RENTS: '/rental-bookings/reports/pending-rents',
   GET_REPORTS_OVERDUE_RENTS: '/rental-bookings/reports/overdue-rents',
+  
+  // Additional operations
+  CONFIRM: (id) => `/rental-bookings/confirm/${id}`,
+  ADD_DOCUMENTS: (id) => `/rental-bookings/${id}/add-documents`,
+  DELETE_DOCUMENT: (id, documentId) => `/rental-bookings/${id}/documents/${documentId}`,
+  UPDATE_DOCUMENT: (id, documentId) => `/rental-bookings/${id}/documents/${documentId}`,
+  GET_DOCUMENT: (id, documentId) => `/rental-bookings/${id}/documents/${documentId}`,
+  GET_MY_BOOKINGS: (userId) => `/rental-bookings/my-bookings/${userId}`,
+  DELETE: (id) => `/rental-bookings/delete/${id}`,
 };

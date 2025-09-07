@@ -19,7 +19,9 @@ import TableContainer from '../../components/common/Table/TableContainer';
 import SearchAndFilter from '../../components/common/SearchAndFilter';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
-import api from '../../services/api';
+import RentalBookingViewer from '../../components/common/RentalBookingViewer';
+import RentalBookingEditForm from '../../components/common/RentalBookingEditForm';
+import { rentalBookingService } from '../../services/paymentManagement/rentalBookingService';
 
 const MyAssignedRentals = () => {
   const navigate = useNavigate();
@@ -34,6 +36,12 @@ const MyAssignedRentals = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  // Modal states
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [editingBooking, setEditingBooking] = useState(null);
+
   // Filter options - dynamically generated from API data
   const filterOptions = {
     status: []
@@ -42,7 +50,7 @@ const MyAssignedRentals = () => {
   // Generate status options dynamically from the actual data
   useEffect(() => {
     if (bookings.length > 0) {
-      const uniqueStatuses = [...new Set(bookings.map(booking => booking.rentalStatus))].filter(Boolean);
+      const uniqueStatuses = [...new Set(bookings.map(booking => booking.bookingStatus))].filter(Boolean);
       const statusOptions = [
         { value: '', label: 'All Statuses' },
         ...uniqueStatuses.map(status => ({
@@ -68,15 +76,15 @@ const MyAssignedRentals = () => {
     try {
       setIsLoading(true);
       
-      // Use the assigned rentals API endpoint
+      // Use the rental booking service to get assigned rentals
       // Note: You'll need to get the current user's ID from context or auth
       const currentUserId = '68347215de3d56d44b9cbcad'; // This should come from user context
-      const response = await api.get(`/rental-bookings/assigned/${currentUserId}`);
+      const response = await rentalBookingService.getRentalBookingsBySalesperson(currentUserId);
       
       // Handle the actual API response format
-      if (response.data && response.data.data && Array.isArray(response.data.data)) {
-        setBookings(response.data.data);
-        setFilteredBookings(response.data.data);
+      if (response && response.data && Array.isArray(response.data)) {
+        setBookings(response.data);
+        setFilteredBookings(response.data);
       } else {
         setBookings([]);
         setFilteredBookings([]);
@@ -103,27 +111,32 @@ const MyAssignedRentals = () => {
 
     if (searchTerm) {
       filtered = filtered.filter(booking =>
-        (booking.rentalId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
         (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
         (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
         (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.propertyId?.propertyAddress?.city?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.assignedSalespersonId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.assignedSalespersonId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.assignedSalespersonId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
         (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
       );
     }
 
     if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(booking => booking.rentalStatus === statusFilter);
+      filtered = filtered.filter(booking => booking.bookingStatus === statusFilter);
     }
 
     setFilteredBookings(filtered);
     setCurrentPage(1); // Reset to first page when filtering
   }, [searchTerm, statusFilter, bookings]);
 
-  // Table columns configuration - simplified and essential only
+  // Table columns configuration - matching AllRentalBookings structure
   const columns = [
     {
-      key: 'rentalId',
-      label: 'Rental ID',
+      key: 'bookingId',
+      label: 'Booking ID',
       render: (value, row) => (
         <Text fontWeight="semibold" color="blue.600" noOfLines={1} maxW="150px">
           {value || row._id?.slice(-8) || 'N/A'}
@@ -172,50 +185,38 @@ const MyAssignedRentals = () => {
       width: "120px"
     },
     {
-      key: 'leaseTerms',
-      label: 'Lease Terms',
-      render: (_, row) => {
-        const getLeaseTermsColor = (terms) => {
-          switch (terms) {
-            case 'SHORT_TERM': return 'green';
-            case 'LONG_TERM': return 'blue';
-            case 'MONTH_TO_MONTH': return 'purple';
-            default: return 'gray';
-          }
-        };
-
-        return (
-          <VStack align="start" spacing={1}>
-            <Badge
-              colorScheme={getLeaseTermsColor(row.leaseTerms)}
-              variant="subtle"
-              fontSize="xs"
-            >
-              {row.leaseTerms?.replace(/_/g, ' ') || 'N/A'}
-            </Badge>
-            {row.leaseDuration && (
-              <Text color="gray.600" fontSize="xs" fontWeight="medium">
-                {row.leaseDuration} months
-              </Text>
-            )}
-          </VStack>
-        );
-      },
+      key: 'rentDueDate',
+      label: 'Rent Due Date',
+      render: (_, row) => (
+        <Text color="gray.700" fontWeight="medium" fontSize="sm">
+          {row.rentDueDate}th of month
+        </Text>
+      ),
       width: "120px"
     },
     {
-      key: 'rentalStatus',
+      key: 'duration',
+      label: 'Duration',
+      render: (_, row) => (
+        <Text color="gray.700" fontWeight="medium" fontSize="sm">
+          {row.duration} months
+        </Text>
+      ),
+      width: "100px"
+    },
+    {
+      key: 'bookingStatus',
       label: 'Status',
       render: (value) => {
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'ACTIVE': return 'green';
-      case 'PENDING': return 'yellow';
-      case 'EXPIRED': return 'red';
-      case 'CANCELLED': return 'gray';
-      default: return 'gray';
-    }
-  };
+        const getStatusColor = (status) => {
+          switch (status) {
+            case 'ACTIVE': return 'green';
+            case 'PENDING': return 'yellow';
+            case 'EXPIRED': return 'red';
+            case 'CANCELLED': return 'gray';
+            default: return 'gray';
+          }
+        };
 
         return (
           <Badge
@@ -231,7 +232,7 @@ const MyAssignedRentals = () => {
     },
   ];
 
-  // Row actions - matching MyAssignedBookings style
+  // Row actions - using modal handlers
   const renderRowActions = (booking) => (
     <HStack spacing={2}>
       <IconButton
@@ -239,7 +240,7 @@ const MyAssignedRentals = () => {
         aria-label="View rental booking"
         icon={<FiEye />}
         size="sm"
-        onClick={() => handleView(booking._id)}
+        onClick={() => handleView(booking)}
         colorScheme="blue"
         variant="outline"
       />
@@ -248,7 +249,7 @@ const MyAssignedRentals = () => {
         aria-label="Edit rental booking"
         icon={<FiEdit />}
         size="sm"
-        onClick={() => handleEdit(booking._id)}
+        onClick={() => handleEdit(booking)}
         colorScheme="brand"
         variant="outline"
       />
@@ -274,25 +275,15 @@ const MyAssignedRentals = () => {
   };
 
   // Handle view rental booking
-  const handleView = (id) => {
-    const booking = bookings.find(b => b._id === id);
-    if (booking) {
-      // Navigate to view page or open modal
-      navigate(`/rental-bookings/view/${id}`, { 
-        state: { bookingData: booking } 
-      });
-    }
+  const handleView = (booking) => {
+    setSelectedBooking(booking);
+    setIsViewerOpen(true);
   };
 
   // Handle edit rental booking
-  const handleEdit = (id) => {
-    const booking = bookings.find(b => b._id === id);
-    if (booking) {
-      // Pass the booking data directly to avoid API call
-      navigate(`/rental-bookings/edit/${id}`, { 
-        state: { bookingData: booking } 
-      });
-    }
+  const handleEdit = (booking) => {
+    setEditingBooking(booking);
+    setIsEditFormOpen(true);
   };
 
   // Handle page change
@@ -313,12 +304,20 @@ const MyAssignedRentals = () => {
     try {
       // Create CSV content from the actual data
       const exportData = filteredBookings.map(booking => ({
-        'Rental ID': booking.rentalId || booking._id?.slice(-8) || 'N/A',
+        'Booking ID': booking.bookingId || booking._id?.slice(-8) || 'N/A',
         'Property': booking.propertyId?.name || 'N/A',
         'Customer': `${booking.customerId?.firstName || ''} ${booking.customerId?.lastName || ''}`.trim() || 'N/A',
+        'Customer Email': booking.customerId?.email || 'N/A',
         'Monthly Rent': `₹${parseFloat(booking.monthlyRent || 0).toLocaleString()}`,
-        'Lease Terms': booking.leaseTerms || 'N/A',
-        'Status': booking.rentalStatus || 'N/A'
+        'Rent Due Date': `${booking.rentDueDate}th of month`,
+        'Duration': `${booking.duration} months`,
+        'Security Deposit': `₹${parseFloat(booking.securityDeposit || 0).toLocaleString()}`,
+        'Maintenance Charges': `₹${parseFloat(booking.maintenanceCharges || 0).toLocaleString()}`,
+        'Advance Rent': `${booking.advanceRent} months`,
+        'Status': booking.bookingStatus || 'N/A',
+        'Start Date': booking.startDate ? new Date(booking.startDate).toLocaleDateString() : 'N/A',
+        'End Date': booking.endDate ? new Date(booking.endDate).toLocaleDateString() : 'N/A',
+        'Created Date': booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A'
       }));
 
       // Generate CSV
@@ -427,6 +426,36 @@ const MyAssignedRentals = () => {
           totalItems={filteredBookings.length}
         />
       </TableContainer>
+
+      {/* Rental Booking Viewer Modal */}
+      {selectedBooking && (
+        <RentalBookingViewer
+          isOpen={isViewerOpen}
+          onClose={() => {
+            setIsViewerOpen(false);
+            setSelectedBooking(null);
+          }}
+          bookingData={selectedBooking}
+        />
+      )}
+
+      {/* Rental Booking Edit Form Modal */}
+      {editingBooking && (
+        <RentalBookingEditForm
+          isOpen={isEditFormOpen}
+          onClose={() => {
+            setIsEditFormOpen(false);
+            setEditingBooking(null);
+          }}
+          bookingData={editingBooking}
+          onUpdate={() => {
+            // Refresh the data after update
+            fetchAssignedRentals();
+            setIsEditFormOpen(false);
+            setEditingBooking(null);
+          }}
+        />
+      )}
     </Box>
   );
 };
