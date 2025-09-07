@@ -226,17 +226,44 @@ const Properties = () => {
 
   // Helper function to get property image
   const getPropertyImage = (property) => {
-    // If property has images array and first image exists
-    if (property.images && property.images.length > 0 && property.images[0]) {
-      return property.images[0];
+    // Priority 1: Check for images array (most common format)
+    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
+      const firstImage = property.images[0];
+      if (firstImage && typeof firstImage === 'string' && firstImage.trim() !== '') {
+        return firstImage;
+      }
     }
     
-    // If property has a single image string
-    if (property.image) {
+    // Priority 2: Check for single image field
+    if (property.image && typeof property.image === 'string' && property.image.trim() !== '') {
       return property.image;
     }
     
-    // Use fallback image
+    // Priority 3: Check for other common image field names
+    const imageFields = ['imageUrl', 'photo', 'thumbnail', 'mainImage', 'featuredImage'];
+    for (const field of imageFields) {
+      if (property[field] && typeof property[field] === 'string' && property[field].trim() !== '') {
+        return property[field];
+      }
+    }
+    
+    // Priority 4: Check if images array has objects with url field
+    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
+      const firstImageObj = property.images[0];
+      if (firstImageObj && typeof firstImageObj === 'object') {
+        if (firstImageObj.url && typeof firstImageObj.url === 'string' && firstImageObj.url.trim() !== '') {
+          return firstImageObj.url;
+        }
+        if (firstImageObj.src && typeof firstImageObj.src === 'string' && firstImageObj.src.trim() !== '') {
+          return firstImageObj.src;
+        }
+        if (firstImageObj.imageUrl && typeof firstImageObj.imageUrl === 'string' && firstImageObj.imageUrl.trim() !== '') {
+          return firstImageObj.imageUrl;
+        }
+      }
+    }
+    
+    // Use fallback image if no valid image found
     return getFallbackImage(property);
   };
 
@@ -602,10 +629,18 @@ const Properties = () => {
               >
                 <Image
                   src={getPropertyImage(property)}
-                  alt={property.name}
+                  alt={property.name || 'Property Image'}
                   w="full"
                   h="full"
                   objectFit="cover"
+                  borderRadius="lg"
+                  loading="lazy"
+                  onError={(e) => {
+                    // If the image fails to load, try fallback image
+                    if (e.target.src !== getFallbackImage(property)) {
+                      e.target.src = getFallbackImage(property);
+                    }
+                  }}
                   fallback={
                     <Flex 
                       direction="column" 
@@ -614,6 +649,7 @@ const Properties = () => {
                       h="full" 
                       bg="gray.100"
                       color="gray.400"
+                      borderRadius="lg"
                     >
                       <FaImage size={32} />
                       <Text fontSize="xs" mt={2} textAlign="center">

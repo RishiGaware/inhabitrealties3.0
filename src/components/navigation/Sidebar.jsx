@@ -173,7 +173,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'customer-profiles': ROUTES.CUSTOMER_PROFILES,
       'documents': ROUTES.CUSTOMER_DOCUMENTS,
       'document-types': ROUTES.CUSTOMER_DOCUMENT_TYPES,
-
     },
     'scheduleMeetings': {
       'admin-meetings': ROUTES.ADMIN_MEETINGS,
