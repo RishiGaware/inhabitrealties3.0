@@ -157,39 +157,39 @@ const EditMyAssignedPurchase = () => {
   }
 
   return (
-    <Box p={{ base: 2, sm: 3, md: 4, lg: 6 }} bg="gray.50" minH="100vh">
+    <Box p={{ base: 1, sm: 2, md: 3, lg: 4 }} bg="gray.50" minH="100vh">
       {/* Header */}
-      <VStack spacing={{ base: 3, md: 4, lg: 6 }} align="stretch" mb={{ base: 4, md: 6 }}>
+      <VStack spacing={{ base: 2, sm: 3, md: 4, lg: 6 }} align="stretch" mb={{ base: 3, sm: 4, md: 6 }}>
         <Flex justify="center" align="center">
-          <Heading as="h1" fontSize={{ base: 'xl', sm: '2xl', md: '3xl' }} fontWeight="bold" textAlign="center">
+          <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl', lg: '3xl' }} fontWeight="bold" textAlign="center">
             Edit My Assigned Purchase Booking
           </Heading>
         </Flex>
 
         {/* Booking ID and Status */}
-        <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm">
-          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={{ base: 3, md: 4 }}>
+        <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm">
+          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={{ base: 2, sm: 3, md: 4 }}>
             <GridItem>
-              <Text fontSize="sm" color="gray.600" fontWeight="semibold">Booking ID</Text>
-              <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color="gray.800">
+              <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Booking ID</Text>
+              <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="gray.800">
                 {booking.bookingId || booking._id?.slice(-8) || 'N/A'}
               </Text>
             </GridItem>
             <GridItem>
-              <Text fontSize="sm" color="gray.600" fontWeight="semibold">Status</Text>
+              <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Status</Text>
               <Badge
                 colorScheme={getStatusColor(booking.bookingStatus)}
                 variant="solid"
-                fontSize={{ base: "xs", md: "sm" }}
-                px={{ base: 2, md: 3 }}
-                py={{ base: 1, md: 1 }}
+                fontSize={{ base: "3xs", sm: "2xs", md: "xs", lg: "sm" }}
+                px={{ base: 1, sm: 2, md: 3 }}
+                py={{ base: 0.5, sm: 1 }}
               >
                 {booking.bookingStatus?.replace(/_/g, ' ') || 'N/A'}
               </Badge>
             </GridItem>
             <GridItem>
-              <Text fontSize="sm" color="gray.600" fontWeight="semibold">Created Date</Text>
-              <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="gray.800">
+              <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Created Date</Text>
+              <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="gray.800">
                 {formatDate(booking.createdAt)}
               </Text>
             </GridItem>
@@ -198,54 +198,54 @@ const EditMyAssignedPurchase = () => {
       </VStack>
 
       {/* Property & Customer Details */}
-      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 3, md: 4 }} mb={{ base: 4, md: 6 }}>
-        <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm">
-          <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="gray.700" mb={3}>Property Details</Text>
-          <VStack spacing={{ base: 2, md: 3 }} align="start">
-            <Text fontSize={{ base: "sm", md: "md" }} color="gray.800"><strong>Name:</strong> {booking.propertyId?.name || 'N/A'}</Text>
-            <Text fontSize={{ base: "sm", md: "md" }} color="gray.800"><strong>Price:</strong> {formatCurrency(booking.propertyId?.price)}</Text>
-            <Text fontSize={{ base: "sm", md: "md" }} color="gray.800"><strong>Description:</strong> {booking.propertyId?.description || 'No description'}</Text>
+      <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 2, sm: 3, md: 4 }} mb={{ base: 3, sm: 4, md: 6 }}>
+        <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm">
+          <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="gray.700" mb={3}>Property Details</Text>
+          <VStack spacing={{ base: 1, sm: 2, md: 3 }} align="start">
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} color="gray.800"><strong>Name:</strong> {booking.propertyId?.name || 'N/A'}</Text>
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} color="gray.800"><strong>Price:</strong> {formatCurrency(booking.propertyId?.price)}</Text>
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} color="gray.800"><strong>Description:</strong> {booking.propertyId?.description || 'No description'}</Text>
             {booking.propertyId?.propertyAddress && (
-              <Text fontSize={{ base: "sm", md: "md" }} color="gray.800"><strong>Address:</strong> {`${booking.propertyId.propertyAddress.street}, ${booking.propertyId.propertyAddress.city}, ${booking.propertyId.propertyAddress.state}`}</Text>
+              <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} color="gray.800"><strong>Address:</strong> {`${booking.propertyId.propertyAddress.street}, ${booking.propertyId.propertyAddress.city}, ${booking.propertyId.propertyAddress.state}`}</Text>
             )}
           </VStack>
         </Box>
 
-        <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm">
-          <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="gray.700" mb={3}>Customer Details</Text>
-          <VStack spacing={{ base: 2, md: 3 }} align="start">
-            <Text fontSize={{ base: "sm", md: "md" }} color="gray.800"><strong>Name:</strong> {booking.customerId ? `${booking.customerId.firstName || ''} ${booking.customerId.lastName || ''}`.trim() : 'N/A'}</Text>
-            <Text fontSize={{ base: "sm", md: "md" }} color="gray.800"><strong>Email:</strong> {booking.customerId?.email || 'N/A'}</Text>
-            <Text fontSize={{ base: "sm", md: "md" }} color="gray.800"><strong>Phone:</strong> {booking.customerId?.phoneNumber || 'N/A'}</Text>
+        <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm">
+          <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="gray.700" mb={3}>Customer Details</Text>
+          <VStack spacing={{ base: 1, sm: 2, md: 3 }} align="start">
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} color="gray.800"><strong>Name:</strong> {booking.customerId ? `${booking.customerId.firstName || ''} ${booking.customerId.lastName || ''}`.trim() : 'N/A'}</Text>
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} color="gray.800"><strong>Email:</strong> {booking.customerId?.email || 'N/A'}</Text>
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} color="gray.800"><strong>Phone:</strong> {booking.customerId?.phoneNumber || 'N/A'}</Text>
           </VStack>
         </Box>
       </SimpleGrid>
 
       {/* Financial Details */}
       {(booking.totalPropertyValue || booking.downPayment || booking.loanAmount) && (
-        <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm" mb={{ base: 4, md: 6 }}>
-          <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="gray.700" mb={3}>Financial Details</Text>
-          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={{ base: 3, md: 4 }}>
+        <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm" mb={{ base: 3, sm: 4, md: 6 }}>
+          <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="gray.700" mb={3}>Financial Details</Text>
+          <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(3, 1fr)" }} gap={{ base: 2, sm: 3, md: 4 }}>
             {booking.totalPropertyValue && (
               <GridItem>
-                <Text fontSize="sm" color="gray.600" fontWeight="semibold">Total Property Value</Text>
-                <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color="gray.800">
+                <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Total Property Value</Text>
+                <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="gray.800">
                   {formatCurrency(booking.totalPropertyValue)}
                 </Text>
               </GridItem>
             )}
             {booking.downPayment && (
               <GridItem>
-                <Text fontSize="sm" color="gray.600" fontWeight="semibold">Down Payment</Text>
-                <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color="gray.800">
+                <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Down Payment</Text>
+                <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="gray.800">
                   {formatCurrency(booking.downPayment)}
                 </Text>
               </GridItem>
             )}
             {booking.loanAmount && (
               <GridItem>
-                <Text fontSize="sm" color="gray.600" fontWeight="semibold">Loan Amount</Text>
-                <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color="gray.800">
+                <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Loan Amount</Text>
+                <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="gray.800">
                   {formatCurrency(booking.loanAmount)}
                 </Text>
               </GridItem>
@@ -255,18 +255,18 @@ const EditMyAssignedPurchase = () => {
       )}
 
       {/* Payment Terms */}
-      <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm" mb={{ base: 4, md: 6 }}>
-        <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="gray.700" mb={3}>Payment Terms</Text>
-        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={{ base: 3, md: 4 }}>
+      <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm" mb={{ base: 3, sm: 4, md: 6 }}>
+        <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="gray.700" mb={3}>Payment Terms</Text>
+        <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)" }} gap={{ base: 2, sm: 3, md: 4 }}>
           <GridItem>
-            <Text fontSize="sm" color="gray.600" fontWeight="semibold">Payment Terms</Text>
-            <Badge colorScheme="blue" variant="solid" fontSize={{ base: "xs", md: "sm" }} px={{ base: 2, md: 3 }} py={{ base: 1, md: 1 }}>
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Payment Terms</Text>
+            <Badge colorScheme="blue" variant="solid" fontSize={{ base: "3xs", sm: "2xs", md: "xs", lg: "sm" }} px={{ base: 1, sm: 2, md: 3 }} py={{ base: 0.5, sm: 1 }}>
               {booking.paymentTerms || 'N/A'}
             </Badge>
           </GridItem>
           <GridItem>
-            <Text fontSize="sm" color="gray.600" fontWeight="semibold">Number of Installments</Text>
-            <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="gray.800">
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" fontWeight="semibold">Number of Installments</Text>
+            <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="gray.800">
               {booking.installmentCount || '0'}
             </Text>
           </GridItem>
@@ -275,31 +275,31 @@ const EditMyAssignedPurchase = () => {
 
       {/* Installment Schedule - Editable */}
       {booking.installmentSchedule && booking.installmentSchedule.length > 0 && (
-        <Box p={{ base: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm" mb={{ base: 4, md: 6 }}>
-          <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+        <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="md" border="1px" borderColor="gray.200" shadow="sm" mb={{ base: 3, sm: 4, md: 6 }}>
+          <VStack spacing={{ base: 2, sm: 3, md: 4 }} align="stretch">
             <HStack justify="space-between" align="center" direction={{ base: "column", sm: "row" }} spacing={{ base: 2, sm: 4 }}>
-              <Text fontSize={{ base: "sm", md: "md" }} fontWeight="semibold" color="gray.700" textAlign={{ base: "center", sm: "left" }}>
+              <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="gray.700" textAlign={{ base: "center", sm: "left" }}>
                 Installment Schedule ({editedInstallments.length} installments)
               </Text>
               <HStack spacing={2} flexWrap="wrap" justify={{ base: "center", sm: "flex-end" }}>
-                <Badge colorScheme="green" variant="subtle" fontSize={{ base: "xs", md: "sm" }}>
+                <Badge colorScheme="green" variant="subtle" fontSize={{ base: "3xs", sm: "2xs", md: "xs" }}>
                   {editedInstallments.filter(inst => inst.status === 'PAID').length} Paid
                 </Badge>
-                <Badge colorScheme="yellow" variant="subtle" fontSize={{ base: "xs", md: "sm" }}>
+                <Badge colorScheme="yellow" variant="subtle" fontSize={{ base: "3xs", sm: "2xs", md: "xs" }}>
                   {editedInstallments.filter(inst => inst.status === 'PENDING').length} Pending
                 </Badge>
-                <Badge colorScheme="red" variant="subtle" fontSize={{ base: "xs", md: "sm" }}>
+                <Badge colorScheme="red" variant="subtle" fontSize={{ base: "3xs", sm: "2xs", md: "xs" }}>
                   {editedInstallments.filter(inst => inst.status === 'OVERDUE').length} Overdue
                 </Badge>
               </HStack>
             </HStack>
             
-            <Text fontSize={{ base: "xs", md: "sm" }} color="gray.600" textAlign="center">
+            <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.600" textAlign="center">
               Amount per installment: {formatCurrency(editedInstallments[0]?.amount)}
             </Text>
             
             <Box 
-              maxH={{ base: "300px", sm: "400px", md: "500px" }} 
+              maxH={{ base: "250px", sm: "300px", md: "400px", lg: "500px" }} 
               overflowY="auto" 
               border="1px" 
               borderColor="gray.200" 
@@ -308,13 +308,13 @@ const EditMyAssignedPurchase = () => {
             >
               <SimpleGrid 
                 columns={{ base: 1, sm: 2, md: 3, lg: 4 }} 
-                spacing={{ base: 2, sm: 3 }} 
-                p={{ base: 2, sm: 3 }}
+                spacing={{ base: 1, sm: 2, md: 3 }} 
+                p={{ base: 1, sm: 2, md: 3 }}
               >
                 {editedInstallments.map((installment, index) => (
                   <Box 
                     key={installment._id || index} 
-                    p={{ base: 2, sm: 3 }} 
+                    p={{ base: 1, sm: 2, md: 3 }} 
                     bg={installment.status === 'PAID' ? 'green.50' : 'white'} 
                     borderRadius="md" 
                     border="1px" 
@@ -329,37 +329,39 @@ const EditMyAssignedPurchase = () => {
                       transition: 'all 0.2s'
                     }}
                   >
-                    <VStack spacing={2} align="start">
+                    <VStack spacing={{ base: 1, sm: 2 }} align="start">
                       <HStack justify="space-between" w="full">
-                        <Text fontSize="xs" color="gray.500" fontWeight="medium">
+                        <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="gray.500" fontWeight="medium">
                           Installment {installment.installmentNumber}
                         </Text>
                         <Badge
                           colorScheme={getInstallmentStatusColor(installment.status)}
                           variant="subtle"
-                          size="sm"
+                          fontSize={{ base: "3xs", sm: "2xs", md: "xs" }}
+                          px={{ base: 1, sm: 2 }}
+                          py={{ base: 0.5, sm: 1 }}
                         >
                           {installment.status}
                         </Badge>
                       </HStack>
                       
-                      <Text fontSize="sm" fontWeight="bold" color="blue.600">
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm", lg: "md" }} fontWeight="bold" color="blue.600">
                         {formatCurrency(installment.amount)}
                       </Text>
                       
-                      <VStack spacing={1} align="start" w="full">
-                        <Text fontSize="xs" color="gray.600">
+                      <VStack spacing={{ base: 0.5, sm: 1 }} align="start" w="full">
+                        <Text fontSize={{ base: "3xs", sm: "2xs", md: "xs" }} color="gray.600">
                           <strong>Due:</strong> {formatDate(installment.dueDate)}
                         </Text>
                         
                         {installment.status === 'PAID' && installment.paidDate && (
-                          <Text fontSize="xs" color="green.600">
+                          <Text fontSize={{ base: "3xs", sm: "2xs", md: "xs" }} color="green.600">
                             <strong>Paid:</strong> {formatDate(installment.paidDate)}
                           </Text>
                         )}
                         
                         {installment.lateFees > 0 && (
-                          <Text fontSize="xs" color="red.600">
+                          <Text fontSize={{ base: "3xs", sm: "2xs", md: "xs" }} color="red.600">
                             <strong>Late Fees:</strong> {formatCurrency(installment.lateFees)}
                           </Text>
                         )}
