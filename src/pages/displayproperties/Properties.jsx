@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { FaBed, FaBath, FaRuler, FaEye, FaImage, FaHeart } from 'react-icons/fa';
 import { MdLocationOn } from 'react-icons/md';
-import { Box, Heading, Flex, Grid, IconButton, Text, Badge, Image, Skeleton, SkeletonText, Button } from '@chakra-ui/react';
+import { Box, Heading, Flex, Grid, IconButton, Text, Badge, Image, Skeleton, SkeletonText, Button, Tabs, TabList, TabPanels, Tab, TabPanel } from '@chakra-ui/react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import PropertyPreview from '../property/propertyMaster/PropertyPreview';
 import CommonCard from '../../components/common/Card/CommonCard';
@@ -28,6 +28,7 @@ const Properties = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [selectedType, setSelectedType] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(false);
   const [selectedProperty, setSelectedProperty] = useState(null);
@@ -239,12 +240,18 @@ const Properties = () => {
     return getFallbackImage(property);
   };
 
-  const filteredProperties = selectedType === 'ALL' 
-    ? properties 
-    : properties.filter(property => {
-        const type = propertyTypes.find(t => t._id === property.propertyTypeId);
-        return type?.typeName === selectedType;
-      });
+  const filteredProperties = properties.filter(property => {
+    // Filter by property type
+    const typeMatch = selectedType === 'ALL' || (() => {
+      const type = propertyTypes.find(t => t._id === property.propertyTypeId);
+      return type?.typeName === selectedType;
+    })();
+    
+    // Filter by property status
+    const statusMatch = selectedStatus === 'ALL' || property.propertyStatus === selectedStatus;
+    
+    return typeMatch && statusMatch;
+  });
 
   if (errorType === 'network') return <NoInternet onRetry={fetchAllProperties} />;
   if (errorType === 'server') return <ServerError onRetry={fetchAllProperties} />;
@@ -331,6 +338,132 @@ const Properties = () => {
           </button>
         </Box>
       </Flex>
+
+      {/* Property Status Tabs - Fully Responsive */}
+      <Box mb={{ base: 4, md: 6 }}>
+        <Tabs 
+          index={selectedStatus === 'ALL' ? 0 : selectedStatus === 'FOR SALE' ? 1 : 2}
+          onChange={(index) => {
+            const statuses = ['ALL', 'FOR SALE', 'FOR RENT'];
+            setSelectedStatus(statuses[index]);
+          }}
+          variant="enclosed"
+          colorScheme="brand"
+          size={{ base: 'sm', sm: 'md', lg: 'lg' }}
+        >
+          <Box 
+            overflowX="auto" 
+            pb={2}
+            sx={{
+              '&::-webkit-scrollbar': {
+                height: '4px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: 'gray.100',
+                borderRadius: '2px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: 'brand.400',
+                borderRadius: '2px',
+              },
+            }}
+          >
+            <TabList 
+              bg="gray.50" 
+              borderRadius={{ base: 'lg', md: 'xl' }} 
+              p={{ base: 0.5, sm: 1 }}
+              border="1px solid"
+              borderColor="gray.200"
+              boxShadow="sm"
+              minW="max-content"
+              gap={{ base: 1, sm: 2 }}
+              flexWrap={{ base: 'nowrap', sm: 'wrap' }}
+            >
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'brand.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'brand.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'brand.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                All Properties
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'green.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'green.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'green.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                For Sale
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'blue.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'blue.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'blue.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                For Rent
+              </Tab>
+            </TabList>
+          </Box>
+        </Tabs>
+      </Box>
 
       {/* Property Types Filter - Responsive */}
       <Box 
