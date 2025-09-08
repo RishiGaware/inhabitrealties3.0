@@ -127,7 +127,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
           "My Meetings",
           "Documents",
           "Payments",
-          "Referrals"
+          // "Referrals"
         ],
         key: "client"
       },
@@ -218,7 +218,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'my-meetings': ROUTES.CLIENT_MY_MEETINGS,
       'documents': ROUTES.CLIENT_DOCUMENTS,
       'payments': ROUTES.CLIENT_PAYMENTS,
-      'referrals': ROUTES.CLIENT_REFERRALS
+      // 'referrals': ROUTES.CLIENT_REFERRALS
     },
     'settings': ROUTES.SETTINGS,
   };
