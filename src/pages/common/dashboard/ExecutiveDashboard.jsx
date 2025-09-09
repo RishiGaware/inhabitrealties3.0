@@ -48,7 +48,9 @@ const ExecutiveDashboard = () => {
     totalProperties: 0,
     totalLeads: 0,
     totalCustomers: 0,
-    totalBookings: 0,
+    totalRentalBookings: 0,
+    totalPurchaseBookings: 0,
+    roleWiseCustomers: {},
     totalRevenue: 0,
     pendingPayments: 0,
     soldProperties: 0,
@@ -123,11 +125,14 @@ const ExecutiveDashboard = () => {
         // Update stats with real data
         if (overviewResponse.statusCode === 200) {
           const overviewData = overviewResponse.data;
+          console.log('Executive Dashboard - Role-wise customers data:', overviewData.roleWiseCustomers);
           setStats({
             totalProperties: overviewData.totalProperties || 0,
             totalLeads: overviewData.totalLeads || 0,
             totalCustomers: overviewData.totalUsers || 0,
-            totalBookings: overviewData.soldProperties || 0,
+            totalRentalBookings: overviewData.totalRentalBookings || 0,
+            totalPurchaseBookings: overviewData.totalPurchaseBookings || 0,
+            roleWiseCustomers: overviewData.roleWiseCustomers || {},
             totalRevenue: financialResponse.data?.totalRevenue || 0,
             pendingPayments: overviewData.pendingFollowups || 0,
             soldProperties: overviewData.soldProperties || 0,
@@ -346,7 +351,27 @@ const ExecutiveDashboard = () => {
           </Box>
 
           {/* Key Metrics */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6} mb={8}>
+          <Box 
+            overflowX="auto" 
+            mb={8}
+            css={{
+              '&::-webkit-scrollbar': {
+                height: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: '#a8a8a8',
+              },
+            }}
+          >
+            <Grid templateColumns={{ base: "repeat(4, 250px)", md: "repeat(4, 280px)", lg: "repeat(4, 300px)" }} gap={6} minW="fit-content">
             <StatCard
               title="Total Properties"
               value={stats.totalProperties}
@@ -364,25 +389,46 @@ const ExecutiveDashboard = () => {
               trendValue="8"
             />
             <StatCard
-              title="Total Revenue"
-              value={formatCurrency(stats.totalRevenue)}
-              icon={FaDollarSign}
-              color="purple"
-              trend="up"
-              trendValue="15"
-            />
-            <StatCard
-              title="Active Customers"
-              value={stats.totalCustomers}
-              icon={FaUsers}
-              color="orange"
+              title="Rental Bookings"
+              value={stats.totalRentalBookings}
+              icon={FaBuilding}
+              color="teal"
               trend="up"
               trendValue="5"
             />
-          </Grid>
+            <StatCard
+              title="Purchase Bookings"
+              value={stats.totalPurchaseBookings}
+              icon={FaDollarSign}
+              color="orange"
+              trend="up"
+              trendValue="3"
+            />
+            </Grid>
+          </Box>
 
           {/* Strategic Metrics */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6} mb={8}>
+          <Box 
+            overflowX="auto" 
+            mb={8}
+            css={{
+              '&::-webkit-scrollbar': {
+                height: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: '#a8a8a8',
+              },
+            }}
+          >
+            <Grid templateColumns={{ base: "repeat(4, 250px)", md: "repeat(4, 280px)", lg: "repeat(4, 300px)" }} gap={6} minW="fit-content">
             <StatCard
               title="Sold Properties"
               value={stats.soldProperties}
@@ -419,10 +465,31 @@ const ExecutiveDashboard = () => {
               trendValue="12"
               subtitle="Overall team efficiency"
             />
-          </Grid>
+            </Grid>
+          </Box>
 
           {/* Operational Metrics */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6} mb={8}>
+          <Box 
+            overflowX="auto" 
+            mb={8}
+            css={{
+              '&::-webkit-scrollbar': {
+                height: '8px',
+              },
+              '&::-webkit-scrollbar-track': {
+                background: '#f1f1f1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb': {
+                background: '#c1c1c1',
+                borderRadius: '4px',
+              },
+              '&::-webkit-scrollbar-thumb:hover': {
+                background: '#a8a8a8',
+              },
+            }}
+          >
+            <Grid templateColumns={{ base: "repeat(3, 250px)", md: "repeat(3, 280px)", lg: "repeat(3, 300px)" }} gap={6} minW="fit-content">
             <StatCard
               title="Active Leads"
               value={stats.activeLeads}
@@ -450,7 +517,49 @@ const ExecutiveDashboard = () => {
               trendValue="15"
               subtitle="Followups due"
             />
-          </Grid>
+            </Grid>
+          </Box>
+
+          {/* Role-wise Customers */}
+          <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor} mb={8}>
+            <CardBody p={6}>
+              <Text fontSize="xl" fontWeight="bold" color={textColor} mb={6}>
+                Role-wise Customer Distribution
+              </Text>
+              <Grid templateColumns={{ base: "repeat(2, 1fr)", md: "repeat(3, 1fr)", lg: "repeat(4, 1fr)" }} gap={4}>
+                {Object.keys(stats.roleWiseCustomers).length > 0 ? (
+                  Object.entries(stats.roleWiseCustomers).map(([role, count]) => (
+                    <Box
+                      key={role}
+                      p={4}
+                      borderRadius="lg"
+                      bg={useColorModeValue('gray.50', 'gray.700')}
+                      border="1px"
+                      borderColor={useColorModeValue('gray.200', 'gray.600')}
+                    >
+                      <VStack spacing={2}>
+                        <Text fontSize="2xl" fontWeight="bold" color={textColor}>
+                          {count}
+                        </Text>
+                        <Text fontSize="sm" color={mutedTextColor} textAlign="center" textTransform="capitalize">
+                          {role.replace(/([A-Z])/g, ' $1').trim()}
+                        </Text>
+                      </VStack>
+                    </Box>
+                  ))
+                ) : (
+                  <Box
+                    colSpan={4}
+                    p={8}
+                    textAlign="center"
+                    color={mutedTextColor}
+                  >
+                    <Text>No role data available</Text>
+                  </Box>
+                )}
+              </Grid>
+            </CardBody>
+          </Card>
 
           {/* Performance Overview */}
           <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6} mb={8}>
@@ -517,8 +626,8 @@ const ExecutiveDashboard = () => {
             </Card>
           </Grid>
 
-          {/* Quick Actions */}
-          <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
+          {/* Quick Actions - Hidden */}
+          {/* <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
             <CardBody p={6}>
               <Text fontSize="xl" fontWeight="bold" color={textColor} mb={6}>
                 Quick Actions
@@ -562,7 +671,7 @@ const ExecutiveDashboard = () => {
                 </Button>
               </Grid>
             </CardBody>
-          </Card>
+          </Card> */}
         </motion.div>
       </AnimatePresence>
     </Box>

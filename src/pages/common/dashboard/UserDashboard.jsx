@@ -38,6 +38,7 @@ import {
   fetchFinancialSummary,
   fetchLeadConversionRates 
 } from '../../../services/dashboard/dashboardService';
+import { meetingAPI } from '../../../services/api';
 import { showErrorToast } from '../../../utils/toastUtils';
 import Loader from '../../../components/common/Loader';
 
@@ -61,6 +62,8 @@ const UserDashboard = () => {
     recommendedProperties: 0
   });
   const [recentActivities, setRecentActivities] = useState([]);
+  const [todaysMeetings, setTodaysMeetings] = useState([]);
+  const [tomorrowsMeetings, setTomorrowsMeetings] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -103,20 +106,35 @@ const UserDashboard = () => {
         
         console.log('Token found, making API calls...');
         
+        // Get user ID from auth data
+        const userId = authData.user?.id || authData.userId;
+        
         // Fetch all dashboard data in parallel
-        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = await Promise.all([
+        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse, todaysMeetingsResponse, tomorrowsMeetingsResponse] = await Promise.all([
           fetchDashboardOverview(),
           fetchRecentActivities(),
           fetchFinancialSummary(),
-          fetchLeadConversionRates()
+          fetchLeadConversionRates(),
+          userId ? meetingAPI.getMyTodaysMeetings(userId) : Promise.resolve({ data: { data: [] } }),
+          userId ? meetingAPI.getMyTomorrowsMeetings(userId) : Promise.resolve({ data: { data: [] } })
         ]);
 
         console.log('User Dashboard API responses:', {
           overview: overviewResponse,
           activities: activitiesResponse,
           financial: financialResponse,
-          conversion: conversionResponse
+          conversion: conversionResponse,
+          todaysMeetings: todaysMeetingsResponse,
+          tomorrowsMeetings: tomorrowsMeetingsResponse
         });
+
+        // Process meeting data
+        if (todaysMeetingsResponse.data?.data) {
+          setTodaysMeetings(todaysMeetingsResponse.data.data);
+        }
+        if (tomorrowsMeetingsResponse.data?.data) {
+          setTomorrowsMeetings(tomorrowsMeetingsResponse.data.data);
+        }
 
         // Update stats with user-specific data
         if (overviewResponse.statusCode === 200) {
@@ -279,6 +297,55 @@ const UserDashboard = () => {
         </VStack>
         <Badge colorScheme={activity.color} variant="subtle">
           {activity.type}
+        </Badge>
+      </HStack>
+    </motion.div>
+  );
+
+  const MeetingItem = ({ meeting }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <HStack
+        p={3}
+        borderRadius="lg"
+        bg={useColorModeValue('gray.50', 'gray.700')}
+        _hover={{ bg: useColorModeValue('gray.100', 'gray.600') }}
+        transition="all 0.2s ease"
+        cursor="pointer"
+        onClick={() => navigate(`/meeting-details/${meeting._id}`)}
+      >
+        <Box
+          p={2}
+          borderRadius="full"
+          bg={useColorModeValue('green.100', 'green.900')}
+          color={useColorModeValue('green.600', 'green.300')}
+        >
+          <FaCalendarAlt size={12} />
+        </Box>
+        <VStack align="start" spacing={1} flex={1}>
+          <Text fontSize="sm" fontWeight="medium" color={textColor}>
+            {meeting.title}
+          </Text>
+          <Text fontSize="xs" color={mutedTextColor}>
+            {meeting.startTime} {meeting.endTime ? `- ${meeting.endTime}` : ''}
+          </Text>
+          {meeting.propertyId && (
+            <Text fontSize="xs" color={mutedTextColor}>
+              Property: {meeting.propertyId.name}
+            </Text>
+          )}
+        </VStack>
+        <Badge
+          colorScheme={meeting.status?.name?.toLowerCase().includes('scheduled') ? 'blue' : 
+                      meeting.status?.name?.toLowerCase().includes('completed') ? 'green' : 
+                      meeting.status?.name?.toLowerCase().includes('cancelled') ? 'red' : 'orange'}
+          variant="subtle"
+          fontSize="xs"
+        >
+          {meeting.status?.name || 'Scheduled'}
         </Badge>
       </HStack>
     </motion.div>
@@ -552,8 +619,58 @@ const UserDashboard = () => {
             </Card>
           </Grid>
 
-          {/* Quick Actions */}
+          {/* My Today's Meetings */}
           <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
+            <CardBody p={6}>
+              <HStack justify="space-between" align="center" mb={6}>
+                <Text fontSize="xl" fontWeight="bold" color={textColor}>
+                  My Today's Meetings
+                </Text>
+                <Button size="sm" variant="ghost" colorScheme="green" onClick={() => navigate('/my-meetings')}>
+                  <FaEye size={14} />
+                </Button>
+              </HStack>
+              <VStack spacing={2} align="stretch" maxH="300px" overflowY="auto">
+                {todaysMeetings.length > 0 ? (
+                  todaysMeetings.map((meeting) => (
+                    <MeetingItem key={meeting._id} meeting={meeting} />
+                  ))
+                ) : (
+                  <Text color={mutedTextColor} textAlign="center" py={4}>
+                    No meetings scheduled for today
+                  </Text>
+                )}
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* My Tomorrow's Meetings */}
+          <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
+            <CardBody p={6}>
+              <HStack justify="space-between" align="center" mb={6}>
+                <Text fontSize="xl" fontWeight="bold" color={textColor}>
+                  My Tomorrow's Meetings
+                </Text>
+                <Button size="sm" variant="ghost" colorScheme="blue" onClick={() => navigate('/my-meetings')}>
+                  <FaEye size={14} />
+                </Button>
+              </HStack>
+              <VStack spacing={2} align="stretch" maxH="300px" overflowY="auto">
+                {tomorrowsMeetings.length > 0 ? (
+                  tomorrowsMeetings.map((meeting) => (
+                    <MeetingItem key={meeting._id} meeting={meeting} />
+                  ))
+                ) : (
+                  <Text color={mutedTextColor} textAlign="center" py={4}>
+                    No meetings scheduled for tomorrow
+                  </Text>
+                )}
+              </VStack>
+            </CardBody>
+          </Card>
+
+          {/* Quick Actions - Hidden */}
+          {/* <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
             <CardBody p={6}>
               <Text fontSize="xl" fontWeight="bold" color={textColor} mb={6}>
                 Quick Actions
@@ -597,7 +714,7 @@ const UserDashboard = () => {
                 </Button>
               </Grid>
             </CardBody>
-          </Card>
+          </Card> */}
         </motion.div>
       </AnimatePresence>
     </Box>

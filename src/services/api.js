@@ -5,7 +5,7 @@ import { Cookie } from 'lucide-react';
 const API_URL = 'http://localhost:3001/api';
 // const API_URL = 'https://insightwaveit-backend-p0cl.onrender.com/api';
 // const API_URL = 'https://backend-hyoy.onrender.com/api';
-// const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
+//const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -57,5 +57,32 @@ api.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// Meeting Schedule API functions
+export const meetingAPI = {
+  // Get all meetings
+  getAllMeetings: () => api.get('/meeting-schedule'),
+  
+  // Get my meetings
+  getMyMeetings: (userId) => api.get(`/meeting-schedule/my-meetings/${userId}`),
+  
+  // Get my today's meetings
+  getMyTodaysMeetings: (userId) => api.get(`/meeting-schedule/my-todays-meetings/${userId}`),
+  
+  // Get my tomorrow's meetings
+  getMyTomorrowsMeetings: (userId) => api.get(`/meeting-schedule/my-tomorrows-meetings/${userId}`),
+  
+  // Get meeting by ID
+  getMeetingById: (meetingId) => api.get(`/meeting-schedule/${meetingId}`),
+  
+  // Create meeting
+  createMeeting: (meetingData) => api.post('/meeting-schedule/create', meetingData),
+  
+  // Update meeting
+  updateMeeting: (meetingId, meetingData) => api.put(`/meeting-schedule/edit/${meetingId}`, meetingData),
+  
+  // Delete meeting
+  deleteMeeting: (meetingId) => api.delete(`/meeting-schedule/delete/${meetingId}`)
+};
 
 export default api;

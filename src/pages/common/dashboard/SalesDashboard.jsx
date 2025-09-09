@@ -554,8 +554,8 @@ const SalesDashboard = () => {
             </Card>
           </Grid>
 
-          {/* Quick Actions */}
-          <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
+          {/* Quick Actions - Hidden */}
+          {/* <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
             <CardBody p={6}>
               <Text fontSize="xl" fontWeight="bold" color={textColor} mb={6}>
                 Quick Actions
@@ -599,7 +599,7 @@ const SalesDashboard = () => {
                 </Button>
               </Grid>
             </CardBody>
-          </Card>
+          </Card> */}
         </motion.div>
       </AnimatePresence>
     </Box>
