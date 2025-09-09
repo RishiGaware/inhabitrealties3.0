@@ -391,7 +391,7 @@ const MeetingStatusManagement = () => {
             (currentPage - 1) * pageSize,
             currentPage * pageSize
           )}
-          rowActions={renderRowActions}
+          // rowActions={renderRowActions}
           emptyStateMessage={!loading ? "No statuses found." : undefined}
         />
         <CommonPagination

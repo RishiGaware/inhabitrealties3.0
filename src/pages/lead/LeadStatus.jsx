@@ -212,6 +212,7 @@ const LeadStatus = () => {
       setSelectedLeadStatus(null);
       setFormData({});
       onClose();
+      fetchAllLeadStatuses();
     } catch (error) {
       console.error('Form submission error:', error);
       setIsSubmitting(false);
@@ -330,7 +331,7 @@ const LeadStatus = () => {
             (currentPage - 1) * pageSize,
             currentPage * pageSize
           )}
-          rowActions={renderRowActions}
+          // rowActions={renderRowActions}
           emptyStateMessage={!loading ? "No lead statuses match your search." : undefined}
         />
         <CommonPagination

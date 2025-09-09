@@ -53,12 +53,34 @@ const Properties = () => {
     }
   }, [getAllPropertyTypes, isAuthenticated]);
 
+  // Debug: Log property types when they change
+  useEffect(() => {
+    if (propertyTypes.length > 0) {
+      console.log('Available Property Types:', propertyTypes.map(pt => ({
+        id: pt._id,
+        typeName: pt.typeName,
+        description: pt.description
+      })));
+    }
+  }, [propertyTypes]);
+
   const fetchAllProperties = async () => {
     setLoading(true);
     setErrorType(null);
     try {
       const response = await fetchProperties();
       setProperties(response.data || []);
+      
+      // Debug: Log all unique property statuses
+      const uniqueStatuses = [...new Set(response.data?.map(p => p.propertyStatus) || [])];
+      console.log('Properties.jsx - All unique property statuses:', uniqueStatuses);
+      
+      // Debug: Log properties with their propertyTypeId
+      console.log('Properties with PropertyTypeId:', response.data?.map(p => ({
+        name: p.name,
+        propertyTypeId: p.propertyTypeId,
+        propertyStatus: p.propertyStatus
+      })));
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');
       else if (error.response?.status === 500) setErrorType('server');
@@ -270,15 +292,110 @@ const Properties = () => {
   const filteredProperties = properties.filter(property => {
     // Filter by property type
     const typeMatch = selectedType === 'ALL' || (() => {
-      const type = propertyTypes.find(t => t._id === property.propertyTypeId);
-      return type?.typeName === selectedType;
+      // Handle both cases: propertyTypeId as string or as object
+      let type = null;
+      let propertyTypeName = null;
+      
+      if (typeof property.propertyTypeId === 'string') {
+        // If propertyTypeId is a string, find the type in propertyTypes array
+        type = propertyTypes.find(t => t._id === property.propertyTypeId);
+        propertyTypeName = type?.typeName;
+      } else if (property.propertyTypeId && typeof property.propertyTypeId === 'object') {
+        // If propertyTypeId is an object (populated), use it directly
+        type = property.propertyTypeId;
+        propertyTypeName = property.propertyTypeId.typeName;
+      }
+      
+      // Try exact match first
+      let isMatch = propertyTypeName === selectedType;
+      
+      // If no exact match, try case-insensitive match
+      if (!isMatch && propertyTypeName) {
+        isMatch = propertyTypeName.toLowerCase() === selectedType.toLowerCase();
+      }
+      
+      // Debug logging for property type filtering
+      if (selectedType !== 'ALL') {
+        console.log('Property Type Filter Debug:', {
+          propertyName: property.name,
+          propertyTypeId: property.propertyTypeId,
+          selectedType,
+          foundType: type,
+          typeName: propertyTypeName,
+          exactMatch: propertyTypeName === selectedType,
+          caseInsensitiveMatch: propertyTypeName?.toLowerCase() === selectedType.toLowerCase(),
+          isMatch
+        });
+      }
+      
+      return isMatch;
     })();
     
     // Filter by property status
     const statusMatch = selectedStatus === 'ALL' || property.propertyStatus === selectedStatus;
     
-    return typeMatch && statusMatch;
+    // Debug logging for status filtering
+    if (selectedStatus !== 'ALL') {
+      console.log('Status Filter Debug:', {
+        propertyName: property.name,
+        propertyStatus: property.propertyStatus,
+        selectedStatus,
+        statusMatch
+      });
+    }
+    
+    const finalMatch = typeMatch && statusMatch;
+    
+    // Debug logging for final result
+    if (selectedType !== 'ALL' || selectedStatus !== 'ALL') {
+      console.log('Final Filter Result:', {
+        propertyName: property.name,
+        selectedType,
+        selectedStatus,
+        typeMatch,
+        statusMatch,
+        finalMatch
+      });
+    }
+    
+    return finalMatch;
   });
+
+  // Debug: Log filtering summary
+  useEffect(() => {
+    if (properties.length > 0) {
+      console.log('=== FILTERING SUMMARY ===');
+      console.log('Total Properties:', properties.length);
+      console.log('Filtered Properties:', filteredProperties.length);
+      console.log('Selected Type:', selectedType);
+      console.log('Selected Status:', selectedStatus);
+      console.log('Available Property Types:', propertyTypes.map(pt => pt.typeName));
+      console.log('Available Property Statuses:', [...new Set(properties.map(p => p.propertyStatus))]);
+      
+      // Detailed property type analysis
+      console.log('=== PROPERTY TYPE ANALYSIS ===');
+      properties.forEach(property => {
+        let type = null;
+        let propertyTypeName = null;
+        
+        if (typeof property.propertyTypeId === 'string') {
+          type = propertyTypes.find(t => t._id === property.propertyTypeId);
+          propertyTypeName = type?.typeName;
+        } else if (property.propertyTypeId && typeof property.propertyTypeId === 'object') {
+          type = property.propertyTypeId;
+          propertyTypeName = property.propertyTypeId.typeName;
+        }
+        
+        console.log(`Property: ${property.name}`, {
+          propertyTypeId: property.propertyTypeId,
+          foundType: type,
+          typeName: propertyTypeName,
+          propertyStatus: property.propertyStatus
+        });
+      });
+      console.log('==============================');
+    }
+  }, [selectedType, selectedStatus, properties, filteredProperties, propertyTypes]);
 
   if (errorType === 'network') return <NoInternet onRetry={fetchAllProperties} />;
   if (errorType === 'server') return <ServerError onRetry={fetchAllProperties} />;
@@ -369,9 +486,9 @@ const Properties = () => {
       {/* Property Status Tabs - Fully Responsive */}
       <Box mb={{ base: 4, md: 6 }}>
         <Tabs 
-          index={selectedStatus === 'ALL' ? 0 : selectedStatus === 'FOR SALE' ? 1 : 2}
+          index={selectedStatus === 'ALL' ? 0 : selectedStatus === 'FOR SALE' ? 1 : selectedStatus === 'FOR RENT' ? 2 : 3}
           onChange={(index) => {
-            const statuses = ['ALL', 'FOR SALE', 'FOR RENT'];
+            const statuses = ['ALL', 'FOR SALE', 'FOR RENT', 'SOLD'];
             setSelectedStatus(statuses[index]);
           }}
           variant="enclosed"
@@ -486,6 +603,33 @@ const Properties = () => {
                 transition="all 0.2s"
               >
                 For Rent
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'purple.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'purple.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'purple.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                Sold
               </Tab>
             </TabList>
           </Box>
@@ -826,7 +970,8 @@ const Properties = () => {
             setIsPreviewOpen(false);
             setSelectedProperty(null);
           }}
-          property={selectedProperty} 
+          property={selectedProperty}
+          isViewOnly={true}
         />
       )}
     </Box>

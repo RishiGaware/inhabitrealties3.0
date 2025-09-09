@@ -181,8 +181,10 @@ const CreateNewPurchase = () => {
         console.log('Filtered salespeople:', salespeopleData);
       }
 
-      // Use only real data from backend
-      const publishedProperties = propertiesData.data?.filter((prop) => prop.published) || [];
+      // Use only real data from backend - filter for published properties with FOR SALE status
+      const publishedProperties = propertiesData.data?.filter((prop) => 
+        prop.published && prop.propertyStatus === "FOR SALE"
+      ) || [];
       const publishedCustomers = customersData.data || [];
       const publishedSalespeople = salespeopleData.data || [];
 
@@ -194,7 +196,7 @@ const CreateNewPurchase = () => {
 
       // Check if we have the minimum required data
       if (publishedProperties.length === 0) {
-        toast.error("No properties available. Please add properties first.");
+        toast.error("No properties available for sale. Please add properties with 'FOR SALE' status first.");
         return;
       }
 
@@ -535,7 +537,7 @@ const CreateNewPurchase = () => {
             Required Data Not Available
           </Text>
           <Text color="gray.600">
-            {properties.length === 0 && "• No properties available"}
+            {properties.length === 0 && "• No properties available for sale"}
           </Text>
           <Text color="gray.600">
             {customers.length === 0 && "• No customers available"}
@@ -544,7 +546,7 @@ const CreateNewPurchase = () => {
             {salespeople.length === 0 && "• No salespeople available"}
           </Text>
           <Text color="gray.500" fontSize="sm">
-            Please ensure you have properties, customers, and salespeople in your system before creating purchase bookings.
+            Please ensure you have properties with 'FOR SALE' status, customers, and salespeople in your system before creating purchase bookings.
           </Text>
           <Button
             colorScheme="blue"
@@ -595,7 +597,7 @@ const CreateNewPurchase = () => {
                   isRequired={true}
                 />
                 <FormHelperText>
-                  Search and select from available properties
+                  Search and select from available properties for sale
                 </FormHelperText>
                 {showErrors && !formData.propertyId && (
                   <Text color="red.500" fontSize="sm" mt={1}>

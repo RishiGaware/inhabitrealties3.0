@@ -40,6 +40,8 @@ const CustomerProfiles = () => {
   const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
@@ -263,6 +265,8 @@ const CustomerProfiles = () => {
     });
     setOriginalFormData(null);
     setErrors({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     onOpen();
   };
 
@@ -279,6 +283,8 @@ const CustomerProfiles = () => {
     setFormData(data);
     setOriginalFormData(data);
     setErrors({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     onOpen();
   };
 
@@ -408,6 +414,14 @@ const CustomerProfiles = () => {
     if (errors[name]) {
       setErrors({ ...errors, [name]: '' });
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const handleRoleChange = (roleId) => {
@@ -601,6 +615,8 @@ const CustomerProfiles = () => {
           });
           setOriginalFormData(null);
           setErrors({});
+          setShowPassword(false);
+          setShowConfirmPassword(false);
         }}
         title={selectedUser ? 'Edit User' : 'Add New User'}
         onSave={handleFormSubmit}
@@ -685,6 +701,8 @@ const CustomerProfiles = () => {
                   onChange={handleInputChange} 
                   error={errors.password} 
                   required={true}
+                  showPassword={showPassword}
+                  onTogglePassword={togglePasswordVisibility}
                 />
               </FormControl>
               <FormControl isInvalid={!!errors.confirmPassword}>
@@ -697,6 +715,8 @@ const CustomerProfiles = () => {
                   onChange={handleInputChange} 
                   error={errors.confirmPassword} 
                   required={true}
+                  showPassword={showConfirmPassword}
+                  onTogglePassword={toggleConfirmPasswordVisibility}
                 />
               </FormControl>
             </>
@@ -710,6 +730,8 @@ const CustomerProfiles = () => {
                 value={formData.password || ''} 
                 onChange={handleInputChange} 
                 placeholder=""
+                showPassword={showPassword}
+                onTogglePassword={togglePasswordVisibility}
               />
             </FormControl>
           )}

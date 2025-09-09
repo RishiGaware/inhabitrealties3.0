@@ -311,7 +311,7 @@ const DocumentTypeManagement = () => {
             (currentPage - 1) * pageSize,
             currentPage * pageSize
           )}
-          rowActions={renderRowActions}
+          // rowActions={renderRowActions}
           emptyStateMessage={!loading ? "No document types match your search." : undefined}
         />
         <CommonPagination

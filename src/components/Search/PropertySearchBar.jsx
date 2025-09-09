@@ -4,11 +4,6 @@ import { FaBuilding, FaHome, FaUserTie, FaLandmark, FaHotel, FaRegBuilding, FaSe
 const tabOptions = [
   { label: 'Buy', icon: <FaHome /> },
   { label: 'Rental', icon: <FaRegBuilding /> },
-  { label: 'Projects', icon: <FaBuilding /> },
-  { label: 'PG / Hostels', icon: <FaHotel /> },
-  { label: 'Plot & Land', icon: <FaLandmark /> },
-  { label: 'Commercial', icon: <FaBuilding /> },
-  { label: 'Agents', icon: <FaUserTie /> },
 ];
 
 const cityOptions = [
@@ -19,15 +14,11 @@ const budgetOptions = [
   'Any', 'Under 50L', '50L - 1Cr', '1Cr - 2Cr', '2Cr - 5Cr', '5Cr+' 
 ];
 
-const propertyTypeOptions = [
-  'Any', 'Apartment', 'Villa', 'Plot', 'Office', 'Shop', 'PG', 'Hostel'
-];
-
 const possessionOptions = [
   'Any', 'Ready to Move', 'Under Construction', 'New Launch'
 ];
 
-const PropertySearchBar = ({ value = {}, onChange, onSearch }) => {
+const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [] }) => {
   const [activeTab, setActiveTab] = useState(value.tabIndex || 0);
   const [city, setCity] = useState(value.city || '');
   const [query, setQuery] = useState(value.query || '');
@@ -67,10 +58,10 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch }) => {
     if (window.innerWidth < 768) setIsCollapsed(true);
   };
 
-  // On md+ always expanded
+  // On lg+ always expanded
   React.useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 768) setIsCollapsed(false);
+      if (window.innerWidth >= 1024) setIsCollapsed(false);
       else setIsCollapsed(true);
     };
     handleResize();
@@ -79,39 +70,42 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch }) => {
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto mt-4 mb-8 p-3 sm:p-4 md:p-6 bg-white rounded-2xl shadow-xl">
+    <div className="w-full max-w-7xl mx-auto mt-4 mb-8 px-2 sm:px-4 md:px-6 lg:px-8 bg-white rounded-2xl shadow-xl">
       {/* Tabs */}
-      <div className="flex gap-2 mb-4 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+      <div className="flex gap-1 sm:gap-2 mb-4 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent pb-2">
         {tabOptions.map((tab, idx) => (
           <button
             key={tab.label}
-            className={`flex items-center gap-2 px-3 py-2 md:px-4 md:py-2 rounded-lg font-semibold text-sm md:text-base transition-all duration-200
+            className={`flex items-center gap-1 sm:gap-2 px-2 sm:px-3 md:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm md:text-base transition-all duration-200 flex-shrink-0
               ${activeTab === idx
                 ? 'bg-[var(--color-purple-600)] text-white shadow-md'
                 : 'bg-gray-100 text-gray-700 hover:bg-[var(--color-purple-600)]/10 hover:text-[var(--color-purple-600)]'}`}
             onClick={() => setActiveTab(idx)}
-            style={{ minWidth: '96px' }}
+            style={{ minWidth: '80px' }}
           >
-            {tab.icon} {tab.label}
+            <span className="text-xs sm:text-sm">{tab.icon}</span>
+            <span className="hidden xs:inline">{tab.label}</span>
           </button>
         ))}
       </div>
+      
       {/* Collapsed Search Button for mobile */}
-      <div className="block md:hidden mb-2">
+      <div className="block lg:hidden mb-3">
         {isCollapsed && (
           <button
-            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm rounded-lg bg-[var(--color-purple-600)] text-white font-bold hover:bg-[var(--color-purple-700)] transition-all duration-200 shadow-md"
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm rounded-lg bg-[var(--color-purple-600)] text-white font-bold hover:bg-[var(--color-purple-700)] transition-all duration-200 shadow-md"
             onClick={() => setIsCollapsed(false)}
           >
             <FaSearch /> Search Properties
           </button>
         )}
       </div>
+      
       {/* Search Bar */}
-      <div className={`w-full flex flex-col md:flex-row gap-2 md:gap-3 items-stretch md:items-center ${isCollapsed ? 'hidden' : ''} md:flex`}>
+      <div className={`w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 ${isCollapsed ? 'hidden' : ''} lg:flex lg:items-center`}>
         {/* City Dropdown */}
         <select
-          className="w-full md:w-44 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-sm bg-white"
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-44"
           value={city}
           onChange={e => setCity(e.target.value)}
         >
@@ -120,22 +114,27 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch }) => {
             <option key={city} value={city}>{city}</option>
           ))}
         </select>
+        
         {/* Search Input */}
-        <div className="relative w-full md:flex-1">
+        <div className="relative w-full lg:col-span-2">
           <input
             type="text"
-            className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-sm bg-white"
+            className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white"
             placeholder="Search by Project, Locality, or Builder"
             value={query}
             onChange={e => setQuery(e.target.value)}
           />
-          <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
-            <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+          <span className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+            <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" className="sm:w-[18px] sm:h-[18px]">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
           </span>
         </div>
+        
         {/* Budget Dropdown */}
         <select
-          className="w-full md:w-32 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-sm bg-white"
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-32"
           value={budget}
           onChange={e => setBudget(e.target.value)}
         >
@@ -143,19 +142,22 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch }) => {
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
+        
         {/* Property Type Dropdown */}
         <select
-          className="w-full md:w-36 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-sm bg-white"
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-36"
           value={propertyType}
           onChange={e => setPropertyType(e.target.value)}
         >
-          {propertyTypeOptions.map(opt => (
-            <option key={opt} value={opt}>{opt}</option>
+          <option value="Any">Any</option>
+          {propertyTypes.map(type => (
+            <option key={type._id} value={type.typeName}>{type.typeName}</option>
           ))}
         </select>
+        
         {/* Possession Status Dropdown */}
         <select
-          className="w-full md:w-40 px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-sm bg-white"
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-40"
           value={possession}
           onChange={e => setPossession(e.target.value)}
         >
@@ -163,9 +165,10 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch }) => {
             <option key={opt} value={opt}>{opt}</option>
           ))}
         </select>
+        
         {/* Search Button */}
         <button
-          className="w-full md:w-auto px-3 py-2 md:px-8 md:py-2 rounded-lg bg-[var(--color-purple-600)] text-white font-bold text-sm md:text-base hover:bg-[var(--color-purple-700)] transition-all duration-200 shadow-md order-last md:order-none"
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-[var(--color-purple-600)] text-white font-bold text-xs sm:text-sm hover:bg-[var(--color-purple-700)] transition-all duration-200 shadow-md lg:px-6"
           onClick={handleSearch}
         >
           Search

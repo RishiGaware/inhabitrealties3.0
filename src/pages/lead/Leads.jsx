@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Loader from '../../components/common/Loader';
 import { fetchLeadStatuses } from '../../services/leadmanagement/leadStatusService';
 import { fetchFollowUpStatuses } from '../../services/leadmanagement/followUpStatusService';
-import { fetchUsers } from '../../services/usermanagement/userService';
+import { fetchUsers, fetchUsersByRole } from '../../services/usermanagement/userService';
 import { fetchProperties, fetchPropertiesWithParams } from '../../services/propertyService';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
@@ -54,6 +54,7 @@ const Leads = () => {
   const [leadStatusOptions, setLeadStatusOptions] = useState([]);
   const [followUpStatusOptions, setFollowUpStatusOptions] = useState([]);
   const [userOptions, setUserOptions] = useState([]);
+  const [salespersonOptions, setSalespersonOptions] = useState([]);
   const [propertyOptions, setPropertyOptions] = useState([]);
 
   // Filter state
@@ -89,6 +90,28 @@ const Leads = () => {
     fetchLeadStatuses().then(res => setLeadStatusOptions(res.data || []));
     fetchFollowUpStatuses().then(res => setFollowUpStatusOptions(res.data || []));
     fetchUsers().then(res => setUserOptions(res.data || []));
+    
+    // Fetch salespersons specifically for the Assigned To dropdown
+    const fetchSalespersons = async () => {
+      try {
+        // Try to fetch users with SALES role first
+        let response = await fetchUsersByRole('SALES');
+        let salespersons = response.data || [];
+        
+        // If no SALES users found, try SALLER role (typo for SELLER)
+        if (salespersons.length === 0) {
+          response = await fetchUsersByRole('SALLER');
+          salespersons = response.data || [];
+        }
+        
+        setSalespersonOptions(salespersons);
+      } catch (error) {
+        console.error('Error fetching salespersons:', error);
+        // Fallback to empty array if salesperson fetch fails
+        setSalespersonOptions([]);
+      }
+    };
+    fetchSalespersons();
     
     // Fetch properties for the Interested Property dropdown
     const fetchPropertyOptions = async () => {
@@ -925,10 +948,10 @@ const Leads = () => {
           />
           <SearchableSelect
             label="Designation"
-            options={[{ label: 'Buyer', value: 'Buyer' }, { label: 'Seller', value: 'Seller' }]}
+            options={[{ label: 'Buyer', value: 'Buyer' }, { label: 'Seller', value: 'Seller' }, { label: 'Tenant', value: 'Tenant' }]}
             value={formData.leadDesignation}
             onChange={val => setFormData(f => ({ ...f, leadDesignation: val }))}
-            placeholder="Select Designation"
+            placeholder="Select Designation" Text
             isRequired
           />
             <SearchableSelect
@@ -992,10 +1015,10 @@ const Leads = () => {
           </Box>
             <SearchableSelect
             label="Assigned To (Optional)"
-              options={userOptions.map(u => ({ label: `${u.firstName} ${u.lastName} (${u.email})`, value: u._id }))}
+              options={salespersonOptions.map(u => ({ label: `${u.firstName} ${u.lastName} (${u.email})`, value: u._id }))}
               value={formData.assignedToUserId}
               onChange={val => setFormData(f => ({ ...f, assignedToUserId: val }))}
-              placeholder="Select User"
+              placeholder="Select Salesperson"
             />
 
           {/* Additional Information */}

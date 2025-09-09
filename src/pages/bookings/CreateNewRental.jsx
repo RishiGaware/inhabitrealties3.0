@@ -134,8 +134,10 @@ const CreateNewRental = () => {
         console.log('Filtered salespersons:', salespersonsData);
       }
 
-      // Use only real data from backend
-      const publishedProperties = propertiesData.data?.filter((prop) => prop.published) || [];
+      // Use only real data from backend - filter for published properties with FOR RENT status
+      const publishedProperties = propertiesData.data?.filter((prop) => 
+        prop.published && prop.propertyStatus === "FOR RENT"
+      ) || [];
       const publishedCustomers = customersData.data || [];
       const publishedSalespersons = salespersonsData.data || [];
 
@@ -147,7 +149,7 @@ const CreateNewRental = () => {
 
       // Check if we have the minimum required data
       if (publishedProperties.length === 0) {
-        toast.error("No properties available. Please add properties first.");
+        toast.error("No properties available for rent. Please add properties with 'FOR RENT' status first.");
         return;
       }
 
@@ -393,7 +395,7 @@ const CreateNewRental = () => {
             Required Data Not Available
           </Text>
           <Text color="gray.600">
-            {properties.length === 0 && "• No properties available"}
+            {properties.length === 0 && "• No properties available for rent"}
           </Text>
           <Text color="gray.600">
             {customers.length === 0 && "• No customers available"}
@@ -402,7 +404,7 @@ const CreateNewRental = () => {
             {salespersons.length === 0 && "• No salespersons available"}
           </Text>
           <Text color="gray.500" fontSize="sm">
-            Please ensure you have properties, customers, and salespersons in your system before creating rental bookings.
+            Please ensure you have properties with 'FOR RENT' status, customers, and salespersons in your system before creating rental bookings.
           </Text>
           <Button
             colorScheme="blue"
@@ -458,7 +460,7 @@ const CreateNewRental = () => {
                   isRequired={true}
                 />
                 <FormHelperText>
-                  Search and select from available properties
+                  Search and select from available properties for rent
                 </FormHelperText>
                 {!formData.propertyId && (
                   <Text color="red.500" fontSize="sm" mt={1}>
@@ -743,7 +745,7 @@ const CreateNewRental = () => {
                         handleInputChange("maintenanceCharges", value)
                       }
                       min={0}
-                      isDisabled={isSubmitting}
+                          isDisabled={isSubmitting}
                       size="md"
                     >
                       <NumberInputField placeholder="Enter maintenance charges" />
@@ -764,7 +766,7 @@ const CreateNewRental = () => {
                         handleInputChange("advanceRent", value)
                       }
                       min={0}
-                      isDisabled={isSubmitting}
+                          isDisabled={isSubmitting}
                       size="md"
                     >
                       <NumberInputField placeholder="Enter advance rent months" />
@@ -825,8 +827,8 @@ const CreateNewRental = () => {
                 title="Rental Documents (PDF Only)"
                 description="Upload PDF documents like rental agreements, contracts, ID proof, address proof, income proof, bank statements, or other supporting documents. Only PDF files are accepted."
               />
-            </CardBody>
-          </Card>
+              </CardBody>
+            </Card>
 
           {/* Submit Button */}
           <Box textAlign="center" pt={4}>
@@ -860,9 +862,9 @@ const CreateNewRental = () => {
         <ModalContent mx={{ base: 2, sm: 0 }} maxH={{ base: "100vh", sm: "90vh" }} overflow="hidden">
           <ModalHeader bg="green.500" color="white" borderRadius="lg">
             <HStack justify="space-between" w="full">
-              <HStack>
-                <FiCheckCircle />
-                <Text>Rental Booking Created Successfully! 🎉</Text>
+            <HStack>
+              <FiCheckCircle />
+              <Text>Rental Booking Created Successfully! 🎉</Text>
               </HStack>
               <Button
                 variant="ghost"
@@ -940,13 +942,13 @@ const CreateNewRental = () => {
                           <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Rent Due Date:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
                             {createdRental.rentDueDate}th of each month
-                          </Text>
+              </Text>
                         </HStack>
                         <HStack justify="space-between" p={3} bg="yellow.50" borderRadius="md">
                           <Text fontWeight="semibold" fontSize={{ base: 'sm', md: 'md' }}>Created Date:</Text>
                           <Text fontSize={{ base: 'sm', md: 'md' }} fontWeight="medium">
                             {new Date(createdRental.createdAt).toLocaleDateString()}
-                          </Text>
+              </Text>
                         </HStack>
                       </SimpleGrid>
 
@@ -954,7 +956,7 @@ const CreateNewRental = () => {
                         <Box>
                           <Text fontWeight="semibold" mb={3} fontSize={{ base: 'md', md: 'lg' }} color="gray.700">
                             💰 Additional Charges
-                          </Text>
+              </Text>
                           <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={3}>
                             {createdRental.maintenanceCharges > 0 && (
                               <HStack justify="space-between" p={3} bg="green.50" borderRadius="md">
@@ -969,7 +971,7 @@ const CreateNewRental = () => {
                               </HStack>
                             )}
                           </SimpleGrid>
-                        </Box>
+            </Box>
                       )}
 
                       {/* Uploaded Documents Information */}
@@ -1032,7 +1034,7 @@ const CreateNewRental = () => {
               // onClick={handleSuccessModalClose}
               size="md"
               leftIcon={<FiCheckCircle />}
-            > 
+            >
               Created Successfully
             </Button>
           </ModalFooter>

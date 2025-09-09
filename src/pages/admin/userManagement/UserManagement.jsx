@@ -57,6 +57,8 @@ const UserManagement = () => {
   const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Get user context
   const userContext = useUserContext();
@@ -149,6 +151,8 @@ const UserManagement = () => {
     });
     setOriginalFormData(null);
     setErrors({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     onOpen();
   };
 
@@ -165,6 +169,8 @@ const UserManagement = () => {
     setFormData(data);
     setOriginalFormData(data);
     setErrors({});
+    setShowPassword(false);
+    setShowConfirmPassword(false);
     onOpen();
   };
 
@@ -325,6 +331,14 @@ const UserManagement = () => {
     if (errors.role) {
       setErrors({ ...errors, role: '' });
     }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  const toggleConfirmPasswordVisibility = () => {
+    setShowConfirmPassword(!showConfirmPassword);
   };
 
   const handlePageChange = (newPage) => {
@@ -514,6 +528,8 @@ const UserManagement = () => {
           });
           setOriginalFormData(null);
           setErrors({});
+          setShowPassword(false);
+          setShowConfirmPassword(false);
         }}
         title={selectedUser ? 'Edit User' : 'Add New User'}
         onSave={handleFormSubmit}
@@ -598,6 +614,8 @@ const UserManagement = () => {
                   onChange={handleInputChange} 
                   error={errors.password} 
                   required={true}
+                  showPassword={showPassword}
+                  onTogglePassword={togglePasswordVisibility}
                 />
               </FormControl>
               <FormControl isInvalid={!!errors.confirmPassword}>
@@ -610,6 +628,8 @@ const UserManagement = () => {
                   onChange={handleInputChange} 
                   error={errors.confirmPassword} 
                   required={true}
+                  showPassword={showConfirmPassword}
+                  onTogglePassword={toggleConfirmPasswordVisibility}
                 />
               </FormControl>
             </>
@@ -623,6 +643,8 @@ const UserManagement = () => {
                 value={formData.password || ''} 
                 onChange={handleInputChange} 
                 placeholder=""
+                showPassword={showPassword}
+                onTogglePassword={togglePasswordVisibility}
               />
             </FormControl>
           )}

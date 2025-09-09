@@ -257,28 +257,28 @@ const RoleManagement = () => {
     }
   ];
 
-  const renderRowActions = (role) => (
-    <HStack spacing={2}>
-      <IconButton
-        key="edit"
-        aria-label="Edit role"
-        icon={<EditIcon />}
-        size="sm"
-        onClick={() => handleEdit(role)}
-        colorScheme="brand"
-        variant="outline"
-      />
-      <IconButton
-        key="delete"
-        aria-label="Delete role"
-        icon={<DeleteIcon />}
-        size="sm"
-        onClick={() => handleDelete(role)}
-        colorScheme="red"
-        variant="outline"
-      />
-    </HStack>
-  );
+  // const renderRowActions = (role) => (
+  //   <HStack spacing={2}>
+  //     <IconButton
+  //       key="edit"
+  //       aria-label="Edit role"
+  //       icon={<EditIcon />}
+  //       size="sm"
+  //       onClick={() => handleEdit(role)}
+  //       colorScheme="brand"
+  //       variant="outline"
+  //     />
+  //     <IconButton
+  //       key="delete"
+  //       aria-label="Delete role"
+  //       icon={<DeleteIcon />}
+  //       size="sm"
+  //       onClick={() => handleDelete(role)}
+  //       colorScheme="red"
+  //       variant="outline"
+  //     />
+  //   </HStack>
+  // );
 
 
   return (
@@ -314,7 +314,7 @@ const RoleManagement = () => {
             (currentPage - 1) * pageSize,
             currentPage * pageSize
           )}
-          rowActions={renderRowActions}
+          // rowActions={renderRowActions}
           emptyStateMessage={!loading ? "No roles match your search." : undefined}
         />
         <CommonPagination

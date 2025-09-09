@@ -18,14 +18,12 @@ import {
   Image,
   Badge,
 } from '@chakra-ui/react';
-import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
-import { FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { SearchIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import CommonTable from '../../../components/common/Table/CommonTable';
 import CommonPagination from '../../../components/common/pagination/CommonPagination';
 import TableContainer from '../../../components/common/Table/TableContainer';
 import FloatingInput from '../../../components/common/FloatingInput';
 import FormModal from '../../../components/common/FormModal';
-import SearchAndFilter from '../../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 import { usePropertyTypeContext } from '../../../context/PropertyTypeContext';
 import Loader from '../../../components/common/Loader';
@@ -341,20 +339,26 @@ const PropertyTypes = () => {
         <CommonAddButton onClick={handleAddNew} />
       </Flex>
 
-      {/* Search and Filter Section */}
-      <SearchAndFilter
-        searchTerm={searchTerm}
-        onSearchChange={handleSearch}
-        onSearchSubmit={() => {}} // No API search needed for this page
-        searchPlaceholder="Search property types..."
-        filters={{}}
-        onFilterChange={() => {}}
-        onApplyFilters={() => {}}
-        onClearFilters={() => {}}
-        filterOptions={{}}
-        title="Filter Property Types"
-        activeFiltersCount={0}
-      />
+      {/* Simple Search Section */}
+      <Box mb={6}>
+        <InputGroup maxW="400px">
+          <InputLeftElement pointerEvents="none">
+            <SearchIcon color="gray.300" />
+          </InputLeftElement>
+          <Input
+            placeholder="Search property types..."
+            value={searchTerm}
+            onChange={handleSearch}
+            bg="white"
+            borderColor="gray.300"
+            _hover={{ borderColor: "gray.400" }}
+            _focus={{
+              borderColor: "brand.500",
+              boxShadow: "0 0 0 1px var(--chakra-colors-brand-500)"
+            }}
+          />
+        </InputGroup>
+      </Box>
 
       <TableContainer>
         <CommonTable

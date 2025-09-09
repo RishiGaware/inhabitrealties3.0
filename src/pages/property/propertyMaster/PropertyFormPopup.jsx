@@ -114,11 +114,43 @@ const PropertyFormPopup = ({
   useEffect(() => {
     if (isOpen && !hasInitialized) {
     if (initialData) {
-      setFormData({
-          ...initialData,
-          listedDate: initialData.listedDate || dayjs().format('YYYY-MM-DD'),
+      // Format the initial data properly for editing
+      const formattedData = {
+        name: initialData.name || '',
+        // Handle propertyTypeId - it might be an object from populated data or just an ID
+        propertyTypeId: typeof initialData.propertyTypeId === 'object' && initialData.propertyTypeId?._id 
+          ? initialData.propertyTypeId._id 
+          : initialData.propertyTypeId || '',
+        description: initialData.description || '',
+        propertyAddress: {
+          street: initialData.propertyAddress?.street || '',
+          area: initialData.propertyAddress?.area || '',
+          city: initialData.propertyAddress?.city || '',
+          state: initialData.propertyAddress?.state || '',
+          zipOrPinCode: initialData.propertyAddress?.zipOrPinCode || '',
+          country: initialData.propertyAddress?.country || '',
+          location: { 
+            lat: initialData.propertyAddress?.location?.lat || '', 
+            lng: initialData.propertyAddress?.location?.lng || '' 
+          }
+        },
+        // Handle owner - it might be an object from populated data or just an ID
+        owner: typeof initialData.owner === 'object' && initialData.owner?._id 
+          ? initialData.owner._id 
+          : initialData.owner || '',
+        price: initialData.price || '',
+        propertyStatus: initialData.propertyStatus || 'FOR SALE',
+        features: {
+          bedRooms: initialData.features?.bedRooms || '',
+          bathRooms: initialData.features?.bathRooms || '',
+          areaInSquarFoot: initialData.features?.areaInSquarFoot || '',
+          amenities: initialData.features?.amenities || []
+        },
+        listedDate: initialData.listedDate ? dayjs(initialData.listedDate).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
         published: initialData.published !== undefined ? initialData.published : true
-      });
+      };
+      
+      setFormData(formattedData);
     } else {
       setFormData({
         name: '',

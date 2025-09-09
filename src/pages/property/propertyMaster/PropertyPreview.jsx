@@ -16,8 +16,10 @@ import {
 import { 
   fetchPropertyImages, 
   uploadPropertyImage, 
+  uploadPropertyImageV2,
   deletePropertyImage 
 } from '../../../services/propertyService';
+import { submitContactUs } from '../../../services/homeservices/homeService';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
 
@@ -36,7 +38,7 @@ const floatingButtonStyle = {
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
 };
 
-const PropertyPreview = ({ isOpen, onClose, property }) => {
+const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
   const [propertyImages, setPropertyImages] = useState([]);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -46,6 +48,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [imageToDelete, setImageToDelete] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [contactLoading, setContactLoading] = useState(false);
   const fileInputRef = useRef();
 
   // Color mode values
@@ -107,10 +110,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
         });
       }, 100);
 
-      const formData = new FormData();
-      formData.append('image', file);
-
-      const response = await uploadPropertyImage(property._id, formData);
+      const response = await uploadPropertyImageV2(property._id, file);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -120,6 +120,11 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
       setCurrentImageIndex(propertyImages.length); // Show the new image
       
       showSuccessToast('Image uploaded successfully');
+      
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error('Failed to upload image:', error);
       showErrorToast('Failed to upload image');
@@ -206,25 +211,80 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
     }
   };
 
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  const handleContactAgent = async () => {
+    try {
+      // Get user data from localStorage
+      const authData = localStorage.getItem('auth');
+      if (!authData) {
+        showErrorToast('Please login to contact agent');
+        return;
+      }
+
+      const parsedAuth = JSON.parse(authData);
+      const userData = parsedAuth.data;
+
+      if (!userData.firstName || !userData.lastName || !userData.email || !userData.phoneNumber) {
+        showErrorToast('User information incomplete. Please update your profile.');
+        return;
+      }
+
+      setContactLoading(true);
+
+      // Prepare contact message
+      const message = `Hi,\n\nI'm interested in the property: ${property.name}\n\nProperty Details:\n- Price: ${formatPrice(property.price)}\n- Address: ${property.propertyAddress?.street}, ${property.propertyAddress?.area}, ${property.propertyAddress?.city}\n\nPlease provide more information about this property.\n\nThank you!`;
+
+      // Submit contact request
+      await submitContactUs({
+        name: `${userData.firstName} ${userData.lastName}`,
+        email: userData.email,
+        phone: userData.phoneNumber,
+        description: message
+      });
+
+      showSuccessToast('Contact request sent successfully!');
+    } catch (error) {
+      console.error('Error sending contact request:', error);
+      showErrorToast('Failed to send contact request. Please try again.');
+    } finally {
+      setContactLoading(false);
+    }
+  };
+
+  // Reset fullscreen when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setIsFullscreen(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen || !property) return null;
 
   const currentImage = propertyImages[currentImageIndex] || null;
   const hasImages = propertyImages.length > 0;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", sm: "full", md: "7xl" }} isCentered>
+    <Modal 
+      isOpen={isOpen} 
+      onClose={onClose} 
+      size={isFullscreen ? "full" : { base: "full", sm: "full", md: "7xl" }} 
+      isCentered={!isFullscreen}
+    >
       <ModalOverlay bg="blackAlpha.700" backdropFilter="blur(12px)" />
       <ModalContent
-        maxW={{ base: "100vw", sm: "100vw", md: "98vw", lg: "95vw", xl: "90vw" }}
-        maxH={{ base: "100vh", sm: "100vh", md: "98vh", lg: "95vh" }}
-        borderRadius={{ base: "0", sm: "0", md: "3xl" }}
+        maxW={isFullscreen ? "100vw" : { base: "100vw", sm: "100vw", md: "98vw", lg: "95vw", xl: "90vw" }}
+        maxH={isFullscreen ? "100vh" : { base: "100vh", sm: "100vh", md: "98vh", lg: "95vh" }}
+        borderRadius={isFullscreen ? "0" : { base: "0", sm: "0", md: "3xl" }}
         overflow="hidden"
         bg={bgColor}
-        boxShadow="0 25px 50px rgba(0, 0, 0, 0.25)"
-        mx={{ base: 0, sm: 0, md: 4 }}
-        my={{ base: 0, sm: 0, md: 4 }}
+        boxShadow={isFullscreen ? "none" : "0 25px 50px rgba(0, 0, 0, 0.25)"}
+        mx={isFullscreen ? 0 : { base: 0, sm: 0, md: 4 }}
+        my={isFullscreen ? 0 : { base: 0, sm: 0, md: 4 }}
         p={0}
-        border="1px solid"
+        border={isFullscreen ? "none" : "1px solid"}
         borderColor={borderColor}
       >
         <ModalCloseButton
@@ -357,33 +417,35 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                   top={4}
                   right={4}
                   spacing={2}
-                  zIndex={5}
+                  zIndex={15}
                 >
-                  <Tooltip label="Upload Image" placement="bottom">
-                    <IconButton
-                      icon={<FaUpload />}
-                      size="md"
-                      onClick={() => fileInputRef.current?.click()}
-                      aria-label="Upload image"
-                      bg="rgba(0,0,0,0.7)"
-                      color="white"
-                      _hover={{
-                        bg: "rgba(0,0,0,0.9)",
-                        transform: "scale(1.1)",
-                        boxShadow: "0 8px 24px rgba(0,0,0,0.4)"
-                      }}
-                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                      borderRadius="full"
-                      backdropFilter="blur(8px)"
-                      border="1px solid"
-                      borderColor="whiteAlpha.200"
-                    />
-                  </Tooltip>
+                  {!isViewOnly && (
+                    <Tooltip label="Upload Image" placement="bottom">
+                      <IconButton
+                        icon={<FaUpload />}
+                        size="md"
+                        onClick={() => fileInputRef.current?.click()}
+                        aria-label="Upload image"
+                        bg="rgba(0,0,0,0.7)"
+                        color="white"
+                        _hover={{
+                          bg: "rgba(0,0,0,0.9)",
+                          transform: "scale(1.1)",
+                          boxShadow: "0 8px 24px rgba(0,0,0,0.4)"
+                        }}
+                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                        borderRadius="full"
+                        backdropFilter="blur(8px)"
+                        border="1px solid"
+                        borderColor="whiteAlpha.200"
+                      />
+                    </Tooltip>
+                  )}
                   <Tooltip label="Fullscreen" placement="bottom">
                     <IconButton
                       icon={isFullscreen ? <FaCompress /> : <FaExpand />}
                       size="md"
-                      onClick={() => setIsFullscreen(!isFullscreen)}
+                      onClick={toggleFullscreen}
                       aria-label="Toggle fullscreen"
                       bg="rgba(0,0,0,0.7)"
                       color="white"
@@ -412,7 +474,7 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                         transform: "scale(1.1)",
                         boxShadow: "0 8px 24px rgba(0,0,0,0.4)"
                       }}
-       s               transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
                       borderRadius="full"
                       backdropFilter="blur(8px)"
                       border="1px solid"
@@ -451,21 +513,23 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     <FaMapMarkerAlt size={32} />
                   </Circle>
                   <Text color={subTextColor} fontSize="lg" fontWeight="medium">No images available</Text>
-                  <Button
-                    leftIcon={<FaUpload />}
-                    colorScheme="brand"
-                    variant="outline"
-                    size="md"
-                    onClick={() => fileInputRef.current?.click()}
-                    borderRadius="xl"
-                    _hover={{
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)"
-                    }}
-                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                  >
-                    Upload First Image
-                  </Button>
+                  {!isViewOnly && (
+                    <Button
+                      leftIcon={<FaUpload />}
+                      colorScheme="brand"
+                      variant="outline"
+                      size="md"
+                      onClick={() => fileInputRef.current?.click()}
+                      borderRadius="xl"
+                      _hover={{
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)"
+                      }}
+                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    >
+                      Upload First Image
+                    </Button>
+                  )}
                 </VStack>
               </Flex>
             )}
@@ -1037,55 +1101,28 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                     </VStack>
                   </Box>
                   
-                  {/* Enhanced Action Buttons - AdminMeetings Style */}
-                  <Box w="full" maxW="600px">
-                    <VStack spacing={{ base: 3, sm: 4 }} align="stretch">
-                      <Button
-                        leftIcon={<FaPhone />}
-                        colorScheme="brand"
-                        variant="solid"
-                        size={{ base: "md", sm: "lg" }}
-                        borderRadius="xl"
-                        fontWeight="bold"
-                        w="full"
-                        onClick={() => {
-                          const phoneNumber = property.agentPhone || '+1234567890';
-                          window.open(`tel:${phoneNumber}`, '_blank');
-                        }}
-                        _hover={{
-                          transform: "translateY(-3px) scale(1.02)",
-                          boxShadow: "0 12px 32px rgba(102, 126, 234, 0.4)"
-                        }}
-                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                      >
-                        Contact Agent
-                      </Button>
-                      <Button
-                        leftIcon={<FaEnvelope />}
-                        colorScheme="gray"
-                        variant="outline"
-                        size={{ base: "md", sm: "lg" }}
-                        borderRadius="xl"
-                        fontWeight="bold"
-                        w="full"
-                        onClick={() => {
-                          const subject = `Inquiry about ${property.name}`;
-                          const body = `Hi,\n\nI'm interested in the property: ${property.name}\n\nProperty Details:\n- Price: ${formatPrice(property.price)}\n- Address: ${property.propertyAddress?.street}, ${property.propertyAddress?.area}, ${property.propertyAddress?.city}\n\nPlease provide more information about this property.\n\nThank you!`;
-                          const email = property.agentEmail || 'info@inhabitrealties.com';
-                          window.open(`mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`, '_blank');
-                        }}
-                        _hover={{
-                          bg: "gray.50",
-                          borderColor: "gray.400",
-                          transform: "translateY(-3px) scale(1.02)",
-                          boxShadow: "0 8px 24px rgba(113, 128, 150, 0.3)"
-                        }}
-                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                      >
-                        Send Email
-                      </Button>
-                    </VStack>
-                  </Box>
+                {/* Enhanced Action Buttons - AdminMeetings Style */}
+                <Box w="full" maxW="600px">
+                  <Button
+                    leftIcon={<FaPhone />}
+                    colorScheme="brand"
+                    variant="solid"
+                    size={{ base: "md", sm: "lg" }}
+                    borderRadius="xl"
+                    fontWeight="bold"
+                    w="full"
+                    isLoading={contactLoading}
+                    loadingText="Sending Request..."
+                    onClick={handleContactAgent}
+                    _hover={{
+                      transform: "translateY(-3px) scale(1.02)",
+                      boxShadow: "0 12px 32px rgba(102, 126, 234, 0.4)"
+                    }}
+                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  >
+                    Contact Agent
+                  </Button>
+                </Box>
                 </VStack>
               </Box>
 
@@ -1094,21 +1131,23 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                 <Box>
                   <Flex justify="space-between" align="center" mb={{ base: 4, sm: 6 }}>
                     <Heading size={{ base: "md", sm: "lg" }} color={textColor}>Gallery</Heading>
-                    <Button
-                      leftIcon={<FaUpload />}
-                      size={{ base: "sm", sm: "md" }}
-                      variant="outline"
-                      colorScheme="brand"
-                      onClick={() => fileInputRef.current?.click()}
-                      borderRadius="xl"
-                      _hover={{
-                        transform: "translateY(-2px)",
-                        boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)"
-                      }}
-                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                    >
-                      Add Image
-                    </Button>
+                    {!isViewOnly && (
+                      <Button
+                        leftIcon={<FaUpload />}
+                        size={{ base: "sm", sm: "md" }}
+                        variant="outline"
+                        colorScheme="brand"
+                        onClick={() => fileInputRef.current?.click()}
+                        borderRadius="xl"
+                        _hover={{
+                          transform: "translateY(-2px)",
+                          boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)"
+                        }}
+                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                      >
+                        Add Image
+                      </Button>
+                    )}
                   </Flex>
                   <SimpleGrid columns={{ base: 3, sm: 4, md: 6, lg: 8 }} spacing={{ base: 2, sm: 3 }}>
                     {propertyImages.map((image, index) => (
@@ -1140,31 +1179,33 @@ const PropertyPreview = ({ isOpen, onClose, property }) => {
                             filter: 'brightness(1.1) contrast(1.1)'
                           }}
                         />
-                        <IconButton
-                          icon={<FaTrash />}
-                          size="sm"
-                          position="absolute"
-                          top={2}
-                          right={2}
-                          colorScheme="red"
-                          variant="solid"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteImage(image);
-                          }}
-                          opacity={0}
-                          transition="opacity 0.3s"
-                          zIndex={10}
-                          bg="red.500"
-                          color="white"
-                          borderRadius="full"
-                          _hover={{
-                            opacity: 1,
-                            bg: "red.600",
-                            transform: "scale(1.1)"
-                          }}
-                          boxShadow="0 4px 12px rgba(239, 68, 68, 0.4)"
-                        />
+                        {!isViewOnly && (
+                          <IconButton
+                            icon={<FaTrash />}
+                            size="sm"
+                            position="absolute"
+                            top={2}
+                            right={2}
+                            colorScheme="red"
+                            variant="solid"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteImage(image);
+                            }}
+                            opacity={0}
+                            transition="opacity 0.3s"
+                            zIndex={10}
+                            bg="red.500"
+                            color="white"
+                            borderRadius="full"
+                            _hover={{
+                              opacity: 1,
+                              bg: "red.600",
+                              transform: "scale(1.1)"
+                            }}
+                            boxShadow="0 4px 12px rgba(239, 68, 68, 0.4)"
+                          />
+                        )}
                         {/* Selection Indicator */}
                         {currentImageIndex === index && (
                           <Box

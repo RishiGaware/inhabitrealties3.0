@@ -234,7 +234,7 @@ const MyBookings = () => {
   };
 
   const columns = [
-    {
+    { 
       key: 'bookingId',
       label: 'Booking ID',
       render: (value, row) => (
@@ -244,7 +244,7 @@ const MyBookings = () => {
       ),
       width: "150px"
     },
-    {
+    { 
       key: 'bookingType',
       label: 'Type',
       render: (value) => (
@@ -259,13 +259,13 @@ const MyBookings = () => {
             variant="subtle" 
             fontSize="xs"
           >
-            {value}
+          {value}
           </Badge>
         </Flex>
       ),
       width: "100px"
     },
-    {
+    { 
       key: 'propertyName',
       label: 'Property',
       render: (_, row) => (
@@ -290,7 +290,7 @@ const MyBookings = () => {
           </Text>
           <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="120px">
             {row.customerId?.email || 'N/A'}
-          </Text>
+        </Text>
         </VStack>
       ),
       width: "150px"
@@ -507,11 +507,11 @@ const MyBookings = () => {
           </Box>
         ) : (
           <TableContainer>
-            <CommonTable
-              columns={columns}
+        <CommonTable
+          columns={columns}
               data={filteredBookings}
-              rowActions={renderRowActions}
-            />
+          rowActions={renderRowActions}
+        />
             <CommonPagination
               currentPage={currentPage}
               totalPages={Math.ceil(filteredBookings.length / pageSize)}

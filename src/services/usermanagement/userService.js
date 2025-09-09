@@ -1,5 +1,5 @@
 import api from '../api';
-import { USER_ENDPOINTS } from '../apiEndpoints';
+import { USER_ENDPOINTS, ROLE_ENDPOINTS } from '../apiEndpoints';
 
 // Fetch all users
 export const fetchUsers = async () => {
@@ -90,6 +90,57 @@ export const fetchUsersWithParams = async (params) => {
     return response.data;
   } catch (error) {
     console.error('userService: Fetch users with params error:', error);
+    console.error('userService: Error details:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    });
+    throw error;
+  }
+};
+
+// Fetch users by role (e.g., salespersons)
+export const fetchUsersByRole = async (roleName) => {
+  try {
+    // First get all users
+    const allUsersResponse = await api.get(USER_ENDPOINTS.GET_ALL);
+    const allUsers = allUsersResponse.data.data || [];
+    
+    // Get all roles to find the role ID for the given role name
+    const rolesResponse = await api.get(ROLE_ENDPOINTS.GET_ALL);
+    const allRoles = rolesResponse.data.data || [];
+    
+    // Find the role ID for the given role name
+    const targetRole = allRoles.find(role => role.name === roleName);
+    if (!targetRole) {
+      console.warn(`Role '${roleName}' not found`);
+      return {
+        success: true,
+        data: [],
+        count: 0
+      };
+    }
+    
+    // Filter users by role ID
+    const filteredUsers = allUsers.filter(user => {
+      // Handle both populated and non-populated role fields
+      if (typeof user.role === 'object' && user.role !== null) {
+        // If role is populated, check by name
+        return user.role.name === roleName;
+      } else if (typeof user.role === 'string') {
+        // If role is ObjectId string, check by ID
+        return user.role === targetRole._id;
+      }
+      return false;
+    });
+    
+    return {
+      success: true,
+      data: filteredUsers,
+      count: filteredUsers.length
+    };
+  } catch (error) {
+    console.error('userService: Fetch users by role error:', error);
     console.error('userService: Error details:', {
       message: error?.message,
       status: error?.response?.status,

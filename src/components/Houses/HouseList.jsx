@@ -1,9 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import HouseItem from './HouseItem';
 import Loader from '../common/Loader';
 import PropertySearchBar from '../Search/PropertySearchBar';
 import { FaHome, FaMapMarkerAlt, FaRupeeSign, FaBuilding, FaCheckCircle, FaRegCalendarAlt, FaDoorOpen, FaTag } from 'react-icons/fa';
+import { fetchHomeProperties } from '../../services/propertyService';
+import { getAllPropertyTypes } from '../../services/propertyTypeService';
 
 const staticHouses = [
   {
@@ -448,8 +450,10 @@ function HousePreviewModal({ property, onClose }) {
 }
 
 const HouseList = () => {
-  const houses = staticHouses;
-  const isLoading = false;
+  const [houses, setHouses] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [propertyTypes, setPropertyTypes] = useState([]);
   const [filters, setFilters] = useState({
     tabIndex: 0,
     type: 'Buy',
@@ -460,6 +464,83 @@ const HouseList = () => {
     possession: 'Any',
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
+
+  // Fetch properties and property types from backend on component mount
+  useEffect(() => {
+    fetchProperties();
+    fetchPropertyTypes();
+  }, []);
+
+  const fetchPropertyTypes = async () => {
+    try {
+      const response = await getAllPropertyTypes();
+      setPropertyTypes(response.data || []);
+    } catch (err) {
+      console.error('Error fetching property types:', err);
+    }
+  };
+
+  const fetchProperties = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Map frontend filters to backend parameters
+      const backendFilters = {
+        propertyType: filters.propertyType,
+        budget: filters.budget,
+        possession: filters.possession,
+        city: filters.city,
+        query: filters.query,
+        propertyStatus: filters.type, // 'Buy' -> 'FOR SALE', 'Rental' -> 'FOR RENT'
+        limit: 20,
+        page: 1
+      };
+
+      const response = await fetchHomeProperties(backendFilters);
+      
+      // Transform backend data to match frontend format
+      const transformedHouses = response.data.map(property => ({
+        id: property._id,
+        name: property.name,
+        address: `${property.propertyAddress.street}, ${property.propertyAddress.city}`,
+        description: property.description,
+        city: property.propertyAddress.city,
+        type: property.propertyTypeId?.typeName || 'House',
+        price: property.price,
+        possessionStatus: getPossessionStatus(property.listedDate),
+        images: property.images || [],
+        listingType: property.propertyStatus === 'FOR SALE' ? 'Sale' : 
+                    property.propertyStatus === 'FOR RENT' ? 'Rent' : 'Sale',
+        bedrooms: property.features?.bedRooms || 0,
+        bathrooms: property.features?.bathRooms || 0,
+        area: property.features?.areaInSquarFoot || 0,
+        amenities: property.features?.amenities || []
+      }));
+      
+      setHouses(transformedHouses);
+    } catch (err) {
+      console.error('Error fetching properties:', err);
+      setError('Failed to load properties');
+      // Fallback to static data on error
+      setHouses(staticHouses);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Helper function to determine possession status based on listedDate
+  const getPossessionStatus = (listedDate) => {
+    if (!listedDate) return 'Ready to Move';
+    
+    const now = new Date();
+    const listed = new Date(listedDate);
+    const sixMonthsAgo = new Date(now.getTime() - (6 * 30 * 24 * 60 * 60 * 1000));
+    
+    if (listed <= now) return 'Ready to Move';
+    if (listed >= sixMonthsAgo) return 'New Launch';
+    return 'Under Construction';
+  };
 
   const filteredHouses = useMemo(() => {
     let filtered = houses;
@@ -502,44 +583,64 @@ const HouseList = () => {
 
   const handleSearchBarSearch = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
+    // Refetch properties with new filters
+    fetchProperties();
     const el = document.getElementById('featured-properties');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
+  // Refetch properties when filters change
+  useEffect(() => {
+    fetchProperties();
+  }, [filters.propertyType, filters.budget, filters.possession, filters.city, filters.query, filters.type]);
+
   if (isLoading) {
     return <Loader fullscreen={false} />;
   }
 
   return (
-    <div id="featured-properties" className="container mx-auto px-4 py-8">
-      <h2 className="text-2xl font-bold text-gray-800 mt-10 text-center w-full" style={{ fontFamily: "'Playfair Display', serif" }}>
+    <div id="featured-properties" className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
+      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-6 sm:mt-8 md:mt-10 text-center w-full px-4" style={{ fontFamily: "'Playfair Display', serif" }}>
         Featured Properties
       </h2>
-      <PropertySearchBar value={filters} onChange={handleSearchBarChange} onSearch={handleSearchBarSearch} />
-      <div className="mb-8">
-        <p className="text-center text-gray-600 text-base mt-2 mb-6 max-w-2xl mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <PropertySearchBar 
+        value={filters} 
+        onChange={handleSearchBarChange} 
+        onSearch={handleSearchBarSearch}
+        propertyTypes={propertyTypes}
+      />
+      <div className="mb-6 sm:mb-8">
+        <p className="text-center text-gray-600 text-sm sm:text-base mt-2 mb-4 sm:mb-6 max-w-2xl mx-auto px-4" style={{ fontFamily: "'Inter', sans-serif" }}>
               Here are some of our most popular properties. Use the filters above to find your perfect match.
             </p>
           </div>
+      
+      {error && (
+        <div className="text-center py-4 mb-6">
+          <p className="text-red-600 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+            {error}
+          </p>
+        </div>
+      )}
       {filteredHouses.length === 0 ? (
-        <div className="text-center py-16">
-          <h3 className="text-xl font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+        <div className="text-center py-12 sm:py-16 px-4">
+          <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
             No Properties Found
           </h3>
-          <p className="text-sm text-gray-500 mb-6" style={{ fontFamily: "'Inter', sans-serif" }}>
+          <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
             Try adjusting your search criteria or clear some filters.
           </p>
           <button
             onClick={() => setFilters({ tabIndex: 0, type: 'Buy', city: '', query: '', budget: 'Any', propertyType: 'Any', possession: 'Any' })}
-            className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
           >
             Clear Filters
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
           {filteredHouses.map((house) => (
             <button
               key={house.id}

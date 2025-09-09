@@ -27,7 +27,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         title: "Admin",
         icon: <FaUsers />, 
         gap: true,
-        subMenu: ["User Management", "Role Management", "Meeting Status Management", "Reports"],
+        subMenu: ["User Management", "Role Management", "Meeting Status Management"],
         key: "admin"
       },
       
@@ -134,7 +134,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         title: "Client Portal", 
         icon: <MdPerson />,
         subMenu: [
-          "My Bookings",
+          // "My Bookings",
           "My Meetings",
           "Payments",
           // "Referrals"

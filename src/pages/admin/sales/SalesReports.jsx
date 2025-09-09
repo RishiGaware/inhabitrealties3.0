@@ -167,14 +167,7 @@ const SalesReports = () => {
           >
             Export PDF
           </Button>
-          <Button
-            leftIcon={<FiDownload />}
-            onClick={() => handleExport('csv')}
-            variant="outline"
-            colorScheme="brand"
-          >
-            Export CSV
-          </Button>
+          
         </HStack>
       </HStack>
 

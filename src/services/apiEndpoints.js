@@ -61,10 +61,12 @@ export const LEADS_ENDPOINTS = {
 export const PROPERTY_ENDPOINTS = {
   CREATE: '/property/create',
   GET_ALL: '/property/',
+  GET_HOME: '/property/home', // New endpoint for home page with filters
   GET_WITH_PARAMS: '/property/withparams',
   EDIT: (id) => `/property/edit/${id}`,
   DELETE: (id) => `/property/delete/${id}`,
   UPLOAD_IMAGE: (id) => `/property/image/create/${id}`,
+  UPLOAD_IMAGE_V2: (id) => `/property/image/upload/${id}`,
   GET_IMAGES: (id) => `/property/images/all/${id}`,
   DELETE_IMAGE: (id) => `/property/image/delete/${id}`,
   DELETE_ALL_IMAGES: (id) => `/property/image/delete/all/${id}`,
@@ -179,13 +181,4 @@ export const RENTAL_BOOKING_ENDPOINTS = {
   GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/rental-bookings/assigned/${salespersonId}`,
   GET_REPORTS_PENDING_RENTS: '/rental-bookings/reports/pending-rents',
   GET_REPORTS_OVERDUE_RENTS: '/rental-bookings/reports/overdue-rents',
-  
-  // Additional operations
-  CONFIRM: (id) => `/rental-bookings/confirm/${id}`,
-  ADD_DOCUMENTS: (id) => `/rental-bookings/${id}/add-documents`,
-  DELETE_DOCUMENT: (id, documentId) => `/rental-bookings/${id}/documents/${documentId}`,
-  UPDATE_DOCUMENT: (id, documentId) => `/rental-bookings/${id}/documents/${documentId}`,
-  GET_DOCUMENT: (id, documentId) => `/rental-bookings/${id}/documents/${documentId}`,
-  GET_MY_BOOKINGS: (userId) => `/rental-bookings/my-bookings/${userId}`,
-  DELETE: (id) => `/rental-bookings/delete/${id}`,
 };

@@ -7,6 +7,21 @@ export const fetchProperties = async () => {
   return response.data;
 };
 
+// Fetch home properties with filters (public endpoint)
+export const fetchHomeProperties = async (filters = {}) => {
+  const queryParams = new URLSearchParams();
+  
+  // Add all filter parameters to query string
+  Object.keys(filters).forEach(key => {
+    if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+      queryParams.append(key, filters[key]);
+    }
+  });
+  
+  const response = await api.get(`${PROPERTY_ENDPOINTS.GET_HOME}?${queryParams.toString()}`);
+  return response.data;
+};
+
 // Fetch properties with filters
 export const fetchPropertiesWithParams = async (params) => {
   const response = await api.post(PROPERTY_ENDPOINTS.GET_WITH_PARAMS, params);
@@ -34,9 +49,18 @@ export const deleteProperty = async (id) => {
 // Upload property image (multipart/form-data)
 export const uploadPropertyImage = async (propertyId, imageFile) => {
   const formData = new FormData();
-  formData.append('propertyId', propertyId);
   formData.append('image', imageFile);
   const response = await api.post(PROPERTY_ENDPOINTS.UPLOAD_IMAGE(propertyId), formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+// Upload property image V2 with overwrite capability (multipart/form-data)
+export const uploadPropertyImageV2 = async (propertyId, imageFile) => {
+  const formData = new FormData();
+  formData.append('image', imageFile);
+  const response = await api.post(PROPERTY_ENDPOINTS.UPLOAD_IMAGE_V2(propertyId), formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
   return response.data;

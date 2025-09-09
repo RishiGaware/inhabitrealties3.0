@@ -16,6 +16,7 @@ import {
 import { 
   fetchPropertyImages, 
   uploadPropertyImage, 
+  uploadPropertyImageV2,
   deletePropertyImage 
 } from '../../../services/propertyService';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
@@ -97,7 +98,7 @@ const PropertyPreviewEnhanced = ({ isOpen, onClose, property }) => {
         });
       }, 100);
 
-      const response = await uploadPropertyImage(property._id, file);
+      const response = await uploadPropertyImageV2(property._id, file);
       
       clearInterval(progressInterval);
       setUploadProgress(100);
