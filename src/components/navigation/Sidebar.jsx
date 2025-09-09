@@ -18,6 +18,9 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   const getFilteredMenus = () => {
     const allMenus = [
       { title: "Dashboard", icon: <MdSpaceDashboard />, key: "dashboard" },
+      { title: "Executive Dashboard", icon: <MdSpaceDashboard />, key: "executive-dashboard" },
+      { title: "Sales Dashboard", icon: <MdSpaceDashboard />, key: "sales-dashboard" },
+      { title: "User Dashboard", icon: <MdSpaceDashboard />, key: "user-dashboard" },
       
       // Admin section (keep as is)
       {
@@ -152,6 +155,9 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
 
   const routeMap = {
     'dashboard': ROUTES.DASHBOARD,
+    'executive-dashboard': '/executive-dashboard',
+    'sales-dashboard': '/sales-dashboard',
+    'user-dashboard': '/user-dashboard',
     'admin': {
       'user-management': ROUTES.ADMIN_USER_MANAGEMENT,
       'role-management': ROUTES.ADMIN_ROLE_MANAGEMENT,

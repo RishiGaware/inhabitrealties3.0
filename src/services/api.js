@@ -16,10 +16,29 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const token = Cookies.get('AuthToken');
+    // Try to get token from cookies first
+    let token = Cookies.get('AuthToken');
+    
+    // If not found in cookies, try localStorage as fallback
+    if (!token) {
+      const authData = localStorage.getItem('auth');
+      if (authData) {
+        try {
+          const parsedAuth = JSON.parse(authData);
+          token = parsedAuth.token;
+        } catch (e) {
+          console.error('Error parsing auth data from localStorage:', e);
+        }
+      }
+    }
+    
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
+      console.log('API Request: Token found and added to headers');
+    } else {
+      console.log('API Request: No token found');
     }
+    
     return config;
   },
   (error) => {
@@ -32,6 +51,7 @@ api.interceptors.response.use(
   (error) => {
     if (error.response && error.response.status === 401) {
       Cookies.remove('AuthToken');
+      localStorage.removeItem('auth');
       window.location.href = '/login';
     }
     return Promise.reject(error);

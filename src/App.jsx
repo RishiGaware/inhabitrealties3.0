@@ -20,6 +20,9 @@ import Features from './pages/common/Features'
 import AboutUs from './pages/common/AboutUs'
 import Contact from './pages/common/Contact'
 import Dashboard from './pages/common/dashboard/Dashboard';
+import ExecutiveDashboard from './pages/common/dashboard/ExecutiveDashboard';
+import SalesDashboard from './pages/common/dashboard/SalesDashboard';
+import UserDashboard from './pages/common/dashboard/UserDashboard';
 import UserManagement from './pages/admin/userManagement/UserManagement';
 import RoleManagement from './pages/admin/roleManagement/RoleManagement';
 import DocumentTypeManagement from './pages/admin/documentTypeManagement/DocumentTypeManagement';
@@ -160,8 +163,11 @@ const App = () => {
             <Route path={ROUTES.CONTACT} element={<MainLayout><Contact /></MainLayout>} />
             <Route path={ROUTES.PROPERTY_DETAILS} element={<MainLayout><PropertyDetails /></MainLayout>} />
             
-            {/* Dashboard Route */}
+            {/* Dashboard Routes */}
             <Route path={ROUTES.DASHBOARD} element={<DashboardLayout><Dashboard /></DashboardLayout>} />
+            <Route path="/executive-dashboard" element={<DashboardLayout><ExecutiveDashboard /></DashboardLayout>} />
+            <Route path="/sales-dashboard" element={<DashboardLayout><SalesDashboard /></DashboardLayout>} />
+            <Route path="/user-dashboard" element={<DashboardLayout><UserDashboard /></DashboardLayout>} />
               
             {/* Admin Routes */}
             <Route path={ROUTES.ADMIN_USER_MANAGEMENT} element={<DashboardLayout><UserManagement /></DashboardLayout>} />

@@ -29,10 +29,29 @@ import {
   FaCalendarAlt,
   FaArrowUp,
   FaArrowDown,
+  FaArrowUp as FaTrendingUp,
+  FaArrowDown as FaTrendingDown,
+  FaPercentage,
+  FaClock,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaChartBar,
+  FaChartPie,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaEnvelope,
+  FaHandshake
 } from 'react-icons/fa';
 import { BiUserPlus } from 'react-icons/bi';
 import { MdInventory } from 'react-icons/md';
 import Loader from '../../../components/common/Loader';
+import { 
+  fetchDashboardOverview, 
+  fetchRecentActivities, 
+  fetchFinancialSummary,
+  fetchLeadConversionRates 
+} from '../../../services/dashboard/dashboardService';
+import { showErrorToast } from '../../../utils/toastUtils';
 
 // Animation variants
 const containerVariants = {
@@ -91,9 +110,17 @@ const Dashboard = () => {
     totalCustomers: 0,
     totalBookings: 0,
     totalRevenue: 0,
-    pendingPayments: 0
+    pendingPayments: 0,
+    soldProperties: 0,
+    unsoldProperties: 0,
+    activeLeads: 0,
+    averageRating: 0,
+    todaySchedules: 0,
+    tomorrowSchedules: 0
   });
   const [recentActivities, setRecentActivities] = useState([]);
+  const [conversionRate, setConversionRate] = useState(0);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   // Move all useColorModeValue hooks to the top level
@@ -108,67 +135,121 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       setLoading(true);
+      setError(null);
+
       try {
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        console.log('Fetching dashboard data...');
         
-        setStats({
-          totalProperties: 156,
-          totalLeads: 89,
-          totalCustomers: 234,
-          totalBookings: 67,
-          totalRevenue: 2845000,
-          pendingPayments: 12
+        // Check if user has a valid token
+        const token = localStorage.getItem('auth');
+        console.log('Auth data from localStorage:', token);
+        
+        if (!token) {
+          throw new Error('No authentication token found. Please log in again.');
+        }
+        
+        // Parse the auth data to get the token
+        let authData;
+        try {
+          authData = JSON.parse(token);
+          console.log('Parsed auth data:', authData);
+        } catch (e) {
+          console.error('Error parsing auth data:', e);
+          throw new Error('Invalid authentication data. Please log in again.');
+        }
+        
+        if (!authData.token) {
+          throw new Error('No token found in auth data. Please log in again.');
+        }
+        
+        console.log('Token found, making API calls...');
+        
+        // Fetch all dashboard data in parallel
+        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = await Promise.all([
+          fetchDashboardOverview(),
+          fetchRecentActivities(),
+          fetchFinancialSummary(),
+          fetchLeadConversionRates()
+        ]);
+
+        console.log('Dashboard API responses:', {
+          overview: overviewResponse,
+          activities: activitiesResponse,
+          financial: financialResponse,
+          conversion: conversionResponse
         });
 
-        setRecentActivities([
-          {
-            id: 1,
-            type: 'booking',
-            message: 'New booking received for Property #123',
-            time: '2 minutes ago',
-            icon: MdInventory,
-            color: 'blue',
-            status: 'success'
-          },
-          {
-            id: 2,
-            type: 'lead',
-            message: 'Lead qualified: John Doe',
-            time: '15 minutes ago',
-            icon: BiUserPlus,
-            color: 'green',
-            status: 'success'
-          },
-          {
-            id: 3,
-            type: 'payment',
-            message: 'Payment received: $25,000',
-            time: '1 hour ago',
-            icon: FaMoneyBillWave,
-            color: 'green',
-            status: 'success'
-          },
-          {
-            id: 4,
-            type: 'customer',
-            message: 'New customer registered: Sarah Wilson',
-            time: '2 hours ago',
-            icon: FaUsers,
-            color: 'purple',
+        // Update stats with real data
+        if (overviewResponse.statusCode === 200) {
+          const overviewData = overviewResponse.data;
+          setStats({
+            totalProperties: overviewData.totalProperties || 0,
+            totalLeads: overviewData.totalLeads || 0,
+            totalCustomers: overviewData.totalUsers || 0,
+            totalBookings: overviewData.soldProperties || 0,
+            totalRevenue: financialResponse.data?.totalRevenue || 0,
+            pendingPayments: overviewData.pendingFollowups || 0,
+            soldProperties: overviewData.soldProperties || 0,
+            unsoldProperties: overviewData.unsoldProperties || 0,
+            activeLeads: overviewData.activeLeads || 0,
+            averageRating: overviewData.averageRating || 0,
+            todaySchedules: overviewData.todaySchedules || 0,
+            tomorrowSchedules: overviewData.tomorrowSchedules || 0
+          });
+        }
+
+        // Update recent activities with real data
+        if (activitiesResponse.statusCode === 200) {
+          const activities = activitiesResponse.data.map((activity, index) => ({
+            id: index + 1,
+            type: activity.type,
+            message: activity.title,
+            time: new Date(activity.time).toLocaleString(),
+            icon: activity.type === 'property' ? FaBuilding : 
+                  activity.type === 'lead' ? BiUserPlus : 
+                  activity.type === 'booking' ? MdInventory : FaUsers,
+            color: activity.type === 'property' ? 'orange' :
+                   activity.type === 'lead' ? 'green' :
+                   activity.type === 'booking' ? 'blue' : 'purple',
             status: 'info'
-          },
-          {
-            id: 5,
-            type: 'property',
-            message: 'Property #456 listed for sale',
-            time: '3 hours ago',
-            icon: FaBuilding,
-            color: 'orange',
-            status: 'info'
-          }
-        ]);
+          }));
+          setRecentActivities(activities);
+        }
+
+        // Update conversion rate
+        if (conversionResponse.statusCode === 200) {
+          setConversionRate(Math.round(conversionResponse.data.conversionRate || 0));
+        }
+
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+          statusText: error.response?.statusText
+        });
+        
+        // If it's an authentication error, show login prompt
+        if (error.message.includes('token') || error.response?.status === 401) {
+          setError('Please log in to view dashboard data');
+          showErrorToast('Please log in to view dashboard data');
+        } else {
+          setError(`Failed to load dashboard data: ${error.message}`);
+          showErrorToast(`Failed to load dashboard data: ${error.message}`);
+        }
+        
+        // Set fallback data
+        setStats({
+          totalProperties: 0,
+          totalLeads: 0,
+          totalCustomers: 0,
+          totalBookings: 0,
+          totalRevenue: 0,
+          pendingPayments: 0
+        });
+        setRecentActivities([]);
+        setConversionRate(0);
       } finally {
         setLoading(false);
       }
@@ -415,7 +496,40 @@ const Dashboard = () => {
   };
 
   if (loading) {
-    return <Loader fullScreen text="Loading dashboard..." />;
+    return (
+      <Box bg={bgColor} minH="100vh" p={6} display="flex" alignItems="center" justifyContent="center">
+        <Loader size="xl" label="Loading dashboard..." />
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box bg={bgColor} minH="100vh" p={6}>
+        <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
+          <CardBody p={8} textAlign="center">
+            <Text color="red.500" fontSize="lg" mb={4}>
+              {error}
+            </Text>
+            {error.includes('log in') ? (
+              <Button 
+                colorScheme="blue" 
+                onClick={() => navigate('/login')}
+              >
+                Go to Login
+              </Button>
+            ) : (
+              <Button 
+                colorScheme="blue" 
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            )}
+          </CardBody>
+        </Card>
+      </Box>
+    );
   }
 
   return (
@@ -534,6 +648,75 @@ const Dashboard = () => {
               </GridItem>
             </Grid>
 
+          {/* Additional Metrics */}
+          <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' }} gap={6} mb={8}>
+            <GridItem>
+              <Text fontSize="xl" fontWeight="bold" color={textColor} mb={4}>
+                Property Status
+              </Text>
+              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                <StatCard
+                  title="Sold Properties"
+                  value={stats.soldProperties}
+                  icon={FaCheckCircle}
+                  change={25}
+                  gradient="linear(to-r, green.500, green.600)"
+                />
+                <StatCard
+                  title="Unsold Properties"
+                  value={stats.unsoldProperties}
+                  icon={FaExclamationTriangle}
+                  change={-5}
+                  gradient="linear(to-r, red.500, red.600)"
+                />
+              </Grid>
+            </GridItem>
+
+            <GridItem>
+              <Text fontSize="xl" fontWeight="bold" color={textColor} mb={4}>
+                Lead Analytics
+              </Text>
+              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                <StatCard
+                  title="Active Leads"
+                  value={stats.activeLeads}
+                  icon={FaClock}
+                  change={10}
+                  gradient="linear(to-r, blue.500, blue.600)"
+                />
+                <StatCard
+                  title="Conversion Rate"
+                  value={`${conversionRate}%`}
+                  icon={FaPercentage}
+                  change={8}
+                  gradient="linear(to-r, purple.500, purple.600)"
+                />
+              </Grid>
+            </GridItem>
+
+            <GridItem>
+              <Text fontSize="xl" fontWeight="bold" color={textColor} mb={4}>
+                Schedule Overview
+              </Text>
+              <Grid templateColumns="repeat(2, 1fr)" gap={4}>
+                <StatCard
+                  title="Today's Schedules"
+                  value={stats.todaySchedules}
+                  icon={FaCalendarAlt}
+                  change={15}
+                  gradient="linear(to-r, teal.500, teal.600)"
+                />
+                <StatCard
+                  title="Tomorrow's Schedules"
+                  value={stats.tomorrowSchedules}
+                  icon={FaCalendarAlt}
+                  change={8}
+                  gradient="linear(to-r, cyan.500, cyan.600)"
+                />
+              </Grid>
+            </GridItem>
+          </Grid>
+
       {/* Recent Activities and Quick Actions */}
             <Grid templateColumns={{ base: '1fr', lg: 'repeat(2, 1fr)' }} gap={6}>
         {/* Recent Activities */}
@@ -628,13 +811,13 @@ const Dashboard = () => {
                       </Box>
                       <VStack spacing={1}>
                         <Text fontSize="3xl" fontWeight="bold" color="green.600">
-                          89%
+                          {conversionRate}%
                         </Text>
                         <Text fontSize="sm" color={mutedTextColor} textAlign="center">
                           Lead Conversion Rate
                         </Text>
                       </VStack>
-                      <Progress value={89} colorScheme="green" size="sm" w="full" borderRadius="full" />
+                      <Progress value={conversionRate} colorScheme="green" size="sm" w="full" borderRadius="full" />
                     </VStack>
 
                     <VStack spacing={3}>
@@ -648,13 +831,13 @@ const Dashboard = () => {
                       </Box>
                       <VStack spacing={1}>
                         <Text fontSize="3xl" fontWeight="bold" color="blue.600">
-                          156
+                          {stats.totalProperties}
                         </Text>
                         <Text fontSize="sm" color={mutedTextColor} textAlign="center">
-                          Active Properties
+                          Total Properties
                         </Text>
                       </VStack>
-                      <Progress value={78} colorScheme="blue" size="sm" w="full" borderRadius="full" />
+                      <Progress value={Math.min((stats.totalProperties / 200) * 100, 100)} colorScheme="blue" size="sm" w="full" borderRadius="full" />
                     </VStack>
 
                     <VStack spacing={3}>
@@ -668,13 +851,13 @@ const Dashboard = () => {
                       </Box>
                       <VStack spacing={1}>
                         <Text fontSize="3xl" fontWeight="bold" color="purple.600">
-                          $2.8M
+                          {formatCurrency(stats.totalRevenue)}
                         </Text>
                         <Text fontSize="sm" color={mutedTextColor} textAlign="center">
-                          Monthly Revenue
+                          Total Revenue
                         </Text>
                       </VStack>
-                      <Progress value={92} colorScheme="purple" size="sm" w="full" borderRadius="full" />
+                      <Progress value={Math.min((stats.totalRevenue / 5000000) * 100, 100)} colorScheme="purple" size="sm" w="full" borderRadius="full" />
                     </VStack>
                   </SimpleGrid>
                 </CardBody>
