@@ -36,7 +36,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "documentManagement"
       },
       
-      // Property section (keep as is)
+      // Property section (kjhjkjkhjhjeep as is)
       {
         title: "Property",
         icon: <FaBuilding />,
