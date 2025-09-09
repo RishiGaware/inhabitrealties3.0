@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { BiUser, BiUserPlus } from "react-icons/bi";
-import { FaChevronDown, FaChevronRight, FaCog, FaUsers, FaMoneyBillWave, FaHandshake, FaBuilding, FaHome, FaChartBar, FaCalendarAlt } from "react-icons/fa";
+import { FaChevronDown, FaChevronRight, FaCog, FaUsers, FaMoneyBillWave, FaHandshake, FaBuilding, FaHome, FaChartBar, FaCalendarAlt, FaFileAlt } from "react-icons/fa";
 import { MdSpaceDashboard, MdInventory, MdPerson } from "react-icons/md";
 import { TbLayoutSidebarLeftCollapse, TbLayoutSidebarLeftExpand } from "react-icons/tb";
 import logown from '../../assets/images/logown.png'
@@ -24,8 +24,16 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         title: "Admin",
         icon: <FaUsers />, 
         gap: true,
-        subMenu: ["User Management", "Role Management", "Document Type Management", "Document Management", "Meeting Status Management", "Reports", "Salesperson Management"],
+        subMenu: ["User Management", "Role Management", "Meeting Status Management", "Reports"],
         key: "admin"
+      },
+      
+      // Document Management section
+      {
+        title: "Document Management",
+        icon: <FaFileAlt />,
+        subMenu: ["Document Type Management", "Document Management", "My Documents"],
+        key: "documentManagement"
       },
       
       // Property section (keep as is)
@@ -125,7 +133,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         subMenu: [
           "My Bookings",
           "My Meetings",
-          "Documents",
           "Payments",
           // "Referrals"
         ],
@@ -148,11 +155,14 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'admin': {
       'user-management': ROUTES.ADMIN_USER_MANAGEMENT,
       'role-management': ROUTES.ADMIN_ROLE_MANAGEMENT,
-      'document-type-management': ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT,
-      'document-management': ROUTES.ADMIN_DOCUMENT_MANAGEMENT,
       'meeting-status-management': ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT,
       'reports': ROUTES.ADMIN_REPORTS,
       'salesperson-management': ROUTES.ADMIN_SALESPERSON_MANAGEMENT
+    },
+    'documentManagement': {
+      'document-type-management': ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT,
+      'document-management': ROUTES.ADMIN_DOCUMENT_MANAGEMENT,
+      'my-documents': ROUTES.CLIENT_DOCUMENTS
     },
     'property': {
       'property-master': ROUTES.PROPERTY_MASTER,
@@ -216,7 +226,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'client': {
       'my-bookings': ROUTES.CLIENT_MY_BOOKINGS,
       'my-meetings': ROUTES.CLIENT_MY_MEETINGS,
-      'documents': ROUTES.CLIENT_DOCUMENTS,
       'payments': ROUTES.CLIENT_PAYMENTS,
       // 'referrals': ROUTES.CLIENT_REFERRALS
     },
