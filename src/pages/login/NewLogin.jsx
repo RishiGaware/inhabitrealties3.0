@@ -6,6 +6,7 @@ import { FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import { AUTH_IMAGES } from '../../config/images';
+import { printRoleInfo } from '../../utils/roleUtils';
 
 const NewLogin = () => {
   const [email, setEmail] = useState('');
@@ -27,6 +28,15 @@ const NewLogin = () => {
       
       // Check if login was successful
       if (result && result.data) {
+        console.log('Login successful!');
+        console.log('User role from result:', result.data?.role);
+        console.log('Role details from result:', result.data?.roleDetails);
+        console.log('Role from localStorage:', localStorage.getItem('userRole'));
+        console.log('Role details from localStorage:', localStorage.getItem('userRoleDetails'));
+        
+        // Print all role information using utility function
+        printRoleInfo();
+        
         showSuccessToast('Sign in successful! Welcome back.');
         navigate('/dashboard');
       } else {

@@ -7,12 +7,19 @@ import logown from '../../assets/images/logown.png'
 import sbicon from '../../assets/images/sb-icon.webp'
 import { useNavigate, useLocation } from "react-router-dom";
 import { ROUTES } from '../../utils/constants';
+import { useAuth } from '../../context/AuthContext';
+import { hasMenuAccess, hasSubMenuAccess } from '../../utils/rolePermissions';
 
 const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { getUserRoleName } = useAuth();
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
   const [selectedSubMenu, setSelectedSubMenu] = useState('');
+
+  // Get current user role
+  const userRole = getUserRoleName() || 'USER';
+  console.log('Current user role:', userRole);
 
   // Function to filter menu items based on user role
   const getFilteredMenus = () => {
@@ -22,7 +29,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       { title: "Sales Dashboard", icon: <MdSpaceDashboard />, key: "sales-dashboard" },
       { title: "User Dashboard", icon: <MdSpaceDashboard />, key: "user-dashboard" },
       
-      // Admin section (keep as is)
+      // Admin section
       {
         title: "Admin",
         icon: <FaUsers />, 
@@ -39,7 +46,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "documentManagement"
       },
       
-      // Property section (kjhjkjkhjhjeep as is)
+      // Property section
       {
         title: "Property",
         icon: <FaBuilding />,
@@ -47,7 +54,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "property"
       },
       
-      // Properties display (keep as is)
+      // Properties display
       {
         title: "Properties",
         icon: <FaHome />,
@@ -55,7 +62,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "displayProperties"
       },
       
-      // Lead Management (keep as is)
+      // Lead Management
       {
         title: "Lead Management",
         icon: <BiUserPlus />,
@@ -63,7 +70,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "leads"
       },
       
-      // Customer Management (keep as is)
+      // Customer Management
       {
         title: "Customer Management",
         icon: <BiUser />,
@@ -71,7 +78,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "customers"
       },
       
-      // Schedule Meetings (keep as is)
+      // Schedule Meetings
       {
         title: "Schedule Meetings",
         icon: <FaCalendarAlt />,
@@ -79,7 +86,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "scheduleMeetings"
       },
       
-      // **CORRECTED: Purchase Booking Management**
+      // Purchase Booking Management
       {
         title: "Purchase Bookings", 
         icon: <FaBuilding />,
@@ -92,7 +99,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "purchaseBookings"
       },
       
-      // **CORRECTED: Rental Booking Management**
+      // Rental Booking Management
       {
         title: "Rental Bookings", 
         icon: <FaHome />,
@@ -105,7 +112,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "rentalBookings"
       },
       
-      // **CORRECTED: Payment Management**
+      // Payment Management
       {
         title: "Payments", 
         icon: <FaMoneyBillWave />,
@@ -117,39 +124,52 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "payments"
       },
       
-
-      
-      // Post-Sale (keep as is)
-      // {
-      //   title: "Post-Sale",
-      //   icon: <FaHandshake />,
-      //   subMenu: [
-      //     "Referrals",
-      //     "Rewards",
-      //     "Points"
-      //   ],
-      //   key: "postSale"
-      // },
-      
-      // Client Portal (keep as is)
+      // Client Portal
       { 
         title: "Client Portal", 
         icon: <MdPerson />,
         subMenu: [
-          // "My Bookings",
+          "My Bookings",
           "My Meetings",
           "Payments",
-          // "Referrals"
         ],
         key: "client"
       },
       
-      // Settings (keep as is)
+      // Settings
       { title: "Settings", icon: <FaCog />, gap: true, key: "settings" },
     ];
 
-    // Return all menus without role filtering
-    return allMenus;
+    // Filter menus based on user role
+    const filteredMenus = allMenus.filter(menu => {
+      // Check if user has access to this menu
+      const hasAccess = hasMenuAccess(userRole, menu.key);
+      console.log(`Menu ${menu.key} access for role ${userRole}:`, hasAccess);
+      
+      if (!hasAccess) return false;
+      
+      // If menu has submenus, filter them based on role permissions
+      if (menu.subMenu) {
+        const filteredSubMenus = menu.subMenu.filter(subMenu => {
+          // Convert submenu title to key format
+          const subMenuKey = subMenu.toLowerCase().replace(/\s+/g, '-');
+          const hasSubAccess = hasSubMenuAccess(userRole, menu.key, subMenuKey);
+          console.log(`SubMenu ${subMenuKey} access for role ${userRole}:`, hasSubAccess);
+          return hasSubAccess;
+        });
+        
+        // Only show menu if it has at least one allowed submenu
+        if (filteredSubMenus.length === 0) return false;
+        
+        // Update the submenu array with filtered items
+        menu.subMenu = filteredSubMenus;
+      }
+      
+      return true;
+    });
+
+    console.log('Filtered menus for role', userRole, ':', filteredMenus);
+    return filteredMenus;
   };
 
   // Get filtered menus

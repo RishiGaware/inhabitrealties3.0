@@ -34,12 +34,14 @@ import PurchaseBookingManagement from '../pages/bookings/PurchaseBookingManageme
 import RentalBookingManagement from '../pages/bookings/RentalBookingManagement';
 import AllPurchaseBookings from '../pages/bookings/AllPurchaseBookings';
 import MyAssignedBookings from '../pages/bookings/MyAssignedBookings';
+import MyPurchaseBookings from '../pages/bookings/MyPurchaseBookings';
 import CreateNewPurchase from '../pages/bookings/CreateNewPurchase';
 import EditPurchaseBooking from '../pages/bookings/EditPurchaseBooking';
 import PendingInstallments from '../pages/bookings/PendingInstallments';
 import OverdueInstallments from '../pages/bookings/OverdueInstallments';
 import AllRentalBookings from '../pages/bookings/AllRentalBookings';
 import MyAssignedRentals from '../pages/bookings/MyAssignedRentals';
+import MyRentalBookings from '../pages/bookings/MyRentalBookings';
 import CreateNewRental from '../pages/bookings/CreateNewRental';
 import PendingRents from '../pages/bookings/PendingRents';
 import Referrals from '../pages/postSale/Referrals';
@@ -62,6 +64,7 @@ import SalesReports from '../pages/admin/sales/SalesReports';
 import ThemeDemo from '../pages/ThemeDemo';
 import RentRoll from '../pages/rent/RentRoll';
 import LeaseManagement from '../pages/rent/LeaseManagement';
+import Unauthorized from '../pages/common/Unauthorized';
 
 import UserProfile from '../pages/profile/UserProfile';
 import Settings from '../pages/Settings';
@@ -130,7 +133,8 @@ export const ROUTES = [
   
   // Purchase Bookings
   { name: 'purchaseAllBookings', path: '/purchase-bookings/all', component: AllPurchaseBookings, permissions: 'public' },
-  { name: 'purchaseMyBookings', path: '/purchase-bookings/my-assigned', component: MyAssignedBookings, permissions: 'public' },
+  { name: 'purchaseMyAssignedBookings', path: '/purchase-bookings/my-assigned', component: MyAssignedBookings, permissions: 'public' },
+  { name: 'purchaseMyBookings', path: '/purchase-bookings/my-bookings', component: MyPurchaseBookings, permissions: 'public' },
   { name: 'purchaseCreateNew', path: '/purchase-bookings/create', component: CreateNewPurchase, permissions: 'public' },
   { name: 'purchaseEdit', path: '/purchase-bookings/edit/:id', component: EditPurchaseBooking, permissions: 'public' },
   { name: 'purchasePendingInstallments', path: '/purchase-bookings/pending-installments', component: PendingInstallments, permissions: 'public' },
@@ -138,7 +142,8 @@ export const ROUTES = [
   
   // Rental Bookings
   { name: 'rentalAllBookings', path: '/rental-bookings/all', component: AllRentalBookings, permissions: 'public' },
-  { name: 'rentalMyRentals', path: '/rental-bookings/my-assigned', component: MyAssignedRentals, permissions: 'public' },
+  { name: 'rentalMyAssignedRentals', path: '/rental-bookings/my-assigned', component: MyAssignedRentals, permissions: 'public' },
+  { name: 'rentalMyBookings', path: '/rental-bookings/my-bookings', component: MyRentalBookings, permissions: 'public' },
   { name: 'rentalCreateNew', path: '/rental-bookings/create', component: CreateNewRental, permissions: 'public' },
   { name: 'rentalPendingRents', path: '/rental-bookings/pending-rents', component: PendingRents, permissions: 'public' },
 
@@ -180,4 +185,7 @@ export const ROUTES = [
 
   // Theme Demo
   { name: 'themeDemo', path: '/theme-demo', component: ThemeDemo, permissions: 'public' },
+  
+  // Unauthorized
+  { name: 'unauthorized', path: '/unauthorized', component: Unauthorized, permissions: 'public' },
 ]; 

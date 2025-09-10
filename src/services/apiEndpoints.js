@@ -21,6 +21,7 @@ export const CUSTOMER_ENDPOINTS = {
 
 export const ROLE_ENDPOINTS = {
   GET_ALL: '/roles/',
+  GET_BY_ID: (id) => `/roles/${id}`,
   CREATE: '/roles/create',
   EDIT: (id) => `/roles/edit/${id}`,
   DELETE: (id) => `/roles/delete/${id}`,
@@ -178,6 +179,7 @@ export const RENTAL_BOOKING_ENDPOINTS = {
   UPDATE: (id) => `/rental-bookings/update/${id}`,
   RECORD_RENT_PAYMENT: (id) => `/rental-bookings/${id}/record-rent-payment`,
   UPDATE_MONTH_STATUS: (id) => `/rental-bookings/${id}/update-month-status`,
+  GET_MY_BOOKINGS: (userId) => `/rental-bookings/my-bookings/${userId}`,
   GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/rental-bookings/assigned/${salespersonId}`,
   GET_REPORTS_PENDING_RENTS: '/rental-bookings/reports/pending-rents',
   GET_REPORTS_OVERDUE_RENTS: '/rental-bookings/reports/overdue-rents',

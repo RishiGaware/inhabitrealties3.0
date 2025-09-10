@@ -1,0 +1,125 @@
+ROLE-BASED ACCESS CONTROL HIERARCHY
+=====================================
+
+ADMIN (🔴) - Full System Access
+├── Dashboard
+├── Admin Menu
+│   ├── User Management
+│   ├── Role Management
+│   └── Meeting Status Management
+├── Document Management
+│   ├── Document Type Management
+│   └── Document Management
+├── Property Menu
+│   ├── Property Master
+│   ├── Property Types
+│   └── Favorite Properties
+├── Lead Management (Full Access)
+│   ├── Leads
+│   ├── Lead Status
+│   ├── Lead Follow Up
+│   └── Reference Source
+├── Schedule Meetings
+│   └── Admin Meetings
+├── Purchase Bookings
+│   ├── All Purchase Bookings
+│   └── Create New Purchase
+├── Rental Bookings
+│   ├── All Rental Bookings
+│   └── Create New Rental
+├── Payments
+│   └── All Payment History
+└── Settings
+
+EXECUTIVE (🟢) - Financial Overview
+├── Executive Dashboard
+├── Document Management
+│   └── Document Management
+├── Property Menu (Full Access)
+│   ├── Property Master
+│   ├── Property Types
+│   └── Favorite Properties
+├── Lead Management (Full Access)
+│   ├── Leads
+│   ├── Lead Status
+│   ├── Lead Follow Up
+│   └── Reference Source
+├── Customer Management
+│   └── Customer Profiles
+├── Schedule Meetings
+│   ├── Sales Meetings
+│   └── My Meetings
+├── Purchase Bookings
+│   ├── All Purchase Bookings
+│   └── Create New Purchase
+├── Rental Bookings
+│   ├── All Rental Bookings
+│   └── Create New Rental
+├── Payments
+│   └── All Payment History
+└── Settings
+
+SALES (🟡) - Sales Operations
+├── Sales Dashboard
+├── Property Menu (Full Access)
+│   ├── Property Master
+│   ├── Property Types
+│   └── Favorite Properties
+├── Lead Management (Full Access)
+│   ├── Leads
+│   ├── Lead Status
+│   ├── Lead Follow Up
+│   └── Reference Source
+├── Schedule Meetings
+│   ├── Sales Meetings
+│   └── My Meetings
+├── Purchase Bookings
+│   ├── My Assigned Bookings
+│   └── Create New Purchase
+├── Rental Bookings
+│   ├── My Assigned Rentals
+│   └── Create New Rental
+├── Payments
+│   └── Assigned Payment History
+└── Settings
+
+USER (🔵) - Limited Access
+├── User Dashboard
+├── Document Management
+│   └── My Documents
+├── Properties
+│   ├── Properties
+│   └── Favorite
+├── Schedule Meetings
+│   └── My Meetings
+├── Purchase Bookings
+│   └── My Bookings
+├── Rental Bookings
+│   └── My Bookings
+├── Payments
+│   └── My Payment History
+└── Settings
+
+CLIENT (🟣) - Client Portal
+├── User Dashboard
+├── Client Portal
+│   ├── My Bookings
+│   ├── My Meetings
+│   └── Payments
+└── Settings
+
+ACCESS LEVELS:
+==============
+🔴 ADMIN: Full system control
+🟢 EXECUTIVE: Financial oversight + management
+🟡 SALES: Sales operations + assigned tasks
+🔵 USER: Personal data + basic functionality
+🟣 CLIENT: Client portal only
+
+MENU RESTRICTIONS:
+==================
+- ADMIN: Can see all menus but limited submenus
+- EXECUTIVE: No admin functions, limited document access
+- SALES: Only assigned bookings, no admin functions
+- USER: Only personal data, no management functions
+- CLIENT: Only client portal functions
