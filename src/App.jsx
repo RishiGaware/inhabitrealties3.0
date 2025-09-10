@@ -80,6 +80,7 @@ import RentalBookingManagement from './pages/bookings/RentalBookingManagement';
 // Purchase Booking Components
 import AllPurchaseBookings from './pages/bookings/AllPurchaseBookings';
 import MyAssignedBookings from './pages/bookings/MyAssignedBookings';
+import MyPurchaseBookings from './pages/bookings/MyPurchaseBookings';
 import CreateNewPurchase from './pages/bookings/CreateNewPurchase';
 import EditPurchaseBooking from './pages/bookings/EditPurchaseBooking';
 import PendingInstallments from './pages/bookings/PendingInstallments';
@@ -88,6 +89,7 @@ import OverdueInstallments from './pages/bookings/OverdueInstallments';
 // Rental Booking Components
 import AllRentalBookings from './pages/bookings/AllRentalBookings';
 import MyAssignedRentals from './pages/bookings/MyAssignedRentals';
+import MyRentalBookings from './pages/bookings/MyRentalBookings';
 import CreateNewRental from './pages/bookings/CreateNewRental';
 import PendingRents from './pages/bookings/PendingRents';
 
@@ -216,6 +218,7 @@ const App = () => {
             {/* Purchase Bookings Routes */}
             <Route path={ROUTES.PURCHASE_ALL_BOOKINGS} element={<DashboardLayout><AllPurchaseBookings /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_MY_BOOKINGS} element={<DashboardLayout><MyAssignedBookings /></DashboardLayout>} />
+            <Route path={ROUTES.PURCHASE_MY_BOOKINGS_VIEW} element={<DashboardLayout><MyPurchaseBookings /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_CREATE_NEW} element={<DashboardLayout><CreateNewPurchase /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_EDIT} element={<DashboardLayout><EditPurchaseBooking /></DashboardLayout>} />
             <Route path={ROUTES.PURCHASE_PENDING_INSTALLMENTS} element={<DashboardLayout><PendingInstallments /></DashboardLayout>} />
@@ -225,6 +228,7 @@ const App = () => {
             {/* Rental Bookings Routes */}
             <Route path={ROUTES.RENTAL_ALL_BOOKINGS} element={<DashboardLayout><AllRentalBookings /></DashboardLayout>} />
             <Route path={ROUTES.RENTAL_MY_RENTALS} element={<DashboardLayout><MyAssignedRentals /></DashboardLayout>} />
+            <Route path={ROUTES.RENTAL_MY_BOOKINGS_VIEW} element={<DashboardLayout><MyRentalBookings /></DashboardLayout>} />
             <Route path={ROUTES.RENTAL_CREATE_NEW} element={<DashboardLayout><CreateNewRental /></DashboardLayout>} />
             <Route path={ROUTES.RENTAL_PENDING_RENTS} element={<DashboardLayout><PendingRents /></DashboardLayout>} />
             <Route path={ROUTES.RENTAL_RENT_SCHEDULE} element={<DashboardLayout><RentRoll /></DashboardLayout>} />

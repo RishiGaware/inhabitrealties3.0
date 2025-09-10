@@ -17,6 +17,22 @@ export const fetchRoles = async () => {
   }
 };
 
+// Fetch role by ID
+export const fetchRoleById = async (roleId) => {
+  try {
+    const response = await api.get(ROLE_ENDPOINTS.GET_BY_ID(roleId));
+    return response.data;
+  } catch (error) {
+    console.error('roleService: Fetch role by ID error:', error);
+    console.error('roleService: Error details:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    });
+    throw error;
+  }
+};
+
 // Create a new role
 export const createRole = async (roleData) => {
   try {

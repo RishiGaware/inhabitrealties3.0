@@ -86,6 +86,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         subMenu: [
           "All Purchase Bookings",
           "My Assigned Bookings",
+          "My Bookings",
           "Create New Purchase",
         ],
         key: "purchaseBookings"
@@ -98,6 +99,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         subMenu: [
           "All Rental Bookings",
           "My Assigned Rentals",
+          "My Bookings",
           "Create New Rental",
         ],
         key: "rentalBookings"
@@ -198,6 +200,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'purchaseBookings': {
       'all-purchase-bookings': ROUTES.PURCHASE_ALL_BOOKINGS,
       'my-assigned-bookings': ROUTES.PURCHASE_MY_BOOKINGS,
+      'my-bookings': ROUTES.PURCHASE_MY_BOOKINGS_VIEW,
       'create-new-purchase': ROUTES.PURCHASE_CREATE_NEW,
       'installment-schedule': ROUTES.PURCHASE_INSTALLMENT_SCHEDULE,
       'pending-installments': ROUTES.PURCHASE_PENDING_INSTALLMENTS,
@@ -206,6 +209,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'rentalBookings': {
       'all-rental-bookings': ROUTES.RENTAL_ALL_BOOKINGS,
       'my-assigned-rentals': ROUTES.RENTAL_MY_RENTALS,
+      'my-bookings': ROUTES.RENTAL_MY_BOOKINGS_VIEW,
       'create-new-rental': ROUTES.RENTAL_CREATE_NEW,
       'rent-schedule': ROUTES.RENTAL_RENT_SCHEDULE,
       'pending-rents': ROUTES.RENTAL_PENDING_RENTS,

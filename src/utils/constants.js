@@ -111,6 +111,7 @@ export const ROUTES = {
   PURCHASE_PENDING_INSTALLMENTS: '/purchase-bookings/pending-installments',
   PURCHASE_OVERDUE_INSTALLMENTS: '/purchase-bookings/overdue-installments',
   PURCHASE_MY_BOOKINGS: '/purchase-bookings/my-assigned',
+  PURCHASE_MY_BOOKINGS_VIEW: '/purchase-bookings/my-bookings',
   
   // Purchase Booking API Endpoints
   PURCHASE_API_ALL: '/api/purchase-booking/all',
@@ -128,6 +129,7 @@ export const ROUTES = {
   // Rental Bookings Routes
   RENTAL_ALL_BOOKINGS: '/rental-bookings/all',
   RENTAL_MY_RENTALS: '/rental-bookings/my-assigned',
+  RENTAL_MY_BOOKINGS_VIEW: '/rental-bookings/my-bookings',
   RENTAL_CREATE_NEW: '/rental-bookings/create',
   RENTAL_RENT_SCHEDULE: '/rental-bookings/rent-schedule',
   RENTAL_PENDING_RENTS: '/rental-bookings/pending-rents',

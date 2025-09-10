@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/auth/authService';
 import { registerNormalUser } from '../services/auth/authService';
+import { fetchRoleById } from '../services/rolemanagement/roleService';
 
 const AuthContext = createContext(null);
 
@@ -17,7 +18,30 @@ export const AuthProvider = ({ children }) => {
     if (savedAuth) {
       try {
         const parsedAuth = JSON.parse(savedAuth);
-        setAuth(parsedAuth);
+        
+        // If role details are missing, try to fetch them
+        if (parsedAuth.data?.role && !parsedAuth.data?.roleDetails) {
+          fetchRoleById(parsedAuth.data.role)
+            .then(roleResponse => {
+              const enhancedAuth = {
+                ...parsedAuth,
+                data: {
+                  ...parsedAuth.data,
+                  roleDetails: roleResponse.data
+                }
+              };
+              setAuth(enhancedAuth);
+              localStorage.setItem('auth', JSON.stringify(enhancedAuth));
+            })
+            .catch(roleError => {
+              console.error('Error fetching role details on app start:', roleError);
+              // Continue with existing auth data even if role fetch fails
+              setAuth(parsedAuth);
+            });
+        } else {
+          setAuth(parsedAuth);
+        }
+        
         setIsAuthenticated(true);
       } catch (error) {
         console.error('Error parsing saved auth data:', error);
@@ -29,12 +53,35 @@ export const AuthProvider = ({ children }) => {
   const login = async (credentials) => {
     try {
       const response = await authService.login(credentials);
-      // Store the complete response object
-      setAuth(response);
+      
+      // Fetch complete role information if role ID exists
+      let roleDetails = null;
+      if (response.data?.role) {
+        try {
+          const roleResponse = await fetchRoleById(response.data.role);
+          roleDetails = roleResponse.data;
+          console.log('Role details fetched:', roleDetails);
+        } catch (roleError) {
+          console.error('Error fetching role details:', roleError);
+          // Continue with login even if role fetch fails
+        }
+      }
+      
+      // Create enhanced auth object with role details
+      const enhancedAuth = {
+        ...response,
+        data: {
+          ...response.data,
+          roleDetails: roleDetails
+        }
+      };
+      
+      // Store the enhanced response object
+      setAuth(enhancedAuth);
       setIsAuthenticated(true);
       // Save to localStorage for persistence
-      localStorage.setItem('auth', JSON.stringify(response));
-      return response;
+      localStorage.setItem('auth', JSON.stringify(enhancedAuth));
+      return enhancedAuth;
     } catch (error) {
       logout();
       throw error;
@@ -60,15 +107,22 @@ export const AuthProvider = ({ children }) => {
     return `${auth.data.firstName || ''} ${auth.data.lastName || ''}`.trim();
   };
   const getUserRole = () => auth?.data?.role || null;
-  const isAdmin = () => auth?.data?.role === 'ADMIN' || auth?.data?.role === '68162f63ff2da55b40ca61b8';
-  const isSales = () => auth?.data?.role === 'SALES';
-  const isExecutive = () => auth?.data?.role === 'EXECUTIVE';
-  const isClient = () => auth?.data?.role === 'CLIENT';
+  const getUserRoleDetails = () => auth?.data?.roleDetails || null;
+  const getUserRoleName = () => auth?.data?.roleDetails?.name || null;
+  const getUserRoleDescription = () => auth?.data?.roleDetails?.description || null;
+  const isAdmin = () => auth?.data?.role === 'ADMIN' || auth?.data?.role === '68162f63ff2da55b40ca61b8' || auth?.data?.roleDetails?.name === 'ADMIN';
+  const isSales = () => auth?.data?.role === 'SALES' || auth?.data?.roleDetails?.name === 'SALES';
+  const isExecutive = () => auth?.data?.role === 'EXECUTIVE' || auth?.data?.roleDetails?.name === 'EXECUTIVE';
+  const isClient = () => auth?.data?.role === 'CLIENT' || auth?.data?.roleDetails?.name === 'CLIENT';
   
   // Check if user has access to a specific module
   const hasAccess = (module) => {
     const role = getUserRole();
-    if (!role) return false;
+    const roleName = getUserRoleName();
+    if (!role && !roleName) return false;
+    
+    // Use role name from roleDetails if available, otherwise fallback to role ID
+    const effectiveRole = roleName || role;
     
     const rolePermissions = {
       'ADMIN': ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'rent', 'postSale', 'client', 'settings'],
@@ -77,7 +131,7 @@ export const AuthProvider = ({ children }) => {
       'CLIENT': ['dashboard', 'client', 'settings']
     };
     
-    return rolePermissions[role]?.includes(module) || false;
+    return rolePermissions[effectiveRole]?.includes(module) || false;
   };
 
   return (
@@ -94,6 +148,9 @@ export const AuthProvider = ({ children }) => {
       getUserEmail,
       getUserName,
       getUserRole,
+      getUserRoleDetails,
+      getUserRoleName,
+      getUserRoleDescription,
       isAdmin,
       isSales,
       isExecutive,
