@@ -21,7 +21,8 @@ import { FiEdit, FiEye, FiDownload } from 'react-icons/fi';
 const PurchaseBookingViewer = ({ 
   isOpen, 
   onClose, 
-  bookingData
+  bookingData,
+  hideCustomerDetails = false,
 }) => {
   if (!isOpen || !bookingData) return null;
 
@@ -169,7 +170,7 @@ const PurchaseBookingViewer = ({
             </Box>
 
             {/* Property & Customer Details */}
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 2, sm: 3, md: 4 }}>
+            <SimpleGrid columns={{ base: 1, md: hideCustomerDetails ? 1 : 2 }} spacing={{ base: 2, sm: 3, md: 4 }}>
               <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
                 <HStack mb={3} align="center">
                   <Box p={2} bg="green.100" borderRadius="full">
@@ -193,6 +194,7 @@ const PurchaseBookingViewer = ({
                 </VStack>
               </Box>
 
+              {!hideCustomerDetails && (
               <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="purple.100" shadow="sm">
                 <HStack mb={3} align="center">
                   <Box p={2} bg="purple.100" borderRadius="full">
@@ -217,6 +219,7 @@ const PurchaseBookingViewer = ({
                   </Box>
                 </VStack>
               </Box>
+              )}
             </SimpleGrid>
 
             {/* Financial Details - Only show if data exists */}

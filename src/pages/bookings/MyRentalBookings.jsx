@@ -11,19 +11,17 @@ import {
   IconButton,
   Heading,
   VStack,
-  Alert,
-  AlertIcon,
 } from '@chakra-ui/react';
-import { FiDownload, FiEye } from 'react-icons/fi';
-import { FaCalendar, FaMoneyBillWave, FaHome, FaBuilding } from 'react-icons/fa';
+import { FiDownload, FiEye, FiEdit } from 'react-icons/fi';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
 import SearchAndFilter from '../../components/common/SearchAndFilter';
-import CommonCard from '../../components/common/Card/CommonCard';
 import Loader from '../../components/common/Loader';
-import { getAllMyBookings } from '../../services/booking/myBookingsService';
 import RentalBookingViewer from '../../components/common/RentalBookingViewer';
+import { getPropertyById } from '../../services/propertyService';
+import RentalBookingEditForm from '../../components/common/RentalBookingEditForm';
+import { rentalBookingService } from '../../services/paymentManagement/rentalBookingService';
 
 const MyRentalBookings = () => {
   const navigate = useNavigate();
@@ -37,19 +35,14 @@ const MyRentalBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [filteredBookings, setFilteredBookings] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
-  const [stats, setStats] = useState({
-    totalBookings: 0,
-    confirmedBookings: 0,
-    pendingBookings: 0,
-    totalRent: 0,
-  });
+  const [isEditFormOpen, setIsEditFormOpen] = useState(false);
+  const [editingBooking, setEditingBooking] = useState(null);
 
   // Get user ID from localStorage
   const getUserId = () => {
@@ -70,42 +63,48 @@ const MyRentalBookings = () => {
   const fetchMyRentalBookings = async () => {
     try {
       setIsLoading(true);
-      setError(null);
-      
+
       const userId = getUserId();
       if (!userId) {
         throw new Error('User not authenticated');
       }
 
-      const response = await getAllMyBookings(userId);
-      
-      if (response.success) {
-        // Filter only rental bookings
-        const rentalBookings = response.data?.filter(booking => booking.type === 'rental') || [];
-        setBookings(rentalBookings);
-        setFilteredBookings(rentalBookings);
-        
-        // Calculate statistics
-        const totalBookings = rentalBookings.length;
-        const confirmedBookings = rentalBookings.filter(b => b.bookingStatus === 'CONFIRMED').length;
-        const pendingBookings = rentalBookings.filter(b => b.bookingStatus === 'PENDING').length;
-        const totalRent = rentalBookings.reduce((sum, booking) => {
-          return sum + (parseInt(booking.monthlyRent) || 0);
-        }, 0);
+      const response = await rentalBookingService.getMyRentalBookings(userId);
 
-        setStats({
-          totalBookings,
-          confirmedBookings,
-          pendingBookings,
-          totalRent,
-        });
+      let raw = [];
+      if (response && response.data && Array.isArray(response.data)) {
+        raw = response.data;
+      } else if (response && Array.isArray(response)) {
+        raw = response;
       } else {
-        throw new Error('Failed to fetch rental bookings');
+        console.warn('Unexpected API response format (my rental bookings):', response);
+        raw = [];
       }
+
+      // Enrich not-populated bookings with property details only
+      const needPopulate = raw.some(b => !b?.propertyId?.name);
+      let enriched = raw;
+      if (needPopulate) {
+        const populated = await Promise.all(raw.map(async (b) => {
+          try {
+            if (b && (!b.propertyId?.name) && (b.propertyId)) {
+              const property = await getPropertyById(b.propertyId?._id || b.propertyId);
+              const propData = property?.data || property;
+              return { ...b, propertyId: propData || b.propertyId };
+            }
+            return b;
+          } catch {
+            return b;
+          }
+        }));
+        enriched = populated;
+      }
+
+      setBookings(enriched);
+      setFilteredBookings(enriched);
     } catch (error) {
       console.error('Error fetching rental bookings:', error);
-      setError(error.message);
-      toast.error(error.message)
+      toast({ title: 'Error', description: 'Failed to fetch my rental bookings', status: 'error' });
       setBookings([]);
       setFilteredBookings([]);
     } finally {
@@ -117,29 +116,40 @@ const MyRentalBookings = () => {
     fetchMyRentalBookings();
   }, []);
 
-  // Filter options
-  const statusOptions = [
-    { value: 'all', label: 'All Status' },
-    { value: 'CONFIRMED', label: 'Confirmed' },
-    { value: 'PENDING', label: 'Pending' },
-    { value: 'CANCELLED', label: 'Cancelled' },
-    { value: 'COMPLETED', label: 'Completed' },
-  ];
+  // Filter options - dynamically generated from data
+  const filterOptions = { status: [] };
+  useEffect(() => {
+    if (bookings.length > 0) {
+      const uniqueStatuses = [...new Set(bookings.map(b => b.bookingStatus))].filter(Boolean);
+      const statusOptions = [
+        { value: '', label: 'All Statuses' },
+        ...uniqueStatuses.map(status => ({
+          value: status,
+          label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+        }))
+      ];
+      filterOptions.status = statusOptions;
+    } else {
+      filterOptions.status = [{ value: '', label: 'All Statuses' }];
+    }
+  }, [bookings]);
 
   // Filter and search functionality
   useEffect(() => {
-    let filtered = [...bookings];
+    let filtered = bookings;
 
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(booking =>
-        booking.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        booking.propertyName?.toLowerCase().includes(searchTerm.toLowerCase())
+        (booking.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.customerId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking.propertyId?.propertyAddress?.city?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
       );
     }
 
-    // Apply status filter
     if (statusFilter && statusFilter !== 'all') {
       filtered = filtered.filter(booking => booking.bookingStatus === statusFilter);
     }
@@ -153,9 +163,9 @@ const MyRentalBookings = () => {
     setSearchTerm(value);
   };
 
-  // Handle filter change
-  const handleFilterChange = (filterType, value) => {
-    if (filterType === 'status') {
+  // Handle filters
+  const handleFilterChange = (key, value) => {
+    if (key === 'status') {
       setStatusFilter(value);
     }
   };
@@ -166,22 +176,94 @@ const MyRentalBookings = () => {
     setStatusFilter('');
   };
 
-  // Handle export
-  const handleExport = () => {
-    // Export functionality can be implemented here
-    toast({
-      title: 'Export',
-      description: 'Export functionality will be implemented soon.',
-      status: 'info',
-      duration: 3000,
-      isClosable: true,
-    });
+  // Handle export similar to AllRentalBookings
+  const handleExport = async () => {
+    try {
+      const exportData = filteredBookings.map(booking => ({
+        'Booking ID': booking.bookingId || booking._id?.slice(-8) || 'N/A',
+        'Property': booking.propertyId?.name || 'N/A',
+        'Property Location': `${booking.propertyId?.propertyAddress?.city || 'N/A'}, ${booking.propertyId?.propertyAddress?.state || 'N/A'}`,
+        'Customer': `${booking.customerId?.firstName || ''} ${booking.customerId?.lastName || ''}`.trim() || 'N/A',
+        'Customer Email': booking.customerId?.email || 'N/A',
+        'Monthly Rent': `₹${parseFloat(booking.monthlyRent || 0).toLocaleString()}`,
+        'Security Deposit': `₹${parseFloat(booking.securityDeposit || 0).toLocaleString()}`,
+        'Rent Due Date': booking.rentDueDate ? `${booking.rentDueDate}th` : 'N/A',
+        'Duration': `${booking.duration || 0} months`,
+        'Start Date': booking.startDate ? new Date(booking.startDate).toLocaleDateString() : 'N/A',
+        'End Date': booking.endDate ? new Date(booking.endDate).toLocaleDateString() : 'N/A',
+        'Status': booking.bookingStatus || 'N/A',
+        'Created Date': booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : 'N/A'
+      }));
+
+      if (exportData.length === 0) {
+        toast({ title: 'No data to export', status: 'info' });
+        return;
+      }
+
+      const csvContent = [
+        Object.keys(exportData[0]).join(','),
+        ...exportData.map(row => Object.values(row).join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `my_rental_bookings_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({ title: 'Export successful', status: 'success' });
+    } catch (error) {
+      console.error('Export error:', error);
+      toast({ title: 'Export failed', status: 'error' });
+    }
   };
 
   // Handle view booking
-  const handleViewBooking = (booking) => {
-    setSelectedBooking(booking);
-    setIsViewerOpen(true);
+  const handleView = (id) => {
+    const booking = bookings.find(b => b._id === id);
+    if (!booking) return;
+    (async () => {
+      try {
+        // Always fetch full rental booking to ensure rentSchedule etc.
+        const full = await rentalBookingService.getRentalBookingById(id);
+        const fullData = full?.data || full;
+        // If rent schedule missing, fetch via schedule endpoint if exists
+        let rentSchedule = fullData?.rentSchedule;
+        if (!Array.isArray(rentSchedule) || rentSchedule.length === 0) {
+          try {
+            const schedule = await rentalBookingService.getRentSchedule?.(id);
+            const schedData = schedule?.data || schedule;
+            if (Array.isArray(schedData)) rentSchedule = schedData;
+          } catch {}
+        }
+        // Ensure property details populated
+        let propertyData = booking.propertyId;
+        if (!propertyData?.name && (booking.propertyId || fullData?.propertyId)) {
+          try {
+            const prop = await getPropertyById(booking.propertyId?._id || booking.propertyId || fullData.propertyId);
+            propertyData = prop?.data || prop || propertyData;
+          } catch {}
+        }
+        setSelectedBooking({ ...booking, ...fullData, rentSchedule, propertyId: propertyData });
+        setIsViewerOpen(true);
+      } catch {
+        setSelectedBooking(booking);
+        setIsViewerOpen(true);
+      }
+    })();
+  };
+
+  // Handle edit booking
+  const handleEdit = (id) => {
+    const booking = bookings.find(b => b._id === id);
+    if (booking) {
+      setEditingBooking(booking);
+      setIsEditFormOpen(true);
+    }
   };
 
   // Table columns
@@ -189,97 +271,84 @@ const MyRentalBookings = () => {
     {
       key: 'bookingId',
       label: 'Booking ID',
-      render: (booking) => (
-        <Text fontWeight="medium" color="blue.600">
-          {booking.bookingId}
+      render: (value, row) => (
+        <Text fontWeight="semibold" color="blue.600" noOfLines={1} maxW="150px">
+          {row.bookingId || row._id?.slice(-8) || 'N/A'}
         </Text>
       ),
     },
     {
       key: 'propertyName',
       label: 'Property',
-      render: (booking) => (
+      render: (_, row) => (
         <VStack align="start" spacing={1}>
-          <Text fontWeight="medium">{booking.propertyName}</Text>
-          <Text fontSize="sm" color="gray.500">{booking.propertyLocation}</Text>
+          <Text color="gray.700" fontWeight="semibold" noOfLines={1} maxW="150px">
+            {row.propertyId?.name || row.propertyName || 'N/A'}
+          </Text>
+          <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="150px">
+            {(row.propertyId?.propertyAddress?.city || row.propertyLocation || 'N/A')}
+            {row.propertyId?.propertyAddress?.state ? `, ${row.propertyId.propertyAddress.state}` : ''}
+          </Text>
         </VStack>
       ),
     },
-    {
-      key: 'customerName',
-      label: 'Customer',
-      render: (booking) => (
-        <VStack align="start" spacing={1}>
-          <Text fontWeight="medium">{booking.customerName}</Text>
-          <Text fontSize="sm" color="gray.500">{booking.customerPhone}</Text>
-        </VStack>
-      ),
-    },
+    // Customer column removed as requested
     {
       key: 'monthlyRent',
       label: 'Monthly Rent',
-      render: (booking) => (
-        <Text fontWeight="medium" color="green.600">
-          ₹{parseInt(booking.monthlyRent).toLocaleString()}
+      render: (_, row) => (
+        <Text color="gray.700" fontWeight="semibold" fontSize="sm">
+          ₹{row.monthlyRent ? parseFloat(row.monthlyRent).toLocaleString() : '0'}
         </Text>
       ),
     },
     {
       key: 'securityDeposit',
       label: 'Security Deposit',
-      render: (booking) => (
-        <Text fontWeight="medium">
-          ₹{parseInt(booking.securityDeposit || 0).toLocaleString()}
-        </Text>
+      render: (_, row) => (
+        <Text>₹{parseFloat(row.securityDeposit || 0).toLocaleString()}</Text>
       ),
     },
     {
       key: 'duration',
       label: 'Duration',
-      render: (booking) => (
-        <Text fontSize="sm">
-          {booking.duration} months
-        </Text>
+      render: (_, row) => (
+        <Text fontSize="sm">{row.duration || 0} months</Text>
       ),
     },
     {
       key: 'bookingStatus',
       label: 'Status',
-      render: (booking) => {
-        const statusColors = {
-          'CONFIRMED': 'green',
-          'PENDING': 'yellow',
-          'CANCELLED': 'red',
-          'COMPLETED': 'blue',
+      render: (value, row) => {
+        const getStatusColor = (status) => {
+          switch (status) {
+            case 'ACTIVE': return 'green';
+            case 'PENDING': return 'yellow';
+            case 'EXPIRED': return 'red';
+            case 'CANCELLED': return 'gray';
+            default: return 'gray';
+          }
         };
         return (
-          <Badge colorScheme={statusColors[booking.bookingStatus] || 'gray'}>
-            {booking.bookingStatus}
+          <Badge colorScheme={getStatusColor(row.bookingStatus)} variant="solid" fontSize="xs">
+            {row.bookingStatus?.replace(/_/g, ' ') || 'N/A'}
           </Badge>
         );
       },
     },
-    {
-      key: 'createdAt',
-      label: 'Booking Date',
-      render: (booking) => (
-        <Text fontSize="sm">
-          {new Date(booking.createdAt).toLocaleDateString()}
-        </Text>
-      ),
-    },
   ];
 
-  // Row actions (view only)
+  // Row actions - view only
   const renderRowActions = (booking) => (
     <HStack spacing={2}>
       <IconButton
+        key="view"
+        aria-label="View booking"
         icon={<FiEye />}
         size="sm"
-        variant="ghost"
+        onClick={() => handleView(booking._id)}
         colorScheme="blue"
-        onClick={() => handleViewBooking(booking)}
-        aria-label="View booking"
+        variant="outline"
       />
     </HStack>
   );
@@ -290,141 +359,87 @@ const MyRentalBookings = () => {
   }
 
   return (
-    <Box p={5}>
-      <Flex justify="space-between" align="center" mb={6}>
-        <Heading as="h1" variant="pageTitle">
+    <Box p={{ base: 3, md: 6 }} bg="gray.50" minH="100vh">
+      {isLoading && <Loader size="xl" />}
+
+      <Flex justify="space-between" align="center" mb={{ base: 4, md: 6 }} direction={{ base: 'column', md: 'row' }} gap={{ base: 3, md: 0 }}>
+        <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
           My Rental Bookings
         </Heading>
         <HStack spacing={3}>
           <Button
             leftIcon={<FiDownload />}
             onClick={handleExport}
-            size="sm"
             variant="outline"
-            colorScheme="blue"
+            colorScheme="green"
+            size="sm"
           >
             Export CSV
           </Button>
         </HStack>
       </Flex>
 
-      {/* Summary Cards */}
-      <Box display="grid" gridTemplateColumns={{ base: '1fr', md: 'repeat(4, 1fr)' }} gap={4} mb={6}>
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="blue.100" borderRadius="lg">
-              <FaCalendar color="#3b82f6" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Total Bookings</Text>
-              <Text fontSize="lg" fontWeight="bold" color="blue.600">{stats.totalBookings}</Text>
-            </Box>
-          </Flex>
-        </CommonCard>
-        
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="green.100" borderRadius="lg">
-              <FaCalendar color="#22c55e" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Confirmed</Text>
-              <Text fontSize="lg" fontWeight="bold" color="green.600">{stats.confirmedBookings}</Text>
-            </Box>
-          </Flex>
-        </CommonCard>
-        
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="yellow.100" borderRadius="lg">
-              <FaCalendar color="#f59e0b" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Pending</Text>
-              <Text fontSize="lg" fontWeight="bold" color="yellow.600">{stats.pendingBookings}</Text>
-            </Box>
-          </Flex>
-        </CommonCard>
-        
-        <CommonCard p={4}>
-          <Flex align="center" gap={3}>
-            <Box p={2} bg="purple.100" borderRadius="lg">
-              <FaMoneyBillWave color="#8b5cf6" size={20} />
-            </Box>
-            <Box>
-              <Text fontSize="sm" color="gray.600">Total Monthly Rent</Text>
-              <Text fontSize="lg" fontWeight="bold" color="purple.600">
-                ₹{stats.totalRent.toLocaleString()}
-              </Text>
-            </Box>
-          </Flex>
-        </CommonCard>
-      </Box>
+      <SearchAndFilter
+        searchTerm={searchTerm}
+        onSearchChange={handleSearch}
+        onSearchSubmit={() => {}}
+        searchPlaceholder="Search by booking ID, customer, property..."
+        filters={{ status: statusFilter }}
+        onFilterChange={handleFilterChange}
+        onApplyFilters={() => {}}
+        onClearFilters={handleClearFilters}
+        filterOptions={{
+          status: {
+            label: 'Status',
+            placeholder: 'Filter by status',
+            options: filterOptions.status
+          }
+        }}
+        title="Filter Rental Bookings"
+        activeFiltersCount={(statusFilter ? 1 : 0) + (searchTerm ? 1 : 0)}
+      />
 
-      <CommonCard p={6}>
-        <SearchAndFilter
-          searchTerm={searchTerm}
-          onSearchChange={handleSearch}
-          onSearchSubmit={() => {}}
-          searchPlaceholder="Search bookings by ID, customer, property..."
-          filters={{ status: statusFilter }}
-          onFilterChange={handleFilterChange}
-          onApplyFilters={() => {}}
-          onClearFilters={handleClearFilters}
-          filterOptions={{
-            status: {
-              label: "Status",
-              placeholder: "Filter by status",
-              options: statusOptions
-            }
-          }}
-          title="My Rental Bookings"
-          activeFiltersCount={(statusFilter ? 1 : 0) + (searchTerm ? 1 : 0)}
+      <TableContainer>
+        <CommonTable
+          columns={columns}
+          data={filteredBookings.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
+          )}
+          rowActions={renderRowActions}
+          emptyStateMessage={!isLoading ? 'No rental bookings match your search.' : undefined}
         />
-        
-        {filteredBookings.length === 0 ? (
-          <Box textAlign="center" py={10}>
-            <Text color="gray.500" fontSize="lg" mb={2}>
-              No rental bookings found
-            </Text>
-            <Text color="gray.400" fontSize="sm">
-              {bookings.length === 0 
-                ? "You don't have any rental bookings yet."
-                : "No bookings match your current search criteria."
-              }
-            </Text>
-          </Box>
-        ) : (
-          <TableContainer>
-            <CommonTable
-              columns={columns}
-              data={filteredBookings}
-              rowActions={renderRowActions}
-            />
-            <CommonPagination
-              currentPage={currentPage}
-              totalPages={Math.ceil(filteredBookings.length / pageSize)}
-              onPageChange={setCurrentPage}
-              pageSize={pageSize}
-              onPageSizeChange={setPageSize}
-              totalItems={filteredBookings.length}
-            />
-          </TableContainer>
-        )}
-      </CommonCard>
+        <CommonPagination
+          currentPage={currentPage}
+          totalPages={Math.ceil(filteredBookings.length / pageSize)}
+          onPageChange={setCurrentPage}
+          pageSize={pageSize}
+          onPageSizeChange={setPageSize}
+          totalItems={filteredBookings.length}
+        />
+      </TableContainer>
 
-      {/* View Modal */}
-      {selectedBooking && (
-        <RentalBookingViewer
-          isOpen={isViewerOpen}
-          onClose={() => {
-            setIsViewerOpen(false);
-            setSelectedBooking(null);
-          }}
-          booking={selectedBooking}
-          isViewOnly={true}
-        />
-      )}
+      <RentalBookingViewer
+        isOpen={isViewerOpen}
+        onClose={() => {
+          setIsViewerOpen(false);
+          setSelectedBooking(null);
+        }}
+        bookingData={selectedBooking}
+        hideCustomerDetails
+      />
+
+      <RentalBookingEditForm
+        isOpen={isEditFormOpen}
+        onClose={() => {
+          setIsEditFormOpen(false);
+          setEditingBooking(null);
+        }}
+        bookingData={editingBooking}
+        onUpdate={() => {
+          fetchMyRentalBookings();
+        }}
+      />
     </Box>
   );
 };
