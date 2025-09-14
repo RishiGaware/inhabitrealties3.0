@@ -50,7 +50,7 @@ export const ROLE_PERMISSIONS = {
       scheduleMeetings: ['sales-meetings', 'my-meetings'],
       purchaseBookings: ['my-assigned-bookings', 'create-new-purchase'],
       rentalBookings: ['my-assigned-rentals', 'create-new-rental'],
-      payments: ['assigned-payment-history']
+      payments: ['assigned-payment-history','payments']
     }
   },
   

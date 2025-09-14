@@ -123,3 +123,4 @@ MENU RESTRICTIONS:
 - SALES: Only assigned bookings, no admin functions
 - USER: Only personal data, no management functions
 - CLIENT: Only client portal functions
+

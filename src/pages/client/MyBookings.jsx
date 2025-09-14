@@ -363,21 +363,6 @@ const MyBookings = () => {
     return <Loader fullScreen text="Loading your bookings..." />;
   }
 
-  // Show error state
-  if (error) {
-    return (
-      <Box p={5}>
-        <Alert status="error" borderRadius="md">
-          <AlertIcon />
-          <Box>
-            <Text fontWeight="bold">Error loading bookings</Text>
-            <Text fontSize="sm">{error}</Text>
-          </Box>
-        </Alert>
-      </Box>
-    );
-  }
-
   return (
     <Box p={5}>
       <Flex justify="space-between" align="center" mb={6}>

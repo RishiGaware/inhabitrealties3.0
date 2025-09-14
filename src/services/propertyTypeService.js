@@ -24,3 +24,4 @@ export const deletePropertyType = async (id) => {
   const response = await api.delete(PROPERTY_TYPE_ENDPOINTS.DELETE(id));
   return response.data;
 };
+
