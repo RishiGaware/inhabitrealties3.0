@@ -6,19 +6,24 @@ const tabOptions = [
   { label: 'Rental', icon: <FaRegBuilding /> },
 ];
 
-const cityOptions = [
-  'Mumbai', 'Delhi', 'Bangalore', 'Pune', 'Hyderabad', 'Chennai', 'Kolkata', 'Ahmedabad', 'Gurgaon', 'Noida'
-];
-
+// Keep values as 'Any' for backend mapping, but show label 'All'
 const budgetOptions = [
-  'Any', 'Under 50L', '50L - 1Cr', '1Cr - 2Cr', '2Cr - 5Cr', '5Cr+' 
+  { label: 'All', value: 'Any' },
+  { label: 'Under 50L', value: 'Under 50L' },
+  { label: '50L - 1Cr', value: '50L - 1Cr' },
+  { label: '1Cr - 2Cr', value: '1Cr - 2Cr' },
+  { label: '2Cr - 5Cr', value: '2Cr - 5Cr' },
+  { label: '5Cr+', value: '5Cr+' }
 ];
 
 const possessionOptions = [
-  'Any', 'Ready to Move', 'Under Construction', 'New Launch'
+  { label: 'All', value: 'Any' },
+  { label: 'Ready to Move', value: 'Ready to Move' },
+  { label: 'Under Construction', value: 'Under Construction' },
+  { label: 'New Launch', value: 'New Launch' }
 ];
 
-const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [] }) => {
+const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [], cities = [] }) => {
   const [activeTab, setActiveTab] = useState(value.tabIndex || 0);
   const [city, setCity] = useState(value.city || '');
   const [query, setQuery] = useState(value.query || '');
@@ -26,6 +31,7 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [] 
   const [propertyType, setPropertyType] = useState(value.propertyType || 'Any');
   const [possession, setPossession] = useState(value.possession || 'Any');
   const [isCollapsed, setIsCollapsed] = useState(true); // for mobile collapse
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     if (onChange) {
@@ -109,9 +115,9 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [] 
           value={city}
           onChange={e => setCity(e.target.value)}
         >
-          <option value="">Select City</option>
-          {cityOptions.map(city => (
-            <option key={city} value={city}>{city}</option>
+          <option value="">All Cities</option>
+          {cities.map(c => (
+            <option key={c} value={c}>{c}</option>
           ))}
         </select>
         
@@ -132,40 +138,27 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [] 
           </span>
         </div>
         
-        {/* Budget Dropdown */}
-        <select
-          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-32"
-          value={budget}
-          onChange={e => setBudget(e.target.value)}
-        >
-          {budgetOptions.map(opt => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-        
         {/* Property Type Dropdown */}
         <select
           className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-36"
           value={propertyType}
           onChange={e => setPropertyType(e.target.value)}
         >
-          <option value="Any">Any</option>
+          <option value="Any">All Types</option>
           {propertyTypes.map(type => (
             <option key={type._id} value={type.typeName}>{type.typeName}</option>
           ))}
         </select>
-        
-        {/* Possession Status Dropdown */}
-        <select
-          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-40"
-          value={possession}
-          onChange={e => setPossession(e.target.value)}
+
+        {/* Advanced toggle */}
+        <button
+          type="button"
+          className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 text-xs sm:text-sm bg-white lg:w-36"
+          onClick={() => setShowAdvanced(s => !s)}
         >
-          {possessionOptions.map(opt => (
-            <option key={opt} value={opt}>{opt}</option>
-          ))}
-        </select>
-        
+          {showAdvanced ? 'Hide Filters' : 'Advanced Filters'}
+        </button>
+
         {/* Search Button */}
         <button
           className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg bg-[var(--color-purple-600)] text-white font-bold text-xs sm:text-sm hover:bg-[var(--color-purple-700)] transition-all duration-200 shadow-md lg:px-6"
@@ -173,8 +166,34 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [] 
         >
           Search
         </button>
-
       </div>
+
+      {/* Advanced section */}
+      {!isCollapsed && showAdvanced && (
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-2 sm:gap-3 mt-2">
+          {/* Budget Dropdown */}
+          <select
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-32"
+            value={budget}
+            onChange={e => setBudget(e.target.value)}
+          >
+            {budgetOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          
+          {/* Possession Status Dropdown */}
+          <select
+            className="w-full px-3 sm:px-4 py-2 sm:py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[var(--color-purple-600)] focus:border-transparent text-xs sm:text-sm bg-white lg:w-40"
+            value={possession}
+            onChange={e => setPossession(e.target.value)}
+          >
+            {possessionOptions.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
+      )}
     </div>
   );
 };

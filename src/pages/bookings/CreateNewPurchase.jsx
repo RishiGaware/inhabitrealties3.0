@@ -1294,7 +1294,7 @@ const CreateNewPurchase = () => {
           <ModalFooter bg="gray.50" borderTop="1px" borderColor="gray.200" p={{ base: 4, md: 6 }}>
             <Button 
               colorScheme="brand" 
-              onClick={handleSuccessModalClose}
+              // onClick={handleSuccessModalClose}
               size="md"
               leftIcon={<FiCheckCircle />}
             >

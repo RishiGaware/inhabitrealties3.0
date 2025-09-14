@@ -464,6 +464,7 @@ const HouseList = () => {
     possession: 'Any',
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
+  const [cities, setCities] = useState([]);
 
   // Fetch properties and property types from backend on component mount
   useEffect(() => {
@@ -519,6 +520,10 @@ const HouseList = () => {
       }));
       
       setHouses(transformedHouses);
+
+      // Build dynamic city list from backend data
+      const uniqueCities = Array.from(new Set((response.data || []).map(p => p?.propertyAddress?.city).filter(Boolean))).sort();
+      setCities(uniqueCities);
     } catch (err) {
       console.error('Error fetching properties:', err);
       setError('Failed to load properties');
@@ -610,6 +615,7 @@ const HouseList = () => {
         onChange={handleSearchBarChange} 
         onSearch={handleSearchBarSearch}
         propertyTypes={propertyTypes}
+        cities={cities}
       />
       <div className="mb-6 sm:mb-8">
         <p className="text-center text-gray-600 text-sm sm:text-base mt-2 mb-4 sm:mb-6 max-w-2xl mx-auto px-4" style={{ fontFamily: "'Inter', sans-serif" }}>

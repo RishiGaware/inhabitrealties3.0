@@ -83,4 +83,21 @@ export const meetingAPI = {
   deleteMeeting: (meetingId) => api.delete(`/meeting-schedule/delete/${meetingId}`)
 };
 
+// Payment History API functions
+export const paymentHistoryAPI = {
+  getAll: () => api.get('/payment-history/all'),
+  getById: (id) => api.get(`/payment-history/${id}`),
+};
+
+// Purchase Booking API functions
+export const purchaseBookingAPI = {
+  // id is bookingId string (e.g., PURCHASE-...)
+  getById: (id) => api.get(`/purchase-bookings/${encodeURIComponent(id)}`),
+};
+
+export const rentalBookingAPI = {
+  // id is bookingId string (e.g., RENTAL-...)
+  getById: (id) => api.get(`/rental-bookings/${encodeURIComponent(id)}`),
+};
+
 export default api;

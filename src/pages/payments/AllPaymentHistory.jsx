@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   VStack,
@@ -18,7 +18,7 @@ import TableContainer from '../../components/common/Table/TableContainer';
 import SearchAndFilter from '../../components/common/SearchAndFilter';
 import Loader from '../../components/common/Loader';
 import PaymentViewerModal from '../../components/common/PaymentViewerModal';
-import api from '../../services/api';
+import api, { purchaseBookingAPI, rentalBookingAPI } from '../../services/api';
 
 const AllPaymentHistory = () => {
   const toast = useToast();
@@ -35,195 +35,17 @@ const AllPaymentHistory = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [paymentTypeFilter, setPaymentTypeFilter] = useState('');
 
-  // Filter options - dynamically generated from API data
-  const filterOptions = {
-    status: [],
-    paymentType: []
-  };
-
-  // Generate filter options dynamically from the actual data
-  useEffect(() => {
-    if (payments.length > 0) {
-      const uniqueStatuses = [...new Set(payments.map(payment => payment.status))].filter(Boolean);
-      const uniquePaymentTypes = [...new Set(payments.map(payment => payment.paymentType))].filter(Boolean);
-      
-      const statusOptions = [
-        { value: '', label: 'All Statuses' },
-        ...uniqueStatuses.map(status => ({
-          value: status,
-          label: status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-        }))
-      ];
-      
-      const paymentTypeOptions = [
-        { value: '', label: 'All Payment Types' },
-        ...uniquePaymentTypes.map(type => ({
-          value: type,
-          label: type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-        }))
-      ];
-      
-      filterOptions.status = statusOptions;
-      filterOptions.paymentType = paymentTypeOptions;
-    } else {
-      // Set default options when no data is available
-      filterOptions.status = [{ value: '', label: 'All Statuses' }];
-      filterOptions.paymentType = [{ value: '', label: 'All Payment Types' }];
-    }
-  }, [payments]);
-
-  // Dummy data for demonstration
-  const dummyPayments = [
-    {
-      _id: '1',
-      paymentId: 'PAY-2025-001',
-      customerId: {
-        firstName: 'Rajesh',
-        lastName: 'Kumar',
-        email: 'rajesh.kumar@email.com',
-        phoneNumber: '+91 98765 43210'
-      },
-      propertyId: {
-        name: 'Sunshine Apartments',
-        type: 'Apartment',
-        propertyAddress: {
-          street: 'Sunshine Lane',
-          city: 'Mumbai',
-          state: 'Maharashtra'
-        }
-      },
-      amount: 250000,
-      paymentType: 'INSTALLMENT',
-      status: 'PAID',
-      paymentDate: '2025-01-15T10:30:00Z',
-      dueDate: '2025-01-15T00:00:00Z'
-    },
-    {
-      _id: '2',
-      paymentId: 'PAY-2025-002',
-      customerId: {
-        firstName: 'Priya',
-        lastName: 'Sharma',
-        email: 'priya.sharma@email.com',
-        phoneNumber: '+91 98765 43211'
-      },
-      propertyId: {
-        name: 'Green Valley Villa',
-        type: 'Villa',
-        propertyAddress: {
-          street: 'Green Valley Road',
-          city: 'Delhi',
-          state: 'Delhi'
-        }
-      },
-      amount: 500000,
-      paymentType: 'DOWN_PAYMENT',
-      status: 'PENDING',
-      paymentDate: '2025-01-14T14:20:00Z',
-      dueDate: '2025-01-20T00:00:00Z'
-    },
-    {
-      _id: '3',
-      paymentId: 'PAY-2025-003',
-      customerId: {
-        firstName: 'Amit',
-        lastName: 'Patel',
-        email: 'amit.patel@email.com',
-        phoneNumber: '+91 98765 43212'
-      },
-      propertyId: {
-        name: 'Royal Heights',
-        type: 'Apartment',
-        propertyAddress: {
-          street: 'Royal Street',
-          city: 'Bangalore',
-          state: 'Karnataka'
-        }
-      },
-      amount: 750000,
-      paymentType: 'FULL_PAYMENT',
-      status: 'PAID',
-      paymentDate: '2025-01-13T09:15:00Z',
-      dueDate: '2025-01-13T00:00:00Z'
-    },
-    {
-      _id: '4',
-      paymentId: 'PAY-2025-004',
-      customerId: {
-        firstName: 'Neha',
-        lastName: 'Singh',
-        email: 'neha.singh@email.com',
-        phoneNumber: '+91 98765 43213'
-      },
-      propertyId: {
-        name: 'Ocean View Residency',
-        type: 'Residency',
-        propertyAddress: {
-          street: 'Ocean Drive',
-          city: 'Chennai',
-          state: 'Tamil Nadu'
-        }
-      },
-      amount: 300000,
-      paymentType: 'INSTALLMENT',
-      status: 'OVERDUE',
-      paymentDate: null,
-      dueDate: '2025-01-10T00:00:00Z'
-    },
-    {
-      _id: '5',
-      paymentId: 'PAY-2025-005',
-      customerId: {
-        firstName: 'Vikram',
-        lastName: 'Malhotra',
-        email: 'vikram.malhotra@email.com',
-        phoneNumber: '+91 98765 43214'
-      },
-      propertyId: {
-        name: 'Skyline Towers',
-        type: 'Tower',
-        propertyAddress: {
-          street: 'Skyline Avenue',
-          city: 'Hyderabad',
-          state: 'Telangana'
-        }
-      },
-      amount: 400000,
-      paymentType: 'LATE_FEE',
-      status: 'PARTIAL',
-      paymentDate: '2025-01-12T16:45:00Z',
-      dueDate: '2025-01-15T00:00:00Z'
-    }
-  ];
+  // Filter options are computed inline in the SearchAndFilter props from payments
 
   // Fetch data from API
   useEffect(() => {
-    fetchPayments();
-  }, []);
-
-  const fetchPayments = async () => {
+    const run = async () => {
     try {
       setIsLoading(true);
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Use dummy data for now
-      setPayments(dummyPayments);
-      setFilteredPayments(dummyPayments);
-      
-      // TODO: Uncomment when API is ready
-      // const response = await api.get('/payments/all');
-      // if (response.data && response.data.data && Array.isArray(response.data.data)) {
-      //   setPayments(response.data.data);
-      //   setFilteredPayments(response.data.data);
-      // } else if (response.data && Array.isArray(response.data)) {
-      //   setPayments(response.data);
-      //   setFilteredPayments(response.data);
-      // } else {
-      //   setPayments([]);
-      //   setFilteredPayments([]);
-      // }
+        const res = await api.get('/payment-history/all');
+        const data = Array.isArray(res?.data?.data) ? res.data.data : [];
+        setPayments(data);
+        setFilteredPayments(data);
     } catch (error) {
       console.error('Error fetching payments:', error);
       toast({
@@ -240,23 +62,29 @@ const AllPaymentHistory = () => {
       setIsLoading(false);
     }
   };
+    run();
+  }, []);
 
   // Filter and search functionality
   useEffect(() => {
     let filtered = payments;
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(payment =>
-        (payment.paymentId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (payment.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (payment.propertyName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+        (payment.receiptNumber?.toLowerCase().includes(term) || false) ||
+        (payment.transactionNumber?.toLowerCase().includes(term) || false) ||
+        (payment.paymentType?.toLowerCase().includes(term) || false) ||
+        (payment.paymentStatus?.toLowerCase().includes(term) || false) ||
+        (payment.bookingType?.toLowerCase().includes(term) || false) ||
         (payment.amount?.toString().includes(searchTerm) || false) ||
-        (payment._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
+        (payment.totalAmount?.toString().includes(searchTerm) || false) ||
+        (payment._id?.toLowerCase().includes(term) || false)
       );
     }
 
     if (statusFilter && statusFilter !== '') {
-      filtered = filtered.filter(payment => payment.status === statusFilter);
+      filtered = filtered.filter(payment => payment.paymentStatus === statusFilter);
     }
 
     if (paymentTypeFilter && paymentTypeFilter !== '') {
@@ -269,7 +97,7 @@ const AllPaymentHistory = () => {
 
   // Helper functions
   const formatCurrency = (amount) => {
-    if (!amount) return '₹0';
+    if (amount === undefined || amount === null) return '₹0';
     return `₹${parseFloat(amount).toLocaleString()}`;
   };
 
@@ -280,11 +108,10 @@ const AllPaymentHistory = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PAID': return 'green';
+      case 'COMPLETED': return 'green';
       case 'PENDING': return 'yellow';
-      case 'OVERDUE': return 'red';
-      case 'PARTIAL': return 'orange';
-      case 'CANCELLED': return 'gray';
+      case 'FAILED': return 'red';
+      case 'REFUNDED': return 'purple';
       default: return 'gray';
     }
   };
@@ -294,7 +121,10 @@ const AllPaymentHistory = () => {
       case 'INSTALLMENT': return 'blue';
       case 'DOWN_PAYMENT': return 'green';
       case 'FULL_PAYMENT': return 'purple';
-      case 'LATE_FEE': return 'red';
+      case 'ADVANCE': return 'teal';
+      case 'RENT': return 'cyan';
+      case 'SECURITY_DEPOSIT': return 'orange';
+      case 'MAINTENANCE': return 'pink';
       default: return 'gray';
     }
   };
@@ -303,100 +133,63 @@ const AllPaymentHistory = () => {
   const columns = [
     {
       key: 'paymentId',
-      label: 'Payment ID',
+      label: 'Payment',
+      render: (_, row) => (
+        <VStack align="start" spacing={0}>
+          <Text fontWeight="semibold" color="blue.600" noOfLines={1} maxW="170px">
+            {row.receiptNumber || row.transactionNumber || row._id?.slice(-8) || 'N/A'}
+          </Text>
+          <Text fontSize="xs" color="gray.500">Txn</Text>
+        </VStack>
+      ),
+      width: "180px"
+    },
+    {
+      key: 'bookingType',
+      label: 'Booking Type',
       render: (value, row) => (
-        <Text fontWeight="semibold" color="blue.600" noOfLines={1} maxW="150px">
-          {value || row._id?.slice(-8) || 'N/A'}
-        </Text>
-      ),
-      width: "150px"
-    },
-    {
-      key: 'customerName',
-      label: 'Customer',
-      render: (_, row) => (
-        <VStack align="start" spacing={1}>
-          <Text fontWeight="semibold" color="gray.800" noOfLines={1} maxW="120px">
-            {row.customerId?.firstName ? 
-              `${row.customerId.firstName} ${row.customerId.lastName || ''}`.trim() : 'N/A'}
-          </Text>
-          <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="120px">
-            {row.customerId?.email || 'N/A'}
-          </Text>
-        </VStack>
-      ),
-      width: "150px"
-    },
-    {
-      key: 'propertyName',
-      label: 'Property',
-      render: (_, row) => (
-        <VStack align="start" spacing={1}>
-          <Text color="gray.700" fontWeight="semibold" noOfLines={1} maxW="150px">
-            {row.propertyId?.name || 'N/A'}
-          </Text>
-          <Text color="gray.500" fontSize="xs" noOfLines={1} maxW="150px">
-            {row.propertyId?.propertyAddress?.city || 'N/A'}
-          </Text>
-        </VStack>
-      ),
-      width: "150px"
-    },
-    {
-      key: 'amount',
-      label: 'Amount',
-      render: (value) => (
-        <Text color="gray.700" fontWeight="semibold" fontSize="sm">
-          {formatCurrency(value)}
-        </Text>
+        <Badge colorScheme={row.bookingType === 'RENTAL' ? 'cyan' : 'purple'} variant="subtle" fontSize="xs">
+          {row.bookingType || 'N/A'}
+        </Badge>
       ),
       width: "120px"
+    },
+    {
+      key: 'totalAmount',
+      label: 'Amount',
+      render: (value, row) => (
+        <VStack align="start" spacing={0}>
+        <Text color="gray.700" fontWeight="semibold" fontSize="sm">
+            {formatCurrency(row.totalAmount ?? row.amount)}
+        </Text>
+          {!!row.taxAmount && <Text fontSize="xs" color="gray.500">Tax: {formatCurrency(row.taxAmount)}</Text>}
+        </VStack>
+      ),
+      width: "140px"
     },
     {
       key: 'paymentType',
       label: 'Payment Type',
-      render: (value) => {
-        const getPaymentTypeColor = (type) => {
-          switch (type) {
-            case 'INSTALLMENT': return 'blue';
-            case 'DOWN_PAYMENT': return 'green';
-            case 'FULL_PAYMENT': return 'purple';
-            case 'LATE_FEE': return 'red';
-            default: return 'gray';
-          }
-        };
-
-        return (
-          <Badge
-            colorScheme={getPaymentTypeColor(value)}
-            variant="subtle"
-            fontSize="xs"
-          >
+      render: (value) => (
+        <Badge colorScheme={getPaymentTypeColor(value)} variant="subtle" fontSize="xs">
             {value?.replace(/_/g, ' ') || 'N/A'}
           </Badge>
-        );
-      },
-      width: "120px"
+      ),
+      width: "140px"
     },
     {
-      key: 'status',
+      key: 'paymentStatus',
       label: 'Status',
-      render: (value) => {
-        return (
-          <Badge
-            colorScheme={getStatusColor(value)}
-            variant="solid"
-            fontSize="xs"
-          >
+      render: (value) => (
+        <Badge colorScheme={getStatusColor(value)} variant="solid" fontSize="xs">
             {value?.replace(/_/g, ' ') || 'N/A'}
           </Badge>
-        );
-      },
-      width: "100px"
+      ),
+      width: "110px"
     },
     {
-      key: 'paymentDate',
-      label: 'Payment Date',
+      key: 'paidDate',
+      label: 'Paid Date',
       render: (value) => (
         <Text fontSize="sm" color="gray.600">
           {formatDate(value)}
@@ -413,7 +206,7 @@ const AllPaymentHistory = () => {
         </Text>
       ),
       width: "120px"
-    }
+    },
   ];
 
   // Row actions - only view button
@@ -453,9 +246,46 @@ const AllPaymentHistory = () => {
   };
 
   // Handle view payment
-  const handleView = (payment) => {
+  const handleView = async (payment) => {
+    try {
+      setIsLoading(true);
+      const res = await api.get(`/payment-history/${payment._id}`);
+      const detailed = res?.data?.data || payment;
+
+      // Try to fetch related booking by bookingId if available
+      let bookingDetails = null;
+      const bookingId = detailed.bookingId;
+      const bookingType = detailed.bookingType;
+      try {
+        if (bookingId && bookingType === 'PURCHASE') {
+          const b = await purchaseBookingAPI.getById(bookingId);
+          bookingDetails = b?.data?.data || null;
+        } else if (bookingId && bookingType === 'RENTAL') {
+          const b = await rentalBookingAPI.getById(bookingId);
+          bookingDetails = b?.data?.data || null;
+        }
+      } catch {
+        // booking fetch is optional; ignore errors
+      }
+
+      const enriched = bookingDetails ? { ...detailed, bookingDetails } : detailed;
+      setSelectedPayment(enriched);
+      onViewerOpen();
+    } catch (error) {
+      console.error('Failed to fetch payment details', error);
+      toast({
+        title: "Failed to fetch payment details",
+        status: "error",
+        duration: 2500,
+        isClosable: true,
+        position: "top-right",
+      });
+      // Fallback to showing the row if detail fetch fails
     setSelectedPayment(payment);
     onViewerOpen();
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Handle page change
@@ -476,13 +306,12 @@ const AllPaymentHistory = () => {
     try {
       // Create CSV content from the actual data
       const exportData = filteredPayments.map(payment => ({
-        'Payment ID': payment.paymentId || payment._id?.slice(-8) || 'N/A',
-        'Customer': payment.customerName || `${payment.customerId?.firstName || ''} ${payment.customerId?.lastName || ''}`.trim() || 'N/A',
-        'Property': payment.propertyName || payment.propertyId?.name || 'N/A',
-        'Amount': formatCurrency(payment.amount),
+        'Payment ID': payment.receiptNumber || payment.transactionNumber || payment._id?.slice(-8) || 'N/A',
+        'Booking Type': payment.bookingType || 'N/A',
+        'Amount': formatCurrency(payment.totalAmount ?? payment.amount),
         'Payment Type': payment.paymentType || 'N/A',
-        'Status': payment.status || 'N/A',
-        'Payment Date': formatDate(payment.paymentDate),
+        'Status': payment.paymentStatus || 'N/A',
+        'Paid Date': formatDate(payment.paidDate),
         'Due Date': formatDate(payment.dueDate)
       }));
 
@@ -551,7 +380,7 @@ const AllPaymentHistory = () => {
         searchTerm={searchTerm}
         onSearchChange={handleSearch}
         onSearchSubmit={() => {}} // No API search needed
-        searchPlaceholder="Search payments..."
+        searchPlaceholder="Search by receipt/txn, type, status..."
         filters={{ 
           status: statusFilter, 
           paymentType: paymentTypeFilter 
@@ -563,12 +392,12 @@ const AllPaymentHistory = () => {
           status: {
             label: "Status",
             placeholder: "Filter by status",
-            options: filterOptions.status
+            options: [{ value: '', label: 'All Statuses' }, ...[...new Set(payments.map(p => p.paymentStatus).filter(Boolean))].map(s => ({ value: s, label: s.replace(/_/g, ' ') }))],
           },
           paymentType: {
             label: "Payment Type",
             placeholder: "Filter by payment type",
-            options: filterOptions.paymentType
+            options: [{ value: '', label: 'All Payment Types' }, ...[...new Set(payments.map(p => p.paymentType).filter(Boolean))].map(t => ({ value: t, label: t.replace(/_/g, ' ') }))],
           }
         }}
         title="Filter Payments"

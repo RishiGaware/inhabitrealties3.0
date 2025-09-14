@@ -45,11 +45,10 @@ const PaymentViewerModal = ({ isOpen, onClose, payment }) => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'PAID': return 'green';
+      case 'COMPLETED': return 'green';
       case 'PENDING': return 'yellow';
-      case 'OVERDUE': return 'red';
-      case 'PARTIAL': return 'orange';
-      case 'CANCELLED': return 'gray';
+      case 'FAILED': return 'red';
+      case 'REFUNDED': return 'purple';
       default: return 'gray';
     }
   };
@@ -92,9 +91,7 @@ const PaymentViewerModal = ({ isOpen, onClose, payment }) => {
     }
   };
 
-  const handleFileView = (file) => {
-    setSelectedFile(file);
-  };
+  // Removed file preview logic tied to dummy attachments
 
   const getFileIcon = (fileType) => {
     if (fileType.includes('pdf')) return <FiFileText />;
@@ -108,69 +105,7 @@ const PaymentViewerModal = ({ isOpen, onClose, payment }) => {
     return 'blue';
   };
 
-  // Dummy payment proof files
-  const paymentProofFiles = [
-    {
-      id: 1,
-      name: 'Payment_Receipt_001.pdf',
-      type: 'application/pdf',
-      size: '2.5 MB',
-      uploadedAt: '2025-01-15T10:30:00Z',
-      category: 'Payment Proof'
-    },
-    {
-      id: 2,
-      name: 'Bank_Transfer_Screenshot.jpg',
-      type: 'image/jpeg',
-      size: '1.8 MB',
-      uploadedAt: '2025-01-15T10:25:00Z',
-      category: 'Payment Proof'
-    },
-    {
-      id: 3,
-      name: 'Cheque_Image.jpg',
-      type: 'image/jpeg',
-      size: '2.1 MB',
-      uploadedAt: '2025-01-15T10:20:00Z',
-      category: 'Payment Proof'
-    }
-  ];
-
-  // Dummy initial documents
-  const initialDocuments = [
-    {
-      id: 1,
-      name: 'Property_Agreement.pdf',
-      type: 'application/pdf',
-      size: '5.2 MB',
-      uploadedAt: '2025-01-10T09:00:00Z',
-      category: 'Initial Documents'
-    },
-    {
-      id: 2,
-      name: 'Customer_ID_Proof.jpg',
-      type: 'image/jpeg',
-      size: '1.5 MB',
-      uploadedAt: '2025-01-10T08:45:00Z',
-      category: 'Initial Documents'
-    },
-    {
-      id: 3,
-      name: 'Income_Proof.pdf',
-      type: 'application/pdf',
-      size: '3.8 MB',
-      uploadedAt: '2025-01-10T08:30:00Z',
-      category: 'Initial Documents'
-    },
-    {
-      id: 4,
-      name: 'Bank_Statement.pdf',
-      type: 'application/pdf',
-      size: '4.1 MB',
-      uploadedAt: '2025-01-10T08:15:00Z',
-      category: 'Initial Documents'
-    }
-  ];
+  // Removed dummy attachment placeholders
 
   return (
     <>
@@ -196,8 +131,8 @@ const PaymentViewerModal = ({ isOpen, onClose, payment }) => {
               <Text fontSize={{ base: "lg", sm: "xl" }} fontWeight="bold" color="gray.800" textAlign={{ base: "center", sm: "left" }}>
                 Payment Details
               </Text>
-              <Badge colorScheme={getStatusColor(payment.status)} variant="solid" fontSize={{ base: "xs", sm: "sm" }}>
-                {payment.status?.replace(/_/g, ' ') || 'N/A'}
+              <Badge colorScheme={getStatusColor(payment.paymentStatus)} variant="solid" fontSize={{ base: "xs", sm: "sm" }}>
+                {payment.paymentStatus?.replace(/_/g, ' ') || 'N/A'}
               </Badge>
             </Flex>
             <IconButton
@@ -221,15 +156,15 @@ const PaymentViewerModal = ({ isOpen, onClose, payment }) => {
                 <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">Payment Summary</Heading>
                 <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={{ base: 3, sm: 4 }}>
                   <GridItem>
-                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Payment ID</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Receipt / Txn</Text>
                     <Text fontSize={{ base: "sm", sm: "md" }} fontWeight="bold" color="gray.800">
-                      {payment.paymentId || payment._id?.slice(-8) || 'N/A'}
+                      {payment.receiptNumber || payment.transactionNumber || payment._id?.slice(-8) || 'N/A'}
                     </Text>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Amount</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Total Amount</Text>
                     <Text fontSize={{ base: "md", sm: "lg" }} fontWeight="bold" color="blue.600">
-                      {formatCurrency(payment.amount)}
+                      {formatCurrency(payment.totalAmount ?? payment.amount)}
                     </Text>
                   </GridItem>
                   <GridItem>
@@ -239,8 +174,12 @@ const PaymentViewerModal = ({ isOpen, onClose, payment }) => {
                     </Badge>
                   </GridItem>
                   <GridItem>
-                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Payment Date</Text>
-                    <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">{formatDate(payment.paymentDate)}</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Payment Method</Text>
+                    <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">{payment.paymentMode || payment.paymentMethod || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Paid Date</Text>
+                    <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">{formatDate(payment.paidDate)}</Text>
                   </GridItem>
                   <GridItem>
                     <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Due Date</Text>
@@ -248,180 +187,100 @@ const PaymentViewerModal = ({ isOpen, onClose, payment }) => {
                   </GridItem>
                   <GridItem>
                     <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Status</Text>
-                    <Badge colorScheme={getStatusColor(payment.status)} variant="solid" fontSize={{ base: "xs", sm: "sm" }}>
-                      {payment.status?.replace(/_/g, ' ') || 'N/A'}
+                    <Badge colorScheme={getStatusColor(payment.paymentStatus)} variant="solid" fontSize={{ base: "xs", sm: "sm" }}>
+                      {payment.paymentStatus?.replace(/_/g, ' ') || 'N/A'}
                     </Badge>
                   </GridItem>
+                  {!!payment.taxAmount && (
+                    <GridItem>
+                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Tax</Text>
+                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">{formatCurrency(payment.taxAmount)}</Text>
+                    </GridItem>
+                  )}
+                  {!!payment.currency && (
+                    <GridItem>
+                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Currency</Text>
+                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">{payment.currency}</Text>
+                    </GridItem>
+                  )}
                 </Grid>
               </Box>
 
-              {/* Customer & Property Details */}
-              <SimpleGrid columns={{ base: 1, sm: 1, md: 2 }} spacing={{ base: 4, sm: 5, md: 6 }}>
-                <Box p={{ base: 3, sm: 4 }} bg="gray.50" borderRadius="md" border="1px" borderColor="gray.200">
-                  <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">Customer Details</Heading>
-                  <VStack spacing={{ base: 2, sm: 3 }} align="start">
-                    <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Name</Text>
-                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
-                        {payment.customerId?.firstName ? 
-                          `${payment.customerId.firstName} ${payment.customerId.lastName || ''}`.trim() : 'N/A'}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Email</Text>
-                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
-                        {payment.customerId?.email || 'N/A'}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Phone</Text>
-                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
-                        {payment.customerPhone || payment.customerId?.phoneNumber || 'N/A'}
-                      </Text>
-                    </Box>
-                  </VStack>
-                </Box>
+              {/* Customer & Property Details from bookingDetails if present */}
+              {payment.bookingDetails && (
+                <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, sm: 5, md: 6 }}>
+                  <Box p={{ base: 3, sm: 4 }} bg="gray.50" borderRadius="md" border="1px" borderColor="gray.200">
+                    <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">Customer Details</Heading>
+                    <VStack spacing={{ base: 2, sm: 3 }} align="start">
+                      <Box>
+                        <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Name</Text>
+                        <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                          {payment.bookingDetails.customerId ? `${payment.bookingDetails.customerId.firstName || ''} ${payment.bookingDetails.customerId.lastName || ''}`.trim() : 'N/A'}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Email</Text>
+                        <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                          {payment.bookingDetails.customerId?.email || 'N/A'}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Phone</Text>
+                        <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                          {payment.bookingDetails.customerId?.phoneNumber || 'N/A'}
+                        </Text>
+                      </Box>
+                    </VStack>
+                  </Box>
 
-                <Box p={{ base: 3, sm: 4 }} bg="gray.50" borderRadius="md" border="1px" borderColor="gray.200">
-                  <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">Property Details</Heading>
-                  <VStack spacing={{ base: 2, sm: 3 }} align="start">
-                    <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Name</Text>
-                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
-                        {payment.propertyId?.name || 'N/A'}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Address</Text>
-                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
-                        {payment.propertyAddress || `${payment.propertyId?.propertyAddress?.street || ''}, ${payment.propertyId?.propertyAddress?.city || ''}, ${payment.propertyId?.propertyAddress?.state || ''}` || 'N/A'}
-                      </Text>
-                    </Box>
-                    <Box>
-                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Type</Text>
-                      <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
-                        {payment.propertyType || payment.propertyId?.type || 'N/A'}
-                      </Text>
-                    </Box>
-                  </VStack>
-                </Box>
-              </SimpleGrid>
+                  <Box p={{ base: 3, sm: 4 }} bg="gray.50" borderRadius="md" border="1px" borderColor="gray.200">
+                    <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">Property Details</Heading>
+                    <VStack spacing={{ base: 2, sm: 3 }} align="start">
+                      <Box>
+                        <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Name</Text>
+                        <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                          {payment.bookingDetails.propertyId?.name || 'N/A'}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Address</Text>
+                        <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                          {payment.bookingDetails.propertyId?.propertyAddress ? `${payment.bookingDetails.propertyId.propertyAddress.street || ''}, ${payment.bookingDetails.propertyId.propertyAddress.city || ''}, ${payment.bookingDetails.propertyId.propertyAddress.state || ''}` : 'N/A'}
+                        </Text>
+                      </Box>
+                      <Box>
+                        <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Type</Text>
+                        <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                          {payment.bookingDetails.propertyId?.type || 'N/A'}
+                        </Text>
+                      </Box>
+                    </VStack>
+                  </Box>
+                </SimpleGrid>
+              )}
 
-              {/* Payment Proof Files */}
+              {/* People */}
               <Box p={{ base: 3, sm: 4 }} bg="gray.50" borderRadius="md" border="1px" borderColor="gray.200">
-                <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">Payment Proof Files</Heading>
-                <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={{ base: 3, sm: 4 }}>
-                  {paymentProofFiles.map((file) => (
-                    <Box
-                      key={file.id}
-                      p={{ base: 2, sm: 3 }}
-                      bg="white"
-                      borderRadius="md"
-                      border="1px"
-                      borderColor="gray.200"
-                      shadow="sm"
-                    >
-                      <HStack spacing={{ base: 2, sm: 3 }} mb={{ base: 2, sm: 2 }}>
-                        <Box
-                          p={{ base: 1, sm: 2 }}
-                          bg={`${getFileTypeColor(file.type)}.100`}
-                          borderRadius="md"
-                          color={`${getFileTypeColor(file.type)}.600`}
-                        >
-                          {getFileIcon(file.type)}
-                        </Box>
-                        <VStack align="start" spacing={1} flex="1">
-                          <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="semibold" color="gray.800" noOfLines={1}>
-                            {file.name}
-                          </Text>
-                          <Text fontSize={{ base: "2xs", sm: "xs" }} color="gray.500">
-                            {file.size} • {formatDate(file.uploadedAt)}
-                          </Text>
-                        </VStack>
-                      </HStack>
-                      <HStack spacing={{ base: 1, sm: 2 }} justify="center">
-                        <Button
-                          size={{ base: "xs", sm: "sm" }}
-                          leftIcon={<FiEye />}
-                          variant="outline"
-                          colorScheme="blue"
-                          onClick={() => handleFileView(file)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size={{ base: "xs", sm: "sm" }}
-                          leftIcon={isLoadingFile ? <Spinner size="sm" /> : <FiDownload />}
-                          variant="outline"
-                          colorScheme="green"
-                          onClick={() => handleFileDownload(file)}
-                          isLoading={isLoadingFile}
-                        >
-                          Download
-                        </Button>
-                      </HStack>
-                    </Box>
-                  ))}
+                <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">People</Heading>
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 4, sm: 6 }}>
+                  <Box>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Responsible Person</Text>
+                    <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                      {payment.responsiblePersonId ? `${payment.responsiblePersonId.firstName || ''} ${payment.responsiblePersonId.lastName || ''}`.trim() : 'N/A'}
+                    </Text>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600">{payment.responsiblePersonId?.email || ''}</Text>
+                  </Box>
+                  <Box>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="semibold">Recorded By</Text>
+                    <Text fontSize={{ base: "sm", sm: "md" }} color="gray.800">
+                      {payment.recordedByUserId ? `${payment.recordedByUserId.firstName || ''} ${payment.recordedByUserId.lastName || ''}`.trim() : 'N/A'}
+                    </Text>
+                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600">{payment.recordedByUserId?.email || ''}</Text>
+                  </Box>
                 </SimpleGrid>
               </Box>
 
-              {/* Initial Documents */}
-              <Box p={{ base: 3, sm: 4 }} bg="gray.50" borderRadius="md" border="1px" borderColor="gray.200">
-                <Heading size={{ base: "sm", sm: "md" }} mb={{ base: 3, sm: 4 }} color="gray.800">Initial Documents</Heading>
-                <SimpleGrid columns={{ base: 1, sm: 1, md: 2, lg: 3 }} spacing={{ base: 3, sm: 4 }}>
-                  {initialDocuments.map((file) => (
-                    <Box
-                      key={file.id}
-                      p={{ base: 2, sm: 3 }}
-                      bg="white"
-                      borderRadius="md"
-                      border="1px"
-                      borderColor="gray.200"
-                      shadow="sm"
-                    >
-                      <HStack spacing={{ base: 2, sm: 3 }} mb={{ base: 2, sm: 2 }}>
-                        <Box
-                          p={{ base: 1, sm: 2 }}
-                          bg={`${getFileTypeColor(file.type)}.100`}
-                          borderRadius="md"
-                          color={`${getFileTypeColor(file.type)}.600`}
-                        >
-                          {getFileIcon(file.type)}
-                        </Box>
-                        <VStack align="start" spacing={1} flex="1">
-                          <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="semibold" color="gray.800" noOfLines={1}>
-                            {file.name}
-                          </Text>
-                          <Text fontSize={{ base: "2xs", sm: "xs" }} color="gray.500">
-                            {file.size} • {formatDate(file.uploadedAt)}
-                          </Text>
-                        </VStack>
-                      </HStack>
-                      <HStack spacing={{ base: 1, sm: 2 }} justify="center">
-                        <Button
-                          size={{ base: "xs", sm: "sm" }}
-                          leftIcon={<FiEye />}
-                          variant="outline"
-                          colorScheme="blue"
-                          onClick={() => handleFileView(file)}
-                        >
-                          View
-                        </Button>
-                        <Button
-                          size={{ base: "xs", sm: "sm" }}
-                          leftIcon={isLoadingFile ? <Spinner size="sm" /> : <FiDownload />}
-                          variant="outline"
-                          colorScheme="green"
-                          onClick={() => handleFileDownload(file)}
-                          isLoading={isLoadingFile}
-                        >
-                          Download
-                        </Button>
-                      </HStack>
-                    </Box>
-                  ))}
-                </SimpleGrid>
-              </Box>
+              {/* Removed dummy Payment Proof Files and Initial Documents sections to reflect actual API-driven UI */}
             </VStack>
           </ModalBody>
 
