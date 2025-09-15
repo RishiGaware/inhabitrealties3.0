@@ -124,3 +124,4 @@ MENU RESTRICTIONS:
 - USER: Only personal data, no management functions
 - CLIENT: Only client portal functions
 
+
