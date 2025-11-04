@@ -3,9 +3,7 @@ import api from '../api';
 // Dashboard service for fetching dashboard data
 export const fetchDashboardOverview = async () => {
   try {
-    console.log('Dashboard Service: Fetching overview...');
     const response = await api.get('/dashboard/overview');
-    console.log('Dashboard Service: Overview response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Dashboard Service: Fetch overview error:', error);
@@ -20,9 +18,7 @@ export const fetchDashboardOverview = async () => {
 
 export const fetchRecentActivities = async () => {
   try {
-    console.log('Dashboard Service: Fetching activities...');
     const response = await api.get('/dashboard/activities');
-    console.log('Dashboard Service: Activities response:', response.data);
     return response.data;
   } catch (error) {
     console.error('Dashboard Service: Fetch activities error:', error);

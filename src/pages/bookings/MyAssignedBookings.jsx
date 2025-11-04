@@ -302,13 +302,10 @@ const MyAssignedBookings = () => {
 
   // Handle edit booking
   const handleEdit = (id) => {
-    console.log('Edit button clicked for booking ID:', id);
     const booking = bookings.find(b => b._id === id);
-    console.log('Found booking:', booking);
     if (booking) {
       setEditingBooking(booking);
       setIsEditFormOpen(true);
-      console.log('Edit form modal should now be open');
     } else {
       console.error('Booking not found for ID:', id);
     }
@@ -316,7 +313,6 @@ const MyAssignedBookings = () => {
 
   // Handle edit form update
   const handleEditFormUpdate = () => {
-    console.log('Edit form update triggered');
     // Refresh the bookings data after update
     fetchAssignedBookings();
     setIsEditFormOpen(false);
@@ -462,7 +458,6 @@ const MyAssignedBookings = () => {
       <PurchaseBookingEditForm
         isOpen={isEditFormOpen}
         onClose={() => {
-          console.log('Edit form closing');
           setIsEditFormOpen(false);
           setEditingBooking(null);
         }}

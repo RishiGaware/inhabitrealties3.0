@@ -80,11 +80,9 @@ const UserDashboard = () => {
       setError(null);
 
       try {
-        console.log('Fetching user dashboard data...');
         
         // Check if user has a valid token
         const token = localStorage.getItem('auth');
-        console.log('Auth data from localStorage:', token);
         
         if (!token) {
           throw new Error('No authentication token found. Please log in again.');
@@ -94,9 +92,7 @@ const UserDashboard = () => {
         let authData;
         try {
           authData = JSON.parse(token);
-          console.log('Parsed auth data:', authData);
         } catch (e) {
-          console.error('Error parsing auth data:', e);
           throw new Error('Invalid authentication data. Please log in again.');
         }
         
@@ -104,7 +100,6 @@ const UserDashboard = () => {
           throw new Error('No token found in auth data. Please log in again.');
         }
         
-        console.log('Token found, making API calls...');
         
         // Get user ID from auth data
         const userId = authData.user?.id || authData.userId;
@@ -118,15 +113,6 @@ const UserDashboard = () => {
           userId ? meetingAPI.getMyTodaysMeetings(userId) : Promise.resolve({ data: { data: [] } }),
           userId ? meetingAPI.getMyTomorrowsMeetings(userId) : Promise.resolve({ data: { data: [] } })
         ]);
-
-        console.log('User Dashboard API responses:', {
-          overview: overviewResponse,
-          activities: activitiesResponse,
-          financial: financialResponse,
-          conversion: conversionResponse,
-          todaysMeetings: todaysMeetingsResponse,
-          tomorrowsMeetings: tomorrowsMeetingsResponse
-        });
 
         // Process meeting data
         if (todaysMeetingsResponse.data?.data) {
@@ -181,14 +167,6 @@ const UserDashboard = () => {
         }
 
       } catch (error) {
-        console.error('Error fetching user dashboard data:', error);
-        console.error('Error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          statusText: error.response?.statusText
-        });
-        
         // If it's an authentication error, show login prompt
         if (error.message.includes('token') || error.response?.status === 401) {
           setError('Please log in to view dashboard data');

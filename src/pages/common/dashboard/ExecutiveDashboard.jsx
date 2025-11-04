@@ -41,6 +41,8 @@ import {
 } from '../../../services/dashboard/dashboardService';
 import { showErrorToast } from '../../../utils/toastUtils';
 import Loader from '../../../components/common/Loader';
+import { useAuth } from '../../../context/AuthContext';
+import { hasRouteAccess } from '../../../utils/rolePermissions';
 
 const ExecutiveDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -67,6 +69,7 @@ const ExecutiveDashboard = () => {
   const [conversionRate, setConversionRate] = useState(0);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { getUserRoleName } = useAuth();
 
   // Color mode values
   const bgColor = useColorModeValue('gray.50', 'gray.900');
@@ -74,6 +77,8 @@ const ExecutiveDashboard = () => {
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
   const mutedTextColor = useColorModeValue('gray.600', 'gray.400');
+  const roleCardBg = useColorModeValue('gray.50', 'gray.700');
+  const roleCardBorder = useColorModeValue('gray.200', 'gray.600');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -81,11 +86,9 @@ const ExecutiveDashboard = () => {
       setError(null);
 
       try {
-        console.log('Fetching executive dashboard data...');
         
         // Check if user has a valid token
         const token = localStorage.getItem('auth');
-        console.log('Auth data from localStorage:', token);
         
         if (!token) {
           throw new Error('No authentication token found. Please log in again.');
@@ -95,9 +98,7 @@ const ExecutiveDashboard = () => {
         let authData;
         try {
           authData = JSON.parse(token);
-          console.log('Parsed auth data:', authData);
-        } catch (e) {
-          console.error('Error parsing auth data:', e);
+        } catch {
           throw new Error('Invalid authentication data. Please log in again.');
         }
         
@@ -105,7 +106,6 @@ const ExecutiveDashboard = () => {
           throw new Error('No token found in auth data. Please log in again.');
         }
         
-        console.log('Token found, making API calls...');
         
         // Fetch all dashboard data in parallel
         const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = await Promise.all([
@@ -115,17 +115,11 @@ const ExecutiveDashboard = () => {
           fetchLeadConversionRates()
         ]);
 
-        console.log('Executive Dashboard API responses:', {
-          overview: overviewResponse,
-          activities: activitiesResponse,
-          financial: financialResponse,
-          conversion: conversionResponse
-        });
+      
 
         // Update stats with real data
         if (overviewResponse.statusCode === 200) {
           const overviewData = overviewResponse.data;
-          console.log('Executive Dashboard - Role-wise customers data:', overviewData.roleWiseCustomers);
           setStats({
             totalProperties: overviewData.totalProperties || 0,
             totalLeads: overviewData.totalLeads || 0,
@@ -168,14 +162,6 @@ const ExecutiveDashboard = () => {
         }
 
       } catch (error) {
-        console.error('Error fetching executive dashboard data:', error);
-        console.error('Error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          statusText: error.response?.statusText
-        });
-        
         // If it's an authentication error, show login prompt
         if (error.message.includes('token') || error.response?.status === 401) {
           setError('Please log in to view dashboard data');
@@ -204,21 +190,53 @@ const ExecutiveDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const StatCard = ({ title, value, icon: Icon, color, trend, trendValue, onClick }) => (
-    <motion.div
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <Card 
-        bg={cardBg} 
-        borderRadius="xl" 
-        boxShadow="lg" 
-        border="1px" 
-        borderColor={borderColor}
-        cursor="pointer"
-        onClick={onClick}
-        _hover={{ boxShadow: 'xl' }}
+  // Navigation handler with role access check
+  const handleCardClick = (route) => {
+    const userRole = getUserRoleName() || 'EXECUTIVE';
+    
+    // Check if user has access to this route
+    if (hasRouteAccess(userRole, route)) {
+      navigate(route);
+    } else {
+      showErrorToast('You do not have access to this page');
+    }
+  };
+
+  // Map stat cards to routes
+  const getRouteForStat = (title) => {
+    const routeMap = {
+      'Total Properties': '/property/property-master',
+      'Total Leads': '/lead/add',
+      'Rental Bookings': '/rental-bookings/all',
+      'Purchase Bookings': '/purchase-bookings/all',
+      'Sold Properties': '/properties',
+      'Monthly Revenue': '/payment-history/all',
+      'Quarterly Growth': '/admin/reports',
+      'Team Performance': '/admin/user-management',
+      'Active Leads': '/lead/add',
+      'Average Rating': '/admin/reports',
+      'Pending Followups': '/lead/qualification'
+    };
+    return routeMap[title] || '/';
+  };
+
+  const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => {
+    const route = getRouteForStat(title);
+    return (
+      <motion.div
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
       >
+        <Card 
+          bg={cardBg} 
+          borderRadius="xl" 
+          boxShadow="lg" 
+          border="1px" 
+          borderColor={borderColor}
+          cursor="pointer"
+          onClick={() => handleCardClick(route)}
+          _hover={{ boxShadow: 'xl' }}
+        >
         <CardBody p={6}>
           <HStack justify="space-between" align="flex-start" mb={4}>
             <VStack align="flex-start" spacing={1}>
@@ -253,7 +271,8 @@ const ExecutiveDashboard = () => {
         </CardBody>
       </Card>
     </motion.div>
-  );
+    );
+  };
 
   const ActivityItem = ({ activity }) => (
     <motion.div
@@ -533,9 +552,9 @@ const ExecutiveDashboard = () => {
                       key={role}
                       p={4}
                       borderRadius="lg"
-                      bg={useColorModeValue('gray.50', 'gray.700')}
+                      bg={roleCardBg}
                       border="1px"
-                      borderColor={useColorModeValue('gray.200', 'gray.600')}
+                      borderColor={roleCardBorder}
                     >
                       <VStack spacing={2}>
                         <Text fontSize="2xl" fontWeight="bold" color={textColor}>
@@ -568,7 +587,7 @@ const ExecutiveDashboard = () => {
                 <Text fontSize="xl" fontWeight="bold" color={textColor} mb={6}>
                   Performance Overview
                 </Text>
-                <Grid templateColumns="repeat(3, 1fr)" gap={6}>
+                <Grid templateColumns="repeat(1, 1fr)" gap={6}>
                   <VStack spacing={3}>
                     <Text fontSize="3xl" fontWeight="bold" color="green.600">
                       {conversionRate}%
@@ -577,24 +596,6 @@ const ExecutiveDashboard = () => {
                       Lead Conversion Rate
                     </Text>
                     <Progress value={conversionRate} colorScheme="green" size="sm" w="full" borderRadius="full" />
-                  </VStack>
-                  <VStack spacing={3}>
-                    <Text fontSize="3xl" fontWeight="bold" color="blue.600">
-                      {stats.totalProperties}
-                    </Text>
-                    <Text fontSize="sm" color={mutedTextColor} textAlign="center">
-                      Total Properties
-                    </Text>
-                    <Progress value={Math.min((stats.totalProperties / 200) * 100, 100)} colorScheme="blue" size="sm" w="full" borderRadius="full" />
-                  </VStack>
-                  <VStack spacing={3}>
-                    <Text fontSize="3xl" fontWeight="bold" color="purple.600">
-                      {formatCurrency(stats.totalRevenue)}
-                    </Text>
-                    <Text fontSize="sm" color={mutedTextColor} textAlign="center">
-                      Total Revenue
-                    </Text>
-                    <Progress value={Math.min((stats.totalRevenue / 5000000) * 100, 100)} colorScheme="purple" size="sm" w="full" borderRadius="full" />
                   </VStack>
                 </Grid>
               </CardBody>

@@ -64,17 +64,6 @@ const PropertyMaster = () => {
     }
   }, [getAllPropertyTypes, isAuthenticated]);
 
-  // Debug: Log property types when they change
-  useEffect(() => {
-    if (propertyTypes.length > 0) {
-      console.log('PropertyMaster - Available Property Types:', propertyTypes.map(pt => ({
-        id: pt._id,
-        typeName: pt.typeName,
-        description: pt.description
-      })));
-    }
-  }, [propertyTypes]);
-
   const fetchUserFavorites = async () => {
     try {
       const userId = getUserId();
@@ -101,7 +90,6 @@ const PropertyMaster = () => {
       setFavorites(favoritePropertyIds);
       setFavoriteRecordIds(recordIdsMap);
     } catch (error) {
-      console.error('Failed to fetch user favorites:', error);
       showErrorToast('Failed to load favorites');
     }
   };
@@ -115,14 +103,8 @@ const PropertyMaster = () => {
       
       // Debug: Log all unique property statuses
       const uniqueStatuses = [...new Set(response.data?.map(p => p.propertyStatus) || [])];
-      console.log('PropertyMaster.jsx - All unique property statuses:', uniqueStatuses);
       
       // Debug: Log properties with their propertyTypeId
-      console.log('PropertyMaster - Properties with PropertyTypeId:', response.data?.map(p => ({
-        name: p.name,
-        propertyTypeId: p.propertyTypeId,
-        propertyStatus: p.propertyStatus
-      })));
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');
       else if (error.response?.status === 500) setErrorType('server');
@@ -205,7 +187,6 @@ const PropertyMaster = () => {
       const successMessage = response?.message || 'Property added successfully';
       showSuccessToast(successMessage);
     } catch (error) {
-      console.error('PropertyMaster: Add property error:', error);
       let errorMessage = 'Failed to add property';
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -280,7 +261,6 @@ const PropertyMaster = () => {
       const successMessage = response?.message || 'Property updated successfully';
       showSuccessToast(successMessage);
     } catch (error) {
-      console.error('PropertyMaster: Update property error:', error);
       let errorMessage = 'Failed to update property';
       if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
@@ -316,7 +296,6 @@ const PropertyMaster = () => {
         const successMessage = response?.message || 'Property deleted successfully';
         showSuccessToast(successMessage);
       } catch (error) {
-        console.error('PropertyMaster: Delete property error:', error);
         showErrorToast('Failed to delete property');
       } finally {
         setIsApiCallInProgress(false);
@@ -381,7 +360,6 @@ const PropertyMaster = () => {
         showSuccessToast('Property added to favorites');
       }
     } catch (error) {
-      console.error('Failed to toggle favorite:', error);
       const errorMessage = error.response?.data?.message || 'Failed to update favorites';
       showErrorToast(errorMessage);
     } finally {
@@ -500,18 +478,7 @@ const PropertyMaster = () => {
       }
       
       // Debug logging for property type filtering
-      if (selectedType !== 'ALL') {
-        console.log('PropertyMaster - Property Type Filter Debug:', {
-          propertyName: property.name,
-          propertyTypeId: property.propertyTypeId,
-          selectedType,
-          foundType: type,
-          typeName: propertyTypeName,
-          exactMatch: propertyTypeName === selectedType,
-          caseInsensitiveMatch: propertyTypeName?.toLowerCase() === selectedType.toLowerCase(),
-          isMatch
-        });
-      }
+     
       
       return isMatch;
     })();
@@ -519,46 +486,17 @@ const PropertyMaster = () => {
     // Filter by property status
     const statusMatch = selectedStatus === 'ALL' || property.propertyStatus === selectedStatus;
     
-    // Debug logging for status filtering
-    if (selectedStatus !== 'ALL') {
-      console.log('PropertyMaster - Status Filter Debug:', {
-        propertyName: property.name,
-        propertyStatus: property.propertyStatus,
-        selectedStatus,
-        statusMatch
-      });
-    }
+
     
     const finalMatch = typeMatch && statusMatch;
     
-    // Debug logging for final result
-    if (selectedType !== 'ALL' || selectedStatus !== 'ALL') {
-      console.log('PropertyMaster - Final Filter Result:', {
-        propertyName: property.name,
-        selectedType,
-        selectedStatus,
-        typeMatch,
-        statusMatch,
-        finalMatch
-      });
-    }
-    
+
     return finalMatch;
   });
 
   // Debug: Log filtering summary
   useEffect(() => {
     if (properties.length > 0) {
-      console.log('=== PROPERTY MASTER FILTERING SUMMARY ===');
-      console.log('Total Properties:', properties.length);
-      console.log('Filtered Properties:', filteredProperties.length);
-      console.log('Selected Type:', selectedType);
-      console.log('Selected Status:', selectedStatus);
-      console.log('Available Property Types:', propertyTypes.map(pt => pt.typeName));
-      console.log('Available Property Statuses:', [...new Set(properties.map(p => p.propertyStatus))]);
-      
-      // Detailed property type analysis
-      console.log('=== PROPERTY MASTER - PROPERTY TYPE ANALYSIS ===');
       properties.forEach(property => {
         let type = null;
         let propertyTypeName = null;
@@ -571,14 +509,7 @@ const PropertyMaster = () => {
           propertyTypeName = property.propertyTypeId.typeName;
         }
         
-        console.log(`Property: ${property.name}`, {
-          propertyTypeId: property.propertyTypeId,
-          foundType: type,
-          typeName: propertyTypeName,
-          propertyStatus: property.propertyStatus
-        });
       });
-      console.log('================================================');
     }
   }, [selectedType, selectedStatus, properties, filteredProperties, propertyTypes]);
 

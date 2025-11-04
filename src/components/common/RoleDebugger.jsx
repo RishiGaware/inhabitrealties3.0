@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Button, VStack, Text, Code, Divider } from '@chakra-ui/react';
 import { useAuth } from '../../context/AuthContext';
-import { printRoleInfo, getUserRole, getUserRoleDetails, getUserRoleName } from '../../utils/roleUtils';
+import { getUserRole, getUserRoleDetails, getUserRoleName } from '../../utils/roleUtils';
 
 /**
  * Role Debugger Component
@@ -24,7 +24,6 @@ const RoleDebugger = () => {
       localStorageRoleDetails: localStorage.getItem('userRoleDetails'),
     };
     setRoleInfo(info);
-    console.log('Role Info Refreshed:', info);
   };
 
   useEffect(() => {
@@ -38,10 +37,6 @@ const RoleDebugger = () => {
         
         <Button onClick={refreshRoleInfo} colorScheme="blue" size="sm">
           Refresh Role Info
-        </Button>
-        
-        <Button onClick={printRoleInfo} colorScheme="green" size="sm">
-          Print to Console
         </Button>
         
         <Divider />
@@ -73,5 +68,10 @@ const RoleDebugger = () => {
 };
 
 export default RoleDebugger;
+
+
+
+
+
 
 

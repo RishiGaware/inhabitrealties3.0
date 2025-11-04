@@ -19,13 +19,11 @@ const ProtectedRoute = ({ children, requiredRole = null, allowedRoles = [] }) =>
 
   // If specific role is required
   if (requiredRole && userRole !== requiredRole) {
-    console.log(`Access denied: Required role ${requiredRole}, user has ${userRole}`);
     return <Navigate to="/unauthorized" replace />;
   }
 
   // If specific roles are allowed
   if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-    console.log(`Access denied: Allowed roles ${allowedRoles.join(', ')}, user has ${userRole}`);
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -33,7 +31,6 @@ const ProtectedRoute = ({ children, requiredRole = null, allowedRoles = [] }) =>
   const hasAccess = hasRouteAccess(userRole, location.pathname);
   
   if (!hasAccess) {
-    console.log(`Access denied: User role ${userRole} does not have access to ${location.pathname}`);
     return <Navigate to="/unauthorized" replace />;
   }
 
@@ -41,5 +38,10 @@ const ProtectedRoute = ({ children, requiredRole = null, allowedRoles = [] }) =>
 };
 
 export default ProtectedRoute;
+
+
+
+
+
 
 

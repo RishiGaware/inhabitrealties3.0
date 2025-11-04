@@ -3,7 +3,7 @@ import authService from '../services/auth/authService';
 import { registerNormalUser } from '../services/auth/authService';
 import { fetchRoleById } from '../services/rolemanagement/roleService';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext(null);  
 
 // Register Context for Registration Page
 const RegisterContext = createContext(null);
@@ -18,13 +18,7 @@ export const AuthProvider = ({ children }) => {
     const savedRole = localStorage.getItem('userRole');
     const savedRoleName = localStorage.getItem('userRoleName');
     const savedRoleDetails = localStorage.getItem('userRoleDetails');
-    
-    console.log('Loading auth data from localStorage:');
-    console.log('Saved auth:', savedAuth);
-    console.log('Saved role:', savedRole);
-    console.log('Saved role name:', savedRoleName);
-    console.log('Saved role details:', savedRoleDetails);
-    
+
     if (savedAuth) {
       try {
         const parsedAuth = JSON.parse(savedAuth);
@@ -60,8 +54,7 @@ export const AuthProvider = ({ children }) => {
           setAuth(parsedAuth);
         }
         
-        setIsAuthenticated(true);
-        console.log('Auth data loaded successfully');
+        setIsAuthenticated(true); 
       } catch (error) {
         console.error('Error parsing saved auth data:', error);
         localStorage.removeItem('auth');
@@ -76,18 +69,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await authService.login(credentials);
       
-      console.log('Login response:', response);
-      console.log('User data:', response.data);
-      console.log('User role:', response.data?.role);
-      
       // Fetch complete role information if role ID exists
       let roleDetails = null;
       if (response.data?.role) {
         try {
-          console.log('Fetching role details for role ID:', response.data.role);
           const roleResponse = await fetchRoleById(response.data.role);
           roleDetails = roleResponse.data;
-          console.log('Role details fetched successfully:', roleDetails);
         } catch (roleError) {
           console.error('Error fetching role details:', roleError);
           console.error('Role fetch error details:', {
@@ -97,8 +84,6 @@ export const AuthProvider = ({ children }) => {
           });
           // Continue with login even if role fetch fails
         }
-      } else {
-        console.log('No role found in user data');
       }
       
       // Create enhanced auth object with role details
@@ -110,7 +95,6 @@ export const AuthProvider = ({ children }) => {
         }
       };
       
-      console.log('Enhanced auth object:', enhancedAuth);
       
       // Store the enhanced response object
       setAuth(enhancedAuth);
@@ -122,19 +106,16 @@ export const AuthProvider = ({ children }) => {
       // Store role separately in localStorage for easy access
       if (response.data?.role) {
         localStorage.setItem('userRole', response.data.role);
-        console.log('Role ID stored separately:', response.data.role);
       }
       
       // Store role name separately if available
       if (roleDetails?.name) {
         localStorage.setItem('userRoleName', roleDetails.name);
-        console.log('Role name stored separately:', roleDetails.name);
       }
       
       // Store role details separately if available
       if (roleDetails) {
         localStorage.setItem('userRoleDetails', JSON.stringify(roleDetails));
-        console.log('Role details stored separately:', roleDetails);
       }
       
       return enhancedAuth;
@@ -154,7 +135,6 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userRoleName');
     localStorage.removeItem('userRoleDetails');
-    console.log('All auth data cleared from localStorage');
   };
 
   // Helper functions to access specific parts of the auth data
@@ -202,7 +182,6 @@ export const AuthProvider = ({ children }) => {
     
     // Use role name from roleDetails if available, otherwise fallback to role ID
     const effectiveRole = roleName || role;
-    console.log('effectiveRole', effectiveRole);
     
     const rolePermissions = {
       'ADMIN': ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'purchaseBookings', 'rentalBookings', 'payments', 'rent', 'postSale', 'client', 'settings'],

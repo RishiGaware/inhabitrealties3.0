@@ -14,7 +14,7 @@ export const ROLE_PERMISSIONS = {
   [USER_ROLES.ADMIN]: {
     name: 'Admin',
     description: 'Full system access with all permissions',
-    canAccess: ['dashboard', 'admin', 'property', 'displayProperties', 'leads', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'payments', 'rent', 'postSale', 'client', 'settings']
+    canAccess: ['dashboard','leads', 'admin', 'property', 'displayProperties', 'customers', 'scheduleMeetings', 'sales', 'bookings', 'payments', 'rent', 'postSale', 'client', 'settings']
   },
   [USER_ROLES.SALES]: {
     name: 'Sales',

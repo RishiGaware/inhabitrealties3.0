@@ -27,7 +27,7 @@ export const ROLE_PERMISSIONS = {
       scheduleMeetings: ['admin-meetings'],
       purchaseBookings: ['all-purchase-bookings', 'create-new-purchase'],
       rentalBookings: ['all-rental-bookings', 'create-new-rental'],
-      payments: ['all-payment-history', 'my-payment-history','assigned-payment-history']
+      payments: ['all-payment-history']
     }
   },
   
@@ -178,51 +178,72 @@ export const getAllowedSubMenus = (roleName, menuKey) => {
  * @returns {boolean} True if role has access to route
  */
 export const hasRouteAccess = (roleName, route) => {
-  // Define route to menu mapping
+  // Define route to menu and submenu mapping
   const routeToMenuMap = {
-    '/dashboard': 'dashboard',
-    '/user-dashboard': 'user-dashboard',
-    '/sales-dashboard': 'sales-dashboard',
-    '/executive-dashboard': 'executive-dashboard',
-    '/admin/user-management': 'admin',
-    '/admin/role-management': 'admin',
-    '/admin/document-type-management': 'documentManagement',
-    '/admin/document-management': 'documentManagement',
-    '/client/documents': 'documentManagement',
-    '/property/property-master': 'property',
-    '/property/property-types': 'property',
-    '/property/favorite-properties': 'property',
-    '/properties': 'displayProperties',
-    '/properties/favorite-properties': 'displayProperties',
-    '/lead/add': 'leads',
-    '/lead/view': 'leads',
-    '/lead/qualification': 'leads',
-    '/lead/reference-source': 'leads',
-    '/customers/profiles': 'customers',
-    '/admin-meetings': 'scheduleMeetings',
-    '/sales-meetings': 'scheduleMeetings',
-    '/my-meetings': 'scheduleMeetings',
-    '/purchase-bookings/all': 'purchaseBookings',
-    '/purchase-bookings/my-assigned': 'purchaseBookings',
-    '/purchase-bookings/my-bookings': 'purchaseBookings',
-    '/purchase-bookings/create': 'purchaseBookings',
-    '/rental-bookings/all': 'rentalBookings',
-    '/rental-bookings/my-assigned': 'rentalBookings',
-    '/rental-bookings/my-bookings': 'rentalBookings',
-    '/rental-bookings/create': 'rentalBookings',
-    '/payment-history/all': 'payments',
-    '/payment-history/assigned': 'payments',
-    '/payment-history/my': 'payments',
-    '/client/my-bookings': 'client',
-    '/client/my-meetings': 'client',
-    '/client/payments': 'client',
-    '/settings': 'settings'
+    '/dashboard': { menu: 'dashboard', submenu: null },
+    '/user-dashboard': { menu: 'user-dashboard', submenu: null },
+    '/sales-dashboard': { menu: 'sales-dashboard', submenu: null },
+    '/executive-dashboard': { menu: 'executive-dashboard', submenu: null },
+    '/admin/user-management': { menu: 'admin', submenu: 'user-management' },
+    '/admin/role-management': { menu: 'admin', submenu: 'role-management' },
+    '/admin/meeting-status-management': { menu: 'admin', submenu: 'meeting-status-management' },
+    '/admin/document-type-management': { menu: 'documentManagement', submenu: 'document-type-management' },
+    '/admin/document-management': { menu: 'documentManagement', submenu: 'document-management' },
+    '/client/documents': { menu: 'documentManagement', submenu: 'my-documents' },
+    '/property/property-master': { menu: 'property', submenu: 'property-master' },
+    '/property/property-types': { menu: 'property', submenu: 'property-types' },
+    '/property/favorite-properties': { menu: 'property', submenu: 'favorite-properties' },
+    '/properties': { menu: 'displayProperties', submenu: 'properties' },
+    '/properties/favorite-properties': { menu: 'displayProperties', submenu: 'favorite' },
+    '/lead/add': { menu: 'leads', submenu: 'leads' },
+    '/lead/view': { menu: 'leads', submenu: 'leads' },
+    '/lead/qualification': { menu: 'leads', submenu: 'lead-status' },
+    '/lead/reference-source': { menu: 'leads', submenu: 'reference-source' },
+    '/customers/profiles': { menu: 'customers', submenu: 'customer-profiles' },
+    '/admin-meetings': { menu: 'scheduleMeetings', submenu: 'admin-meetings' },
+    '/sales-meetings': { menu: 'scheduleMeetings', submenu: 'sales-meetings' },
+    '/my-meetings': { menu: 'scheduleMeetings', submenu: 'my-meetings' },
+    '/purchase-bookings/all': { menu: 'purchaseBookings', submenu: 'all-purchase-bookings' },
+    '/purchase-bookings/my-assigned': { menu: 'purchaseBookings', submenu: 'my-assigned-bookings' },
+    '/purchase-bookings/my-bookings': { menu: 'purchaseBookings', submenu: 'my-bookings' },
+    '/purchase-bookings/create': { menu: 'purchaseBookings', submenu: 'create-new-purchase' },
+    '/rental-bookings/all': { menu: 'rentalBookings', submenu: 'all-rental-bookings' },
+    '/rental-bookings/my-assigned': { menu: 'rentalBookings', submenu: 'my-assigned-rentals' },
+    '/rental-bookings/my-bookings': { menu: 'rentalBookings', submenu: 'my-bookings' },
+    '/rental-bookings/create': { menu: 'rentalBookings', submenu: 'create-new-rental' },
+    '/payment-history/all': { menu: 'payments', submenu: 'all-payment-history' },
+    '/payment-history/assigned': { menu: 'payments', submenu: 'assigned-payment-history' },
+    '/payment-history/my': { menu: 'payments', submenu: 'my-payment-history' },
+    '/client/my-bookings': { menu: 'client', submenu: 'my-bookings' },
+    '/client/my-meetings': { menu: 'client', submenu: 'my-meetings' },
+    '/client/payments': { menu: 'client', submenu: 'payments' },
+    '/settings': { menu: 'settings', submenu: null }
   };
   
-  const menuKey = routeToMenuMap[route];
-  if (!menuKey) return true; // Allow unknown routes by default
+  const routeMapping = routeToMenuMap[route];
   
-  return hasMenuAccess(roleName, menuKey);
+  // If route is not in the mapping, allow access by default (don't restrict unknown routes)
+  if (!routeMapping) {
+    return true;
+  }
+  
+  const { menu: menuKey, submenu: subMenuKey } = routeMapping;
+  
+  // Check if role has access to the menu
+  if (!hasMenuAccess(roleName, menuKey)) {
+    // Menu access denied - restrict route
+    return false;
+  }
+  
+  // If there's a submenu, check submenu access
+  if (subMenuKey) {
+    const hasSubAccess = hasSubMenuAccess(roleName, menuKey, subMenuKey);
+    // Enforce submenu access - restrict if no access
+    return hasSubAccess;
+  }
+  
+  // Menu access granted and no submenu restriction, allow route
+  return true;
 };
 
 /**

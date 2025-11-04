@@ -24,7 +24,7 @@ const Home = () => {
       <Testimonials />
       <Agents />
       <PropertyFeatures />
-      <ImageSlider />
+      {/* <ImageSlider /> */}
       <AboutUsWithBrochure />
       <TopDevelopers />
       <GetStarted />

@@ -2,8 +2,9 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Cookie } from 'lucide-react';
 
-// const API_URL = 'http://localhost:3001/api';
-const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
+const API_URL = 'http://localhost:3001/api';
+// const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
+
 
 const api = axios.create({
   baseURL: API_URL,
@@ -32,9 +33,6 @@ api.interceptors.request.use(
     
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
-      console.log('API Request: Token found and added to headers');
-    } else {
-      console.log('API Request: No token found');
     }
     
     return config;
@@ -47,10 +45,22 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      Cookies.remove('AuthToken');
-      localStorage.removeItem('auth');
-      window.location.href = '/login';
+    if (error.response) {
+      // Handle 401 Unauthorized errors (including invalid token/signature)
+      if (error.response.status === 401) {
+        Cookies.remove('AuthToken');
+        localStorage.removeItem('auth');
+        // Redirect to login page
+        window.location.href = '/login';
+      }
+      // Handle invalid signature error specifically (500 status with specific error message)
+      if (error.response.status === 500 && 
+          error.response.data?.error?.includes('invalid signature')) {
+        Cookies.remove('AuthToken');
+        localStorage.removeItem('auth');
+        // Redirect to login page to get a new token
+        window.location.href = '/login';
+      }
     }
     return Promise.reject(error);
   }

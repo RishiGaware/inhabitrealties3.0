@@ -77,11 +77,9 @@ const SalesDashboard = () => {
       setError(null);
 
       try {
-        console.log('Fetching sales dashboard data...');
         
         // Check if user has a valid token
         const token = localStorage.getItem('auth');
-        console.log('Auth data from localStorage:', token);
         
         if (!token) {
           throw new Error('No authentication token found. Please log in again.');
@@ -91,9 +89,7 @@ const SalesDashboard = () => {
         let authData;
         try {
           authData = JSON.parse(token);
-          console.log('Parsed auth data:', authData);
         } catch (e) {
-          console.error('Error parsing auth data:', e);
           throw new Error('Invalid authentication data. Please log in again.');
         }
         
@@ -101,7 +97,6 @@ const SalesDashboard = () => {
           throw new Error('No token found in auth data. Please log in again.');
         }
         
-        console.log('Token found, making API calls...');
         
         // Fetch all dashboard data in parallel
         const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = await Promise.all([
@@ -110,13 +105,6 @@ const SalesDashboard = () => {
           fetchFinancialSummary(),
           fetchLeadConversionRates()
         ]);
-
-        console.log('Sales Dashboard API responses:', {
-          overview: overviewResponse,
-          activities: activitiesResponse,
-          financial: financialResponse,
-          conversion: conversionResponse
-        });
 
         // Update stats with real data (filtered for sales person)
         if (overviewResponse.statusCode === 200) {
@@ -167,14 +155,6 @@ const SalesDashboard = () => {
         }
 
       } catch (error) {
-        console.error('Error fetching sales dashboard data:', error);
-        console.error('Error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          statusText: error.response?.statusText
-        });
-        
         // If it's an authentication error, show login prompt
         if (error.message.includes('token') || error.response?.status === 401) {
           setError('Please log in to view dashboard data');

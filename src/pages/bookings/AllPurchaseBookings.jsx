@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -45,6 +45,9 @@ const AllPurchaseBookings = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
+  
+  // Ref to track initial mount
+  const isInitialMount = useRef(true);
 
   // Filter options - dynamically generated from API data
   const filterOptions = {
@@ -69,19 +72,25 @@ const AllPurchaseBookings = () => {
         { value: '', label: 'All Statuses' }
       ];
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookings]);
 
-  // Fetch data from real API
-  useEffect(() => {
-    fetchBookings();
-  }, []);
-
-  const fetchBookings = async () => {
+  // Fetch data from real API with search and filter parameters
+  const fetchBookings = useCallback(async (search = '', status = '') => {
     try {
       setIsLoading(true);
       
-      // Use the configured API service
-      const response = await purchaseBookingService.getAllPurchaseBookings();
+      // Build query parameters
+      const params = {};
+      if (search && search.trim()) {
+        params.search = search.trim();
+      }
+      if (status && status !== 'all' && status.trim() !== '') {
+        params.status = status;
+      }
+      
+      // Use the configured API service with search and filter params
+      const response = await purchaseBookingService.getAllPurchaseBookings(params);
       
       // Handle the actual API response format
       if (response && response.data && Array.isArray(response.data)) {
@@ -92,15 +101,13 @@ const AllPurchaseBookings = () => {
         setBookings(response);
         setFilteredBookings(response);
       } else {
-        console.warn('Unexpected API response format:', response);
         setBookings([]);
         setFilteredBookings([]);
       }
-    } catch (error) {
-      console.error('Error fetching bookings:', error);
+    } catch (err) {
       toast({
         title: "Error",
-        description: "Failed to fetch purchase bookings",
+        description: err?.response?.data?.message || "Failed to fetch purchase bookings",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -110,29 +117,31 @@ const AllPurchaseBookings = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [toast]);
 
-  // Filter and search functionality
+  // Initial fetch on mount only
   useEffect(() => {
-    let filtered = bookings;
+    fetchBookings('', '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    if (searchTerm) {
-      filtered = filtered.filter(booking =>
-        (booking.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
-      );
+  // Debounced search/filter effect - only runs when searchTerm or statusFilter changes
+  useEffect(() => {
+    // Skip if this is the initial mount (handled by the effect above)
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
     }
 
-    if (statusFilter && statusFilter !== 'all') {
-      filtered = filtered.filter(booking => booking.bookingStatus === statusFilter);
-    }
+    // Debounced fetch when search or filter changes
+    const timeoutId = setTimeout(() => {
+      fetchBookings(searchTerm, statusFilter);
+      setCurrentPage(1); // Reset to first page when filtering
+    }, 500); // 500ms debounce
 
-    setFilteredBookings(filtered);
-    setCurrentPage(1); // Reset to first page when filtering
-  }, [searchTerm, statusFilter, bookings]);
+    return () => clearTimeout(timeoutId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchTerm, statusFilter]);
 
   // Table columns configuration - simplified and essential only
   const columns = [
@@ -273,8 +282,8 @@ const AllPurchaseBookings = () => {
   );
 
   // Handle search
-  const handleSearch = (value) => {
-    setSearchTerm(value);
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
   };
 
   // Handle filters
@@ -308,13 +317,10 @@ const AllPurchaseBookings = () => {
 
   // Handle edit booking
   const handleEdit = (id) => {
-    console.log('Edit button clicked for booking ID:', id);
     const booking = bookings.find(b => b._id === id);
-    console.log('Found booking:', booking);
     if (booking) {
       setEditingBooking(booking);
       setIsEditFormOpen(true);
-      console.log('Edit form modal should now be open');
     } else {
       console.error('Booking not found for ID:', id);
     }
@@ -322,7 +328,6 @@ const AllPurchaseBookings = () => {
 
   // Handle edit form update
   const handleEditFormUpdate = () => {
-    console.log('Edit form update triggered');
     // Refresh the bookings data after update
     fetchBookings();
     setIsEditFormOpen(false);
@@ -418,7 +423,7 @@ const AllPurchaseBookings = () => {
       <SearchAndFilter
         searchTerm={searchTerm}
         onSearchChange={handleSearch}
-        onSearchSubmit={() => {}} // No API search needed
+        onSearchSubmit={() => fetchBookings(searchTerm, statusFilter)} // Trigger API search
         searchPlaceholder="Search bookings..."
         filters={{ status: statusFilter }}
         onFilterChange={handleFilterChange}
@@ -473,7 +478,6 @@ const AllPurchaseBookings = () => {
       <PurchaseBookingEditForm
         isOpen={isEditFormOpen}
         onClose={() => {
-          console.log('Edit form closing');
           setIsEditFormOpen(false);
           setEditingBooking(null);
         }}

@@ -979,7 +979,6 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                         onChange={(e) => {
                           const files = Array.from(e.target.files);
                           if (files.length > 0) {
-                            console.log('Files selected for installment:', files);
                             toast({
                               title: "Files Selected",
                               description: `${files.length} file(s) selected for upload`,

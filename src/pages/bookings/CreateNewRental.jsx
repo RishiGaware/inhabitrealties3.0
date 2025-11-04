@@ -91,15 +91,12 @@ const CreateNewRental = () => {
     try {
       // Step 1: Fetch roles first to get role IDs
       const rolesData = await fetchRoles();
-      console.log('Roles data:', rolesData);
 
       // Step 2: Fetch properties
       const propertiesData = await fetchProperties();
-      console.log('Properties data:', propertiesData);
 
       // Step 3: Fetch all users and filter by role
       const allUsersData = await fetchUsers();
-      console.log('All users data:', allUsersData);
 
       // Filter users by role on the frontend
       let customersData = { data: [] };
@@ -111,10 +108,6 @@ const CreateNewRental = () => {
         const executiveRole = rolesData.data.find((role) => role.name === "EXECUTIVE");
         const adminRole = rolesData.data.find((role) => role.name === "ADMIN");
         
-        console.log('Found USER role:', userRole);
-        console.log('Found SALES role:', salesRole);
-        console.log('Found EXECUTIVE role:', executiveRole);
-        console.log('Found ADMIN role:', adminRole);
 
         if (userRole) {
           customersData.data = allUsersData.data.filter(user => 
@@ -130,8 +123,6 @@ const CreateNewRental = () => {
           );
         }
 
-        console.log('Filtered customers:', customersData);
-        console.log('Filtered salespersons:', salespersonsData);
       }
 
       // Use only real data from backend - filter for published properties with FOR RENT status
@@ -141,33 +132,7 @@ const CreateNewRental = () => {
       const publishedCustomers = customersData.data || [];
       const publishedSalespersons = salespersonsData.data || [];
 
-      console.log('Final processed data:', {
-        properties: publishedProperties.length,
-        customers: publishedCustomers.length,
-        salespersons: publishedSalespersons.length
-      });
-
-      // Check if we have the minimum required data
-      if (publishedProperties.length === 0) {
-        toast.error("No properties available for rent. Please add properties with 'FOR RENT' status first.");
-        return;
-      }
-
-      if (publishedCustomers.length === 0) {
-        toast.error("No customers available. Please add customers first.");
-        return;
-      }
-
-      if (publishedSalespersons.length === 0) {
-        console.warn("No users with SALES/EXECUTIVE/ADMIN role found. Available roles:", rolesData.data?.map(r => r.name));
-        console.warn("All users have role:", allUsersData.data?.map(u => ({ id: u._id, role: u.role, email: u.email })));
-        
-        // Show more specific error message
-        const availableRoles = rolesData.data?.map(r => r.name).join(', ') || 'none';
-        toast.error(`No salespersons available. Available roles: ${availableRoles}. Users need to have the SALES, EXECUTIVE, or ADMIN role assigned.`);
-        return;
-      }
-
+      // Always set the data, even if empty - let the form handle empty states
       setProperties(publishedProperties);
       setCustomers(publishedCustomers);
       setSalespersons(publishedSalespersons);
@@ -190,6 +155,12 @@ const CreateNewRental = () => {
   };
 
   const handlePropertyChange = (propertyId) => {
+    // Check if dropdown was clicked but is empty
+    if (!propertyId && properties.length === 0) {
+      toast.error("No properties available for rent. Please add properties with 'FOR RENT' first.");
+      return;
+    }
+    
     const property = properties.find((p) => p._id === propertyId);
     if (property) {
       setSelectedProperty(property);
@@ -209,6 +180,12 @@ const CreateNewRental = () => {
   };
 
   const handleCustomerChange = (customerId) => {
+    // Check if dropdown was clicked but is empty
+    if (!customerId && customers.length === 0) {
+      toast.error("No customers available. Please add customers first.");
+      return;
+    }
+    
     const customer = customers.find((c) => c._id === customerId);
     if (customer) {
       setFormData((prev) => ({
@@ -219,6 +196,12 @@ const CreateNewRental = () => {
   };
 
   const handleSalespersonChange = (salespersonId) => {
+    // Check if dropdown was clicked but is empty
+    if (!salespersonId && salespersons.length === 0) {
+      toast.error("No salespersons available. Users need to have the SALES, EXECUTIVE, or ADMIN role assigned.");
+      return;
+    }
+    
     const salesperson = salespersons.find((s) => s._id === salespersonId);
     if (salesperson) {
       setFormData((prev) => ({
@@ -379,44 +362,7 @@ const CreateNewRental = () => {
     );
   }
 
-  // Show error state if no data is available
-  if (properties.length === 0 || customers.length === 0 || salespersons.length === 0) {
-    return (
-      <Box
-        p={6}
-        bg="gray.50"
-        minH="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack spacing={4} textAlign="center">
-          <Text fontSize="xl" fontWeight="bold" color="red.600">
-            Required Data Not Available
-          </Text>
-          <Text color="gray.600">
-            {properties.length === 0 && "• No properties available for rent"}
-          </Text>
-          <Text color="gray.600">
-            {customers.length === 0 && "• No customers available"}
-          </Text>
-          <Text color="gray.600">
-            {salespersons.length === 0 && "• No salespersons available"}
-          </Text>
-          <Text color="gray.500" fontSize="sm">
-            Please ensure you have properties with 'FOR RENT' status, customers, and salespersons in your system before creating rental bookings.
-          </Text>
-          <Button
-            colorScheme="blue"
-            onClick={() => window.location.reload()}
-            leftIcon={<FiRefreshCw />}
-          >
-            Refresh Page
-          </Button>
-        </VStack>
-      </Box>
-    );
-  }
+  // Always show the form - let dropdowns handle empty states
 
   // Theme colors
   const cardBg = "white";
@@ -452,6 +398,11 @@ const CreateNewRental = () => {
                   placeholder="Search and choose a property"
                       value={formData.propertyId}
                   onChange={handlePropertyChange}
+                  onOpen={() => {
+                    if (properties.length === 0) {
+                      toast.error("No properties available for rent. Please add properties with 'FOR RENT' first.");
+                    }
+                  }}
                   options={properties.map(property => ({
                     value: property._id,
                     label: `${property.name || property.title} - ₹${property.price?.toLocaleString() || 'N/A'}`
@@ -545,6 +496,11 @@ const CreateNewRental = () => {
                   placeholder="Search and choose a customer"
                   value={formData.customerId}
                   onChange={handleCustomerChange}
+                  onOpen={() => {
+                    if (customers.length === 0) {
+                      toast.error("No customers available. Please add customers first.");
+                    }
+                  }}
                   options={customers.map(customer => ({
                     value: customer._id,
                     label: `${customer.firstName || ""} ${
@@ -586,6 +542,11 @@ const CreateNewRental = () => {
                   placeholder="Search and choose a salesperson"
                   value={formData.assignedSalespersonId}
                   onChange={handleSalespersonChange}
+                  onOpen={() => {
+                    if (salespersons.length === 0) {
+                      toast.error("No salespersons available. Users need to have the SALES, EXECUTIVE, or ADMIN role assigned.");
+                    }
+                  }}
                   options={salespersons.map(salesperson => ({
                     value: salesperson._id,
                     label: `${salesperson.firstName || ""} ${

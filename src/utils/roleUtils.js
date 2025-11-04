@@ -9,7 +9,6 @@
  */
 export const getUserRole = () => {
   const role = localStorage.getItem('userRole');
-  console.log('Getting user role from localStorage:', role);
   return role;
 };
 
@@ -20,14 +19,12 @@ export const getUserRole = () => {
 export const getUserRoleDetails = () => {
   const roleDetails = localStorage.getItem('userRoleDetails');
   if (roleDetails) {
-    try {
-      const parsed = JSON.parse(roleDetails);
-      console.log('Getting user role details from localStorage:', parsed);
-      return parsed;
-    } catch (error) {
-      console.error('Error parsing role details from localStorage:', error);
-      return null;
-    }
+      try {
+        const parsed = JSON.parse(roleDetails);
+        return parsed;
+      } catch {
+        return null;
+      }
   }
   return null;
 };
@@ -40,14 +37,12 @@ export const getUserRoleName = () => {
   // First try to get from direct storage
   const directRoleName = localStorage.getItem('userRoleName');
   if (directRoleName) {
-    console.log('Getting user role name from direct storage:', directRoleName);
     return directRoleName;
   }
   
   // Fallback to role details
   const roleDetails = getUserRoleDetails();
   const roleName = roleDetails?.name || null;
-  console.log('Getting user role name from role details:', roleName);
   return roleName;
 };
 
@@ -95,19 +90,4 @@ export const isClient = () => {
   return hasRole('CLIENT');
 };
 
-/**
- * Print all role information to console
- * Useful for debugging
- */
-export const printRoleInfo = () => {
-  console.log('=== ROLE INFORMATION ===');
-  console.log('User Role ID:', getUserRole());
-  console.log('User Role Name:', getUserRoleName());
-  console.log('Role Details:', getUserRoleDetails());
-  console.log('Direct Role Name from localStorage:', localStorage.getItem('userRoleName'));
-  console.log('Is Admin:', isAdmin());
-  console.log('Is Sales:', isSales());
-  console.log('Is Executive:', isExecutive());
-  console.log('Is Client:', isClient());
-  console.log('========================');
-};
+

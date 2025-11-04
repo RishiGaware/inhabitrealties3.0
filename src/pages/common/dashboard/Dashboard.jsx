@@ -54,6 +54,8 @@ import {
 } from "../../../services/dashboard/dashboardService";
 import { meetingAPI } from "../../../services/api";
 import { showErrorToast } from "../../../utils/toastUtils";
+import { useAuth } from "../../../context/AuthContext";
+import { hasRouteAccess } from "../../../utils/rolePermissions";
 
 // Animation variants
 const containerVariants = {
@@ -128,6 +130,7 @@ const Dashboard = () => {
   const [tomorrowsMeetings, setTomorrowsMeetings] = useState([]);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { getUserRoleName } = useAuth();
 
   // Move all useColorModeValue hooks to the top level
   const bgColor = useColorModeValue("gray.50", "gray.900");
@@ -144,11 +147,9 @@ const Dashboard = () => {
       setError(null);
 
       try {
-        console.log("Fetching dashboard data...");
 
         // Check if user has a valid token
-        const token = localStorage.getItem("auth");
-        console.log("Auth data from localStorage:", token);
+        const token = localStorage.getItem("auth"); 
 
         if (!token) {
           throw new Error(
@@ -160,9 +161,7 @@ const Dashboard = () => {
         let authData;
         try {
           authData = JSON.parse(token);
-          console.log("Parsed auth data:", authData);
-        } catch (e) {
-          console.error("Error parsing auth data:", e);
+        } catch {
           throw new Error("Invalid authentication data. Please log in again.");
         }
 
@@ -170,16 +169,11 @@ const Dashboard = () => {
           throw new Error("No token found in auth data. Please log in again.");
         }
 
-        console.log("Token found, making API calls...");
 
         // Get user ID from auth data
         const userId = authData.user?.id || authData.userId;
-        console.log("User ID for meetings:", userId);
-        console.log("User role:", authData.user?.role);
-        console.log("Auth data structure:", authData);
 
         // Fetch all dashboard data in parallel
-        console.log("Making API calls with userId:", userId);
         const [
           overviewResponse,
           activitiesResponse,
@@ -193,93 +187,33 @@ const Dashboard = () => {
           fetchFinancialSummary(),
           fetchLeadConversionRates(),
           userId
-            ? meetingAPI.getMyTodaysMeetings(userId).catch((err) => {
-                console.error("Error fetching today's meetings:", err);
+            ? meetingAPI.getMyTodaysMeetings(userId).catch(() => {
                 return { data: { data: [] } };
               })
             : Promise.resolve({ data: { data: [] } }),
           userId
-            ? meetingAPI.getMyTomorrowsMeetings(userId).catch((err) => {
-                console.error("Error fetching tomorrow's meetings:", err);
+            ? meetingAPI.getMyTomorrowsMeetings(userId).catch(() => {
                 return { data: { data: [] } };
               })
             : Promise.resolve({ data: { data: [] } }),
         ]);
 
-        console.log("Dashboard API responses:", {
-          overview: overviewResponse,
-          activities: activitiesResponse,
-          financial: financialResponse,
-          conversion: conversionResponse,
-          todaysMeetings: todaysMeetingsResponse,
-          tomorrowsMeetings: tomorrowsMeetingsResponse,
-        });
-
         // Process meeting data
-        console.log("Today's meetings response:", todaysMeetingsResponse);
-        console.log("Tomorrow's meetings response:", tomorrowsMeetingsResponse);
-        console.log(
-          "Today's meetings response status:",
-          todaysMeetingsResponse.status
-        );
-        console.log(
-          "Tomorrow's meetings response status:",
-          tomorrowsMeetingsResponse.status
-        );
+       
 
         if (todaysMeetingsResponse.data?.data) {
-          console.log(
-            "Setting today's meetings:",
-            todaysMeetingsResponse.data.data
-          );
-          console.log(
-            "Today's meetings count:",
-            todaysMeetingsResponse.data.data.length
-          );
           setTodaysMeetings(todaysMeetingsResponse.data.data);
         } else {
-          console.log("No today's meetings data found");
-          console.log(
-            "Today's meetings response structure:",
-            JSON.stringify(todaysMeetingsResponse, null, 2)
-          );
           setTodaysMeetings([]);
         }
 
         if (tomorrowsMeetingsResponse.data?.data) {
-          console.log(
-            "Setting tomorrow's meetings:",
-            tomorrowsMeetingsResponse.data.data
-          );
-          console.log(
-            "Tomorrow's meetings count:",
-            tomorrowsMeetingsResponse.data.data.length
-          );
-          setTomorrowsMeetings(tomorrowsMeetingsResponse.data.data);
+            setTomorrowsMeetings(tomorrowsMeetingsResponse.data.data);
         } else {
-          console.log("No tomorrow's meetings data found");
-          console.log(
-            "Tomorrow's meetings response structure:",
-            JSON.stringify(tomorrowsMeetingsResponse, null, 2)
-          );
           setTomorrowsMeetings([]);
         }
 
-        // Debug role-wise customers data
-        if (overviewResponse.statusCode === 200) {
-          console.log(
-            "Role-wise customers data:",
-            overviewResponse.data.roleWiseCustomers
-          );
-          console.log(
-            "Type of roleWiseCustomers:",
-            typeof overviewResponse.data.roleWiseCustomers
-          );
-          console.log(
-            "Keys in roleWiseCustomers:",
-            Object.keys(overviewResponse.data.roleWiseCustomers || {})
-          );
-        }
+      
 
         // Update stats with real data
         if (overviewResponse.statusCode === 200) {
@@ -337,14 +271,6 @@ const Dashboard = () => {
           );
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        console.error("Error details:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          statusText: error.response?.statusText,
-        });
-
         // If it's an authentication error, show login prompt
         if (error.message.includes("token") || error.response?.status === 401) {
           setError("Please log in to view dashboard data");
@@ -374,13 +300,14 @@ const Dashboard = () => {
   }, []);
 
   const handleStatCardClick = (type) => {
+    const userRole = getUserRoleName() || 'USER';
     let path = "";
     switch (type) {
       case "totalproperties":
-        path = "/properties";
+        path = "/property/property-master";
         break;
       case "totalleads":
-        path = "/leads";
+        path = "/lead/add";
         break;
       case "totalcustomers":
         path = "/customers/profiles";
@@ -389,18 +316,25 @@ const Dashboard = () => {
         path = "/bookings/booked-units";
         break;
       case "totalrevenue":
-        path = "/admin/reports";
+        path = "/payment-history/all";
         break;
       case "pendingpayments":
-        path = "/payments/due-payments";
+        path = "/payment-history/all";
         break;
       default:
         path = "/";
     }
-    navigate(path);
+    
+    // Check if user has access to this route
+    if (hasRouteAccess(userRole, path)) {
+      navigate(path);
+    } else {
+      showErrorToast('You do not have access to this page');
+    }
   };
 
   const handleQuickActionClick = (type) => {
+    const userRole = getUserRoleName() || 'USER';
     let path = "";
     switch (type) {
       case "addlead":
@@ -410,7 +344,7 @@ const Dashboard = () => {
         path = "/property/property-master";
         break;
       case "recordpayment":
-        path = "/payments/installments";
+        path = "/payment-history/all";
         break;
       case "viewreports":
         path = "/admin/reports";
@@ -418,7 +352,13 @@ const Dashboard = () => {
       default:
         path = "/";
     }
-    navigate(path);
+    
+    // Check if user has access to this route
+    if (hasRouteAccess(userRole, path)) {
+      navigate(path);
+    } else {
+      showErrorToast('You do not have access to this page');
+    }
   };
 
   const StatCard = ({
@@ -990,12 +930,9 @@ const Dashboard = () => {
                             key={role}
                             p={4}
                             borderRadius="lg"
-                            bg={useColorModeValue("gray.50", "gray.700")}
+                            bg={activityBg}
                             border="1px"
-                            borderColor={useColorModeValue(
-                              "gray.200",
-                              "gray.600"
-                            )}
+                            borderColor={borderColor}
                           >
                             <VStack spacing={2}>
                               <Text
@@ -1238,10 +1175,7 @@ const Dashboard = () => {
                       maxH="300px"
                       overflowY="auto"
                     >
-                      {console.log(
-                        "Rendering today's meetings:",
-                        todaysMeetings
-                      )}
+                    
                       {todaysMeetings.length > 0 ? (
                         todaysMeetings.map((meeting) => (
                           <MeetingItem key={meeting._id} meeting={meeting} />
@@ -1285,10 +1219,7 @@ const Dashboard = () => {
                       maxH="300px"
                       overflowY="auto"
                     >
-                      {console.log(
-                        "Rendering tomorrow's meetings:",
-                        tomorrowsMeetings
-                      )}
+                      
                       {tomorrowsMeetings.length > 0 ? (
                         tomorrowsMeetings.map((meeting) => (
                           <MeetingItem key={meeting._id} meeting={meeting} />

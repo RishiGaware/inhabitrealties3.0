@@ -33,6 +33,7 @@ const SearchableSelect = ({
   variant = 'outline',
   showClearButton = true,
   name,
+  onOpen,
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -90,8 +91,13 @@ const SearchableSelect = ({
 
   const handleToggle = () => {
     if (!isDisabled) {
-      setIsOpen(!isOpen);
-      if (!isOpen) {
+      const willOpen = !isOpen;
+      setIsOpen(willOpen);
+      if (willOpen) {
+        // Call onOpen callback if provided, especially useful for empty dropdowns
+        if (onOpen && options.length === 0) {
+          onOpen();
+        }
         setTimeout(() => {
           inputRef.current?.focus();
         }, 100);

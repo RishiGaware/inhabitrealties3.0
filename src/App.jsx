@@ -1,5 +1,6 @@
 import './App.css'
 import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from './components/common/ProtectedRoute';
 import { Toaster } from 'react-hot-toast';
 import AppProvider from './providers/AppProvider';
 import NetworkStatusProvider from './components/common/NetworkStatusProvider';
@@ -97,6 +98,7 @@ import UserProfile from './pages/profile/UserProfile';
 import ReferenceSource from './pages/lead/ReferenceSource';
 import Banner from './components/Banner';
 import TopDevelopers from './components/TopDevelopers';
+import Unauthorized from './pages/common/Unauthorized';
 
 // Import route constants
 import { ROUTES } from './utils/constants';
@@ -166,112 +168,115 @@ const App = () => {
             <Route path={ROUTES.PROPERTY_DETAILS} element={<MainLayout><PropertyDetails /></MainLayout>} />
             
             {/* Dashboard Routes */}
-            <Route path={ROUTES.DASHBOARD} element={<DashboardLayout><Dashboard /></DashboardLayout>} />
-            <Route path="/executive-dashboard" element={<DashboardLayout><ExecutiveDashboard /></DashboardLayout>} />
-            <Route path="/sales-dashboard" element={<DashboardLayout><SalesDashboard /></DashboardLayout>} />
-            <Route path="/user-dashboard" element={<DashboardLayout><UserDashboard /></DashboardLayout>} />
+            <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/executive-dashboard" element={<ProtectedRoute><DashboardLayout><ExecutiveDashboard /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/sales-dashboard" element={<ProtectedRoute><DashboardLayout><SalesDashboard /></DashboardLayout></ProtectedRoute>} />
+            <Route path="/user-dashboard" element={<ProtectedRoute><DashboardLayout><UserDashboard /></DashboardLayout></ProtectedRoute>} />
               
             {/* Admin Routes */}
-            <Route path={ROUTES.ADMIN_USER_MANAGEMENT} element={<DashboardLayout><UserManagement /></DashboardLayout>} />
-            <Route path={ROUTES.ADMIN_ROLE_MANAGEMENT} element={<DashboardLayout><RoleManagement /></DashboardLayout>} />
-            <Route path={ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT} element={<DashboardLayout><DocumentTypeManagement /></DashboardLayout>} />
-            <Route path={ROUTES.ADMIN_DOCUMENT_MANAGEMENT} element={<DashboardLayout><DocumentManagement /></DashboardLayout>} />
-            <Route path={ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT} element={<DashboardLayout><MeetingStatusManagement /></DashboardLayout>} />
-            <Route path={ROUTES.ADMIN_REPORTS} element={<DashboardLayout><Reports /></DashboardLayout>} />
-            <Route path={ROUTES.ADMIN_SALESPERSON_MANAGEMENT} element={<DashboardLayout><SalespersonManagement /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_USER_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><UserManagement /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_ROLE_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><RoleManagement /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_DOCUMENT_TYPE_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><DocumentTypeManagement /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_DOCUMENT_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><DocumentManagement /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><MeetingStatusManagement /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_REPORTS} element={<ProtectedRoute><DashboardLayout><Reports /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.ADMIN_SALESPERSON_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><SalespersonManagement /></DashboardLayout></ProtectedRoute>} />
             
             {/* Property Routes */}
-            <Route path={ROUTES.PROPERTY_MASTER} element={<DashboardLayout><PropertyMaster /></DashboardLayout>} />
-            <Route path={ROUTES.PROPERTY_TYPES} element={<DashboardLayout><PropertyTypes /></DashboardLayout>} />
-            <Route path={ROUTES.PROPERTY_FAVORITES} element={<DashboardLayout><PropertyFavoriteProperties /></DashboardLayout>} />
+            <Route path={ROUTES.PROPERTY_MASTER} element={<ProtectedRoute><DashboardLayout><PropertyMaster /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PROPERTY_TYPES} element={<ProtectedRoute><DashboardLayout><PropertyTypes /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PROPERTY_FAVORITES} element={<ProtectedRoute><DashboardLayout><PropertyFavoriteProperties /></DashboardLayout></ProtectedRoute>} />
             
-            {/* Display Properties Routes */}
-            <Route path={ROUTES.PROPERTIES} element={<DashboardLayout><Properties /></DashboardLayout>} />
-            <Route path={ROUTES.DISPLAY_FAVORITES} element={<DashboardLayout><FavoriteProperties /></DashboardLayout>} />
-            <Route path={ROUTES.PROPERTY_MASTER_DISPLAY} element={<DashboardLayout><PropertyMasterDisplay /></DashboardLayout>} />
+            {/* Display Properties Routes - Public access */}
+            <Route path={ROUTES.PROPERTIES} element={<MainLayout><Properties /></MainLayout>} />
+            <Route path={ROUTES.DISPLAY_FAVORITES} element={<ProtectedRoute><DashboardLayout><FavoriteProperties /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PROPERTY_MASTER_DISPLAY} element={<ProtectedRoute><DashboardLayout><PropertyMasterDisplay /></DashboardLayout></ProtectedRoute>} />
             
             {/* Lead Management Routes */}
-            <Route path={ROUTES.LEAD_ADD} element={<DashboardLayout><Leads /></DashboardLayout>} />
-            <Route path={ROUTES.LEAD_VIEW} element={<DashboardLayout><LeadStatus /></DashboardLayout>} />
-            <Route path={ROUTES.LEAD_QUALIFICATION} element={<DashboardLayout><LeadFollowUp /></DashboardLayout>} />
-            <Route path={ROUTES.LEAD_REFERENCE_SOURCE} element={<DashboardLayout><ReferenceSource /></DashboardLayout>} />
+            <Route path={ROUTES.LEAD_ADD} element={<ProtectedRoute><DashboardLayout><Leads /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.LEAD_VIEW} element={<ProtectedRoute><DashboardLayout><LeadStatus /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.LEAD_QUALIFICATION} element={<ProtectedRoute><DashboardLayout><LeadFollowUp /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.LEAD_REFERENCE_SOURCE} element={<ProtectedRoute><DashboardLayout><ReferenceSource /></DashboardLayout></ProtectedRoute>} />
             
             {/* Customer Management Routes */}
-            <Route path={ROUTES.CUSTOMER_PROFILES} element={<DashboardLayout><CustomerProfiles /></DashboardLayout>} />
-            <Route path={ROUTES.CUSTOMER_DOCUMENTS} element={<DashboardLayout><CustomerDocuments /></DashboardLayout>} />
-            <Route path={ROUTES.CUSTOMER_DOCUMENT_TYPES} element={<DashboardLayout><CustomerDocumentTypeManagement /></DashboardLayout>} />
+            <Route path={ROUTES.CUSTOMER_PROFILES} element={<ProtectedRoute><DashboardLayout><CustomerProfiles /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.CUSTOMER_DOCUMENTS} element={<ProtectedRoute><DashboardLayout><CustomerDocuments /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.CUSTOMER_DOCUMENT_TYPES} element={<ProtectedRoute><DashboardLayout><CustomerDocumentTypeManagement /></DashboardLayout></ProtectedRoute>} />
     
             
             {/* Sales Management Routes */}
-            <Route path={ROUTES.SALES_LIST} element={<DashboardLayout><SalesList /></DashboardLayout>} />
-            <Route path={ROUTES.SALES_ADD_PAYMENT} element={<DashboardLayout><AddPayment /></DashboardLayout>} />
-            <Route path={ROUTES.SALES_PENDING_PAYMENTS} element={<DashboardLayout><PendingPayments /></DashboardLayout>} />
-            <Route path={ROUTES.SALES_REPORTS} element={<DashboardLayout><SalesReports /></DashboardLayout>} />
+            <Route path={ROUTES.SALES_LIST} element={<ProtectedRoute><DashboardLayout><SalesList /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.SALES_ADD_PAYMENT} element={<ProtectedRoute><DashboardLayout><AddPayment /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.SALES_PENDING_PAYMENTS} element={<ProtectedRoute><DashboardLayout><PendingPayments /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.SALES_REPORTS} element={<ProtectedRoute><DashboardLayout><SalesReports /></DashboardLayout></ProtectedRoute>} />
             
             {/* Bookings Routes */}
-            <Route path={ROUTES.BOOKINGS_INVENTORY} element={<DashboardLayout><Inventory /></DashboardLayout>} />
-            <Route path={ROUTES.BOOKINGS_BOOKED_UNITS} element={<DashboardLayout><BookedUnits /></DashboardLayout>} />
-            <Route path={ROUTES.BOOKINGS_PAYMENT_STATUS} element={<DashboardLayout><PaymentStatus /></DashboardLayout>} />
-            <Route path={ROUTES.BOOKINGS_PURCHASE_MANAGEMENT} element={<DashboardLayout><PurchaseBookingManagement /></DashboardLayout>} />
-            <Route path={ROUTES.BOOKINGS_RENTAL_MANAGEMENT} element={<DashboardLayout><RentalBookingManagement /></DashboardLayout>} />
+            <Route path={ROUTES.BOOKINGS_INVENTORY} element={<ProtectedRoute><DashboardLayout><Inventory /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.BOOKINGS_BOOKED_UNITS} element={<ProtectedRoute><DashboardLayout><BookedUnits /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.BOOKINGS_PAYMENT_STATUS} element={<ProtectedRoute><DashboardLayout><PaymentStatus /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.BOOKINGS_PURCHASE_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><PurchaseBookingManagement /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.BOOKINGS_RENTAL_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><RentalBookingManagement /></DashboardLayout></ProtectedRoute>} />
             
             {/* Purchase Bookings Routes */}
-            <Route path={ROUTES.PURCHASE_ALL_BOOKINGS} element={<DashboardLayout><AllPurchaseBookings /></DashboardLayout>} />
-            <Route path={ROUTES.PURCHASE_MY_BOOKINGS} element={<DashboardLayout><MyAssignedBookings /></DashboardLayout>} />
-            <Route path={ROUTES.PURCHASE_MY_BOOKINGS_VIEW} element={<DashboardLayout><MyPurchaseBookings /></DashboardLayout>} />
-            <Route path={ROUTES.PURCHASE_CREATE_NEW} element={<DashboardLayout><CreateNewPurchase /></DashboardLayout>} />
-            <Route path={ROUTES.PURCHASE_EDIT} element={<DashboardLayout><EditPurchaseBooking /></DashboardLayout>} />
-            <Route path={ROUTES.PURCHASE_PENDING_INSTALLMENTS} element={<DashboardLayout><PendingInstallments /></DashboardLayout>} />
-            <Route path={ROUTES.PURCHASE_OVERDUE_INSTALLMENTS} element={<DashboardLayout><OverdueInstallments /></DashboardLayout>} />
-            <Route path={ROUTES.PURCHASE_INSTALLMENT_SCHEDULE} element={<DashboardLayout><PendingInstallments /></DashboardLayout>} />
+            <Route path={ROUTES.PURCHASE_ALL_BOOKINGS} element={<ProtectedRoute><DashboardLayout><AllPurchaseBookings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PURCHASE_MY_BOOKINGS} element={<ProtectedRoute><DashboardLayout><MyAssignedBookings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PURCHASE_MY_BOOKINGS_VIEW} element={<ProtectedRoute><DashboardLayout><MyPurchaseBookings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PURCHASE_CREATE_NEW} element={<ProtectedRoute><DashboardLayout><CreateNewPurchase /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PURCHASE_EDIT} element={<ProtectedRoute><DashboardLayout><EditPurchaseBooking /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PURCHASE_PENDING_INSTALLMENTS} element={<ProtectedRoute><DashboardLayout><PendingInstallments /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PURCHASE_OVERDUE_INSTALLMENTS} element={<ProtectedRoute><DashboardLayout><OverdueInstallments /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PURCHASE_INSTALLMENT_SCHEDULE} element={<ProtectedRoute><DashboardLayout><PendingInstallments /></DashboardLayout></ProtectedRoute>} />
             
             {/* Rental Bookings Routes */}
-            <Route path={ROUTES.RENTAL_ALL_BOOKINGS} element={<DashboardLayout><AllRentalBookings /></DashboardLayout>} />
-            <Route path={ROUTES.RENTAL_MY_RENTALS} element={<DashboardLayout><MyAssignedRentals /></DashboardLayout>} />
-            <Route path={ROUTES.RENTAL_MY_BOOKINGS_VIEW} element={<DashboardLayout><MyRentalBookings /></DashboardLayout>} />
-            <Route path={ROUTES.RENTAL_CREATE_NEW} element={<DashboardLayout><CreateNewRental /></DashboardLayout>} />
-            <Route path={ROUTES.RENTAL_PENDING_RENTS} element={<DashboardLayout><PendingRents /></DashboardLayout>} />
-            <Route path={ROUTES.RENTAL_RENT_SCHEDULE} element={<DashboardLayout><RentRoll /></DashboardLayout>} />
-            <Route path={ROUTES.RENTAL_OVERDUE_RENTS} element={<DashboardLayout><RentRoll /></DashboardLayout>} />
+            <Route path={ROUTES.RENTAL_ALL_BOOKINGS} element={<ProtectedRoute><DashboardLayout><AllRentalBookings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENTAL_MY_RENTALS} element={<ProtectedRoute><DashboardLayout><MyAssignedRentals /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENTAL_MY_BOOKINGS_VIEW} element={<ProtectedRoute><DashboardLayout><MyRentalBookings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENTAL_CREATE_NEW} element={<ProtectedRoute><DashboardLayout><CreateNewRental /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENTAL_PENDING_RENTS} element={<ProtectedRoute><DashboardLayout><PendingRents /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENTAL_RENT_SCHEDULE} element={<ProtectedRoute><DashboardLayout><RentRoll /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENTAL_OVERDUE_RENTS} element={<ProtectedRoute><DashboardLayout><RentRoll /></DashboardLayout></ProtectedRoute>} />
             
             {/* Payments Routes */}
-            <Route path={ROUTES.PAYMENT_HISTORY_ALL} element={<DashboardLayout><AllPaymentHistory /></DashboardLayout>} />
-            <Route path={ROUTES.PAYMENT_HISTORY_ASSIGNED} element={<DashboardLayout><AssignedPaymentHistory /></DashboardLayout>} />
-            <Route path={ROUTES.PAYMENT_HISTORY_MY} element={<DashboardLayout><MyPaymentHistory /></DashboardLayout>} />
+            <Route path={ROUTES.PAYMENT_HISTORY_ALL} element={<ProtectedRoute><DashboardLayout><AllPaymentHistory /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PAYMENT_HISTORY_ASSIGNED} element={<ProtectedRoute><DashboardLayout><AssignedPaymentHistory /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.PAYMENT_HISTORY_MY} element={<ProtectedRoute><DashboardLayout><MyPaymentHistory /></DashboardLayout></ProtectedRoute>} />
             
             {/* Rent Management Routes */}
-            <Route path={ROUTES.RENT_ROLL} element={<DashboardLayout><RentRoll /></DashboardLayout>} />
-            <Route path={ROUTES.LEASE_MANAGEMENT} element={<DashboardLayout><LeaseManagement /></DashboardLayout>} />
-            <Route path={ROUTES.RENT_SCHEDULE} element={<DashboardLayout><RentRoll /></DashboardLayout>} />
-            <Route path={ROUTES.RENT_OVERDUE_RENTS} element={<DashboardLayout><RentRoll /></DashboardLayout>} />
+            <Route path={ROUTES.RENT_ROLL} element={<ProtectedRoute><DashboardLayout><RentRoll /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.LEASE_MANAGEMENT} element={<ProtectedRoute><DashboardLayout><LeaseManagement /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENT_SCHEDULE} element={<ProtectedRoute><DashboardLayout><RentRoll /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.RENT_OVERDUE_RENTS} element={<ProtectedRoute><DashboardLayout><RentRoll /></DashboardLayout></ProtectedRoute>} />
 
 
             
             {/* Post-Sale Routes */}
-            <Route path={ROUTES.POST_SALE_REFERRALS} element={<DashboardLayout><Referrals /></DashboardLayout>} />
-            <Route path={ROUTES.POST_SALE_REWARDS} element={<DashboardLayout><Rewards /></DashboardLayout>} />
-            <Route path={ROUTES.POST_SALE_POINTS} element={<DashboardLayout><Points /></DashboardLayout>} />
+            <Route path={ROUTES.POST_SALE_REFERRALS} element={<ProtectedRoute><DashboardLayout><Referrals /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.POST_SALE_REWARDS} element={<ProtectedRoute><DashboardLayout><Rewards /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.POST_SALE_POINTS} element={<ProtectedRoute><DashboardLayout><Points /></DashboardLayout></ProtectedRoute>} />
             
             {/* Schedule Meetings Routes */}
-            <Route path={ROUTES.ADMIN_MEETINGS} element={<DashboardLayout><AdminMeetings /></DashboardLayout>} />
-            <Route path={ROUTES.SALES_MEETINGS} element={<DashboardLayout><SalesMeetings /></DashboardLayout>} />
-            <Route path={ROUTES.MY_MEETINGS} element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
+            <Route path={ROUTES.ADMIN_MEETINGS} element={<ProtectedRoute><DashboardLayout><AdminMeetings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.SALES_MEETINGS} element={<ProtectedRoute><DashboardLayout><SalesMeetings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.MY_MEETINGS} element={<ProtectedRoute><DashboardLayout><MyMeetings /></DashboardLayout></ProtectedRoute>} />
             
             {/* Client Portal Routes */}
-            <Route path={ROUTES.CLIENT_MY_BOOKINGS} element={<DashboardLayout><MyBookings /></DashboardLayout>} />
-            <Route path={ROUTES.CLIENT_MY_MEETINGS} element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
-            <Route path={ROUTES.CLIENT_DOCUMENTS} element={<DashboardLayout><ClientDocuments /></DashboardLayout>} />
-            <Route path={ROUTES.CLIENT_PAYMENTS} element={<DashboardLayout><ClientPayments /></DashboardLayout>} />
-            <Route path={ROUTES.CLIENT_REFERRALS} element={<DashboardLayout><ClientReferrals /></DashboardLayout>} />
+            <Route path={ROUTES.CLIENT_MY_BOOKINGS} element={<ProtectedRoute><DashboardLayout><MyBookings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.CLIENT_MY_MEETINGS} element={<ProtectedRoute><DashboardLayout><MyMeetings /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.CLIENT_DOCUMENTS} element={<ProtectedRoute><DashboardLayout><ClientDocuments /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.CLIENT_PAYMENTS} element={<ProtectedRoute><DashboardLayout><ClientPayments /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.CLIENT_REFERRALS} element={<ProtectedRoute><DashboardLayout><ClientReferrals /></DashboardLayout></ProtectedRoute>} />
             
             {/* Settings Route */}
-            <Route path={ROUTES.SETTINGS} element={<DashboardLayout><Settings /></DashboardLayout>} />
+            <Route path={ROUTES.SETTINGS} element={<ProtectedRoute><DashboardLayout><Settings /></DashboardLayout></ProtectedRoute>} />
             
             {/* Profile Route */}
-            <Route path={ROUTES.PROFILE} element={<DashboardLayout><UserProfile /></DashboardLayout>} />
+            <Route path={ROUTES.PROFILE} element={<ProtectedRoute><DashboardLayout><UserProfile /></DashboardLayout></ProtectedRoute>} />
 
             {/* Theme Demo Route */}
             <Route path={ROUTES.THEME_DEMO} element={<DashboardLayout><ThemeDemo /></DashboardLayout>} />
+            
+            {/* Unauthorized Route */}
+            <Route path="/unauthorized" element={<Unauthorized />} />
             
             {/* 404 Route */}
             <Route path="*" element={<NotFound />} />

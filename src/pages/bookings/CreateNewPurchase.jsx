@@ -133,15 +133,12 @@ const CreateNewPurchase = () => {
     try {
       // Step 1: Fetch roles first to get role IDs
       const rolesData = await fetchRoles();
-      console.log('Roles data:', rolesData);
 
       // Step 2: Fetch properties
       const propertiesData = await fetchProperties();
-      console.log('Properties data:', propertiesData);
 
       // Step 3: Fetch all users and filter by role
       const allUsersData = await fetchUsers();
-      console.log('All users data:', allUsersData);
 
       // Filter users by role on the frontend
       let customersData = { data: [] };
@@ -151,8 +148,6 @@ const CreateNewPurchase = () => {
         const userRole = rolesData.data.find((role) => role.name === "USER");
         const salesRole = rolesData.data.find((role) => role.name === "SALES");
         
-        console.log('Found USER role:', userRole);
-        console.log('Found SALES role:', salesRole);
 
         if (userRole) {
           customersData.data = allUsersData.data.filter(user => 
@@ -170,15 +165,12 @@ const CreateNewPurchase = () => {
         if (salespeopleData.data.length === 0) {
           const executiveRole = rolesData.data.find((role) => role.name === "EXECUTIVE");
           if (executiveRole) {
-            console.log('No SALES users found, using EXECUTIVE users as fallback');
             salespeopleData.data = allUsersData.data.filter(user => 
               user.role === executiveRole._id && user.published === true
             );
           }
         }
 
-        console.log('Filtered customers:', customersData);
-        console.log('Filtered salespeople:', salespeopleData);
       }
 
       // Use only real data from backend - filter for published properties with FOR SALE status
@@ -188,39 +180,12 @@ const CreateNewPurchase = () => {
       const publishedCustomers = customersData.data || [];
       const publishedSalespeople = salespeopleData.data || [];
 
-      console.log('Final processed data:', {
-        properties: publishedProperties.length,
-        customers: publishedCustomers.length,
-        salespeople: publishedSalespeople.length
-      });
-
-      // Check if we have the minimum required data
-      if (publishedProperties.length === 0) {
-        toast.error("No properties available for sale. Please add properties with 'FOR SALE' status first.");
-        return;
-      }
-
-      if (publishedCustomers.length === 0) {
-        toast.error("No customers available. Please add customers first.");
-        return;
-      }
-
-      if (publishedSalespeople.length === 0) {
-        console.warn("No users with SALES role found. Available roles:", rolesData.data?.map(r => r.name));
-        console.warn("All users have role:", allUsersData.data?.map(u => ({ id: u._id, role: u.role, email: u.email })));
-        
-        // Show more specific error message
-        const availableRoles = rolesData.data?.map(r => r.name).join(', ') || 'none';
-        toast.error(`No salespeople available. Available roles: ${availableRoles}. Users need to have the SALES role assigned.`);
-        return;
-      }
-
+      // Always set the data, even if empty - let the form handle empty states
       setProperties(publishedProperties);
       setCustomers(publishedCustomers);
       setSalespeople(publishedSalespeople);
 
-    } catch (error) {
-      console.error("Error in fetchInitialData:", error);
+    } catch {
       toast.error("Failed to load required data. Please check your connection and try again.");
       
       // Set empty arrays to prevent form from rendering with invalid data
@@ -242,6 +207,12 @@ const CreateNewPurchase = () => {
   };
 
   const handlePropertyChange = (propertyId) => {
+    // Check if dropdown was clicked but is empty
+    if (!propertyId && properties.length === 0) {
+      toast.error("No properties available for sale. Please add properties with 'FOR SALE' First.");
+      return;
+    }
+    
     const property = properties.find((p) => p._id === propertyId);
     if (property) {
       setSelectedProperty(property);
@@ -266,6 +237,12 @@ const CreateNewPurchase = () => {
   };
 
   const handleCustomerChange = (customerId) => {
+    // Check if dropdown was clicked but is empty
+    if (!customerId && customers.length === 0) {
+      toast.error("No customers available. Please add customers first.");
+      return;
+    }
+    
     const customer = customers.find((c) => c._id === customerId);
     if (customer) {
       setFormData((prev) => ({
@@ -281,6 +258,12 @@ const CreateNewPurchase = () => {
   };
 
   const handleSalespersonChange = (salespersonId) => {
+    // Check if dropdown was clicked but is empty
+    if (!salespersonId && salespeople.length === 0) {
+      toast.error("No salespeople available. Users need to have the SALES role assigned.");
+      return;
+    }
+    
     const salesperson = salespeople.find((s) => s._id === salespersonId);
     if (salesperson) {
       setFormData((prev) => ({
@@ -459,7 +442,6 @@ const CreateNewPurchase = () => {
 
       toast.success("Purchase booking created successfully!");
     } catch (error) {
-      console.error("Error creating purchase booking:", error);
       toast.error(
         error.response?.data?.message ||
           "Failed to create purchase booking. Please try again."
@@ -521,44 +503,7 @@ const CreateNewPurchase = () => {
     );
   }
 
-  // Show error state if no data is available
-  if (properties.length === 0 || customers.length === 0 || salespeople.length === 0) {
-    return (
-      <Box
-        p={6}
-        bg="gray.50"
-        minH="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <VStack spacing={4} textAlign="center">
-          <Text fontSize="xl" fontWeight="bold" color="red.600">
-            Required Data Not Available
-          </Text>
-          <Text color="gray.600">
-            {properties.length === 0 && "• No properties available for sale"}
-          </Text>
-          <Text color="gray.600">
-            {customers.length === 0 && "• No customers available"}
-          </Text>
-          <Text color="gray.600">
-            {salespeople.length === 0 && "• No salespeople available"}
-          </Text>
-          <Text color="gray.500" fontSize="sm">
-            Please ensure you have properties with 'FOR SALE' status, customers, and salespeople in your system before creating purchase bookings.
-          </Text>
-          <Button
-            colorScheme="blue"
-            onClick={() => window.location.reload()}
-            leftIcon={<FiRefreshCw />}
-          >
-            Refresh Page
-          </Button>
-        </VStack>
-      </Box>
-    );
-  }
+  // Always show the form - let dropdowns handle empty states
 
   return (
     <Box p={{ base: 3, md: 6 }} bg="gray.50" minH="100vh">
@@ -589,6 +534,11 @@ const CreateNewPurchase = () => {
                   placeholder="Search and choose a property"
                   value={formData.propertyId}
                   onChange={handlePropertyChange}
+                  onOpen={() => {
+                    if (properties.length === 0) {
+                      toast.error("No properties available for sale. Please add properties with 'FOR SALE' first.");
+                    }
+                  }}
                   options={properties.map(property => ({
                     value: property._id,
                     label: `${property.name || property.title} - ₹${property.price?.toLocaleString() || 'N/A'}`
@@ -701,6 +651,11 @@ const CreateNewPurchase = () => {
                   placeholder="Search and choose a customer"
                   value={formData.customerId}
                   onChange={handleCustomerChange}
+                  onOpen={() => {
+                    if (customers.length === 0) {
+                      toast.error("No customers available. Please add customers first.");
+                    }
+                  }}
                   options={customers.map(customer => ({
                     value: customer._id,
                     label: `${customer.firstName || ""} ${
@@ -742,6 +697,11 @@ const CreateNewPurchase = () => {
                   placeholder="Search and choose a salesperson"
                   value={formData.assignedSalespersonId}
                   onChange={handleSalespersonChange}
+                  onOpen={() => {
+                    if (salespeople.length === 0) {
+                      toast.error("No salespeople available. Users need to have the SALES role assigned.");
+                    }
+                  }}
                   options={salespeople.map(salesperson => ({
                     value: salesperson._id,
                     label: `${salesperson.firstName || ""} ${

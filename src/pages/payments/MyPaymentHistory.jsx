@@ -46,7 +46,7 @@ const MyPaymentHistory = () => {
   // Generate filter options dynamically from the actual data
   useEffect(() => {
     if (payments.length > 0) {
-      const uniqueStatuses = [...new Set(payments.map(payment => payment.status))].filter(Boolean);
+      const uniqueStatuses = [...new Set(payments.map(payment => payment.status || payment.paymentStatus))].filter(Boolean);
       const uniquePaymentTypes = [...new Set(payments.map(payment => payment.paymentType))].filter(Boolean);
       
       const statusOptions = [
@@ -231,25 +231,27 @@ const MyPaymentHistory = () => {
         return;
       }
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const response = await api.get('/payment-history/my');
+      const rawData = Array.isArray(response?.data?.data) ? response.data.data : [];
       
-      // Use dummy data for now
-      setPayments(dummyPayments);
-      setFilteredPayments(dummyPayments);
+      // Map backend data to frontend format
+      const mappedData = rawData.map(payment => ({
+        ...payment,
+        // Map booking data to top-level fields for easier access
+        customerId: payment.bookingId?.customerId || null,
+        propertyId: payment.bookingId?.propertyId || null,
+        // Map paymentStatus to status for filtering
+        status: payment.paymentStatus || payment.status,
+        // Map amount fields
+        amount: payment.totalAmount || payment.amount,
+        // Map date fields
+        paymentDate: payment.paidDate || payment.paymentDate,
+        // Keep bookingId for reference
+        bookingId: payment.bookingId
+      }));
       
-      // TODO: Uncomment when API is ready
-      // const response = await api.get(`/payments/my-payments/${currentUser._id}`);
-      // if (response.data && response.data.data && Array.isArray(response.data.data)) {
-      //   setPayments(response.data.data);
-      //   setFilteredPayments(response.data.data);
-      // } else if (response.data && Array.isArray(response.data)) {
-      //   setPayments(response.data);
-      //   setFilteredPayments(response.data);
-      // } else {
-      //   setPayments([]);
-      //   setFilteredPayments([]);
-      // }
+      setPayments(mappedData);
+      setFilteredPayments(mappedData);
     } catch (error) {
       console.error('Error fetching my payments:', error);
       toast({
@@ -282,7 +284,7 @@ const MyPaymentHistory = () => {
     }
 
     if (statusFilter && statusFilter !== '') {
-      filtered = filtered.filter(payment => payment.status === statusFilter);
+      filtered = filtered.filter(payment => (payment.status || payment.paymentStatus) === statusFilter);
     }
 
     if (paymentTypeFilter && paymentTypeFilter !== '') {

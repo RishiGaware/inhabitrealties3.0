@@ -19,7 +19,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
 
   // Get current user role
   const userRole = getUserRoleName() || 'USER';
-  console.log('Current user role:', userRole);
 
   // Function to filter menu items based on user role
   const getFilteredMenus = () => {
@@ -38,30 +37,9 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "admin"
       },
       
-      // Document Management section
-      {
-        title: "Document Management",
-        icon: <FaFileAlt />,
-        subMenu: ["Document Type Management", "Document Management", "My Documents"],
-        key: "documentManagement"
-      },
+     
       
-      // Property section
-      {
-        title: "Property",
-        icon: <FaBuilding />,
-        subMenu: ["Property Master", "Property Types", "Favorite Properties"],
-        key: "property"
-      },
-      
-      // Properties display
-      {
-        title: "Properties",
-        icon: <FaHome />,
-        subMenu: ["Properties", "Favorite"],
-        key: "displayProperties"
-      },
-      
+     
       // Lead Management
       {
         title: "Lead Management",
@@ -78,51 +56,11 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         key: "customers"
       },
       
-      // Schedule Meetings
-      {
-        title: "Schedule Meetings",
-        icon: <FaCalendarAlt />,
-        subMenu: ["Admin Meetings", "Sales Meetings", "My Meetings"],
-        key: "scheduleMeetings"
-      },
       
-      // Purchase Booking Management
-      {
-        title: "Purchase Bookings", 
-        icon: <FaBuilding />,
-        subMenu: [
-          "All Purchase Bookings",
-          "My Assigned Bookings",
-          "My Bookings",
-          "Create New Purchase",
-        ],
-        key: "purchaseBookings"
-      },
-      
-      // Rental Booking Management
-      {
-        title: "Rental Bookings", 
-        icon: <FaHome />,
-        subMenu: [
-          "All Rental Bookings",
-          "My Assigned Rentals",
-          "My Bookings",
-          "Create New Rental",
-        ],
-        key: "rentalBookings"
-      },
+     
       
       // Payment Management
-      {
-        title: "Payments", 
-        icon: <FaMoneyBillWave />,
-        subMenu: [
-          "All Payment History",
-          "Assigned Payment History",
-          "My Payment History"
-        ],
-        key: "payments"
-      },
+      
       
       // Client Portal
       { 
@@ -135,6 +73,73 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
         ],
         key: "client"
       },
+
+       // Property section
+       {
+        title: "Property",
+        icon: <FaBuilding />,
+        subMenu: ["Property Master", "Property Types", "Favorite Properties"],
+        key: "property"
+      },
+      
+      // Properties display
+      {
+        title: "Properties",
+        icon: <FaHome />,
+        subMenu: ["Properties", "Favorite"],
+        key: "displayProperties"
+      },
+      
+      // Schedule Meetings
+      {
+        title: "Schedule Meetings",
+        icon: <FaCalendarAlt />,
+        subMenu: ["Admin Meetings", "Sales Meetings", "My Meetings"],
+        key: "scheduleMeetings"
+      },
+      
+       // Rental Booking Management
+       {
+        title: "Rental Bookings", 
+        icon: <FaHome />,
+        subMenu: [
+          "All Rental Bookings",
+          "My Assigned Rentals",
+          "My Bookings",
+          "Create New Rental",
+        ],
+        key: "rentalBookings"
+      },
+       // Purchase Booking Management
+       {
+        title: "Purchase Bookings", 
+        icon: <FaBuilding />,
+        subMenu: [
+          "All Purchase Bookings",
+          "My Assigned Bookings",
+          "My Bookings",
+          "Create New Purchase",
+        ],
+        key: "purchaseBookings"
+      },
+      
+      {
+        title: "Payments", 
+        icon: <FaMoneyBillWave />,
+        subMenu: [
+          "All Payment History",
+          "Assigned Payment History",
+          "My Payment History"
+        ],
+        key: "payments"
+      },
+       // Document Management section
+       {
+        title: "Document Management",
+        icon: <FaFileAlt />,
+        subMenu: ["Document Type Management", "Document Management", "My Documents"],
+        key: "documentManagement"
+      },
       
       // Settings
       { title: "Settings", icon: <FaCog />, gap: true, key: "settings" },
@@ -144,7 +149,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     const filteredMenus = allMenus.filter(menu => {
       // Check if user has access to this menu
       const hasAccess = hasMenuAccess(userRole, menu.key);
-      console.log(`Menu ${menu.key} access for role ${userRole}:`, hasAccess);
       
       if (!hasAccess) return false;
       
@@ -154,7 +158,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
           // Convert submenu title to key format
           const subMenuKey = subMenu.toLowerCase().replace(/\s+/g, '-');
           const hasSubAccess = hasSubMenuAccess(userRole, menu.key, subMenuKey);
-          console.log(`SubMenu ${subMenuKey} access for role ${userRole}:`, hasSubAccess);
           return hasSubAccess;
         });
         
@@ -168,7 +171,6 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       return true;
     });
 
-    console.log('Filtered menus for role', userRole, ':', filteredMenus);
     return filteredMenus;
   };
 

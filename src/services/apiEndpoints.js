@@ -125,6 +125,8 @@ export const MEETING_SCHEDULE_STATUS_ENDPOINTS = {
 // Payment Management Endpoints
 export const PAYMENT_HISTORY_ENDPOINTS = {
   GET_ALL: '/payment-history/all',
+  GET_ASSIGNED: '/payment-history/assigned',
+  GET_MY: '/payment-history/my',
   GET_BY_TYPE: (paymentType) => `/payment-history/type/${paymentType}`,
   GET_BY_STATUS: (status) => `/payment-history/status/${status}`,
   GET_BY_DATE_RANGE: '/payment-history/date-range',

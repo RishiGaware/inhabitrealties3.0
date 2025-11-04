@@ -20,7 +20,7 @@ export const NEIGHBORHOOD_IMAGES = {
 
 // Testimonials
 export const TESTIMONIAL_IMAGES = {
-  sarah: 'https://images.unsplash.com/photo-1599577181288-2828631024c3?w=150&h=150&fit=crop&crop=face',
+  sarah: 'https://images.unsplash.com/photo-1607746882042-944635dfe10e?w=150&h=150&fit=crop&crop=face', // woman portrait
   michael: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=150&h=150&fit=crop&crop=face',
   jessica: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
 };
