@@ -15,7 +15,8 @@ import {
   createProperty, 
   editProperty, 
   deleteProperty,
-  fetchPropertiesWithParams
+  fetchPropertiesWithParams,
+  uploadPropertyBrochure
 } from '../../../services/propertyService';
 import { 
   createFavoriteProperty,
@@ -132,7 +133,7 @@ const PropertyMaster = () => {
     }
   };
 
-  const handleAddProperty = async (propertyData) => {
+  const handleAddProperty = async (propertyData, brochureFile = null) => {
     if (isApiCallInProgress || isSubmitting) {
       return;
     }
@@ -172,11 +173,23 @@ const PropertyMaster = () => {
       };
 
       const response = await createProperty(formattedData);
+      const propertyId = response.data?._id;
+      
+      // Upload brochure if provided
+      if (brochureFile && propertyId) {
+        try {
+          await uploadPropertyBrochure(propertyId, brochureFile);
+          showSuccessToast('Property and brochure uploaded successfully');
+        } catch (brochureError) {
+          console.error('Failed to upload brochure:', brochureError);
+          showErrorToast('Property created but brochure upload failed');
+        }
+      }
       
       // Add the new property to local state
       const newProperty = {
         ...formattedData,
-        _id: response.data?._id || Date.now().toString(),
+        _id: propertyId || Date.now().toString(),
         images: response.data?.images || ['default-property.jpg'],
         createdAt: response.data?.createdAt || new Date().toISOString(),
       };
@@ -185,7 +198,12 @@ const PropertyMaster = () => {
       setIsModalOpen(false);
       
       const successMessage = response?.message || 'Property added successfully';
-      showSuccessToast(successMessage);
+      if (!brochureFile) {
+        showSuccessToast(successMessage);
+      }
+      
+      // Refresh properties list to get updated data
+      fetchProperties();
     } catch (error) {
       let errorMessage = 'Failed to add property';
       if (error?.response?.data?.message) {
@@ -205,7 +223,7 @@ const PropertyMaster = () => {
     setIsModalOpen(true);
   };
 
-  const handleUpdateProperty = async (updatedData) => {
+  const handleUpdateProperty = async (updatedData, brochureFile = null) => {
     if (isApiCallInProgress || isSubmitting) {
       return;
     }
@@ -241,10 +259,22 @@ const PropertyMaster = () => {
           amenities: updatedData.features?.amenities || []
         },
         listedDate: updatedData.listedDate || selectedProperty.listedDate,
-        published: updatedData.published !== undefined ? updatedData.published : true
+        published: updatedData.published !== undefined ? updatedData.published : true,
+        brochureUrl: updatedData.brochureUrl || selectedProperty.brochureUrl
       };
 
       const response = await editProperty(selectedProperty._id, formattedData);
+      
+      // Upload brochure if provided
+      if (brochureFile && selectedProperty._id) {
+        try {
+          await uploadPropertyBrochure(selectedProperty._id, brochureFile);
+          showSuccessToast('Property and brochure updated successfully');
+        } catch (brochureError) {
+          console.error('Failed to upload brochure:', brochureError);
+          showErrorToast('Property updated but brochure upload failed');
+        }
+      }
       
       // Update the property in local state
       setProperties(prevProperties => 
@@ -259,7 +289,12 @@ const PropertyMaster = () => {
       setIsModalOpen(false);
       
       const successMessage = response?.message || 'Property updated successfully';
-      showSuccessToast(successMessage);
+      if (!brochureFile) {
+        showSuccessToast(successMessage);
+      }
+      
+      // Refresh properties list to get updated data
+      fetchProperties();
     } catch (error) {
       let errorMessage = 'Failed to update property';
       if (error?.response?.data?.message) {
@@ -569,9 +604,13 @@ const PropertyMaster = () => {
       {/* Property Status Tabs - Fully Responsive */}
       <Box mb={{ base: 4, md: 6 }}>
         <Tabs 
-          index={selectedStatus === 'ALL' ? 0 : selectedStatus === 'FOR SALE' ? 1 : selectedStatus === 'FOR RENT' ? 2 : 3}
+          index={(() => {
+            const statuses = ['ALL', 'FOR SALE', 'FOR RENT', 'SOLD', 'RENT', 'RENTED', 'LEASE', 'READY TO MOVE', 'UNDER CONSTRUCTION', 'NEW LAUNCH', 'AFTER 1 YEAR POSSESSION'];
+            const index = statuses.indexOf(selectedStatus);
+            return index >= 0 ? index : 0;
+          })()}
           onChange={(index) => {
-            const statuses = ['ALL', 'FOR SALE', 'FOR RENT', 'SOLD'];
+            const statuses = ['ALL', 'FOR SALE', 'FOR RENT', 'SOLD', 'RENT', 'RENTED', 'LEASE', 'READY TO MOVE', 'UNDER CONSTRUCTION', 'NEW LAUNCH', 'AFTER 1 YEAR POSSESSION'];
             setSelectedStatus(statuses[index]);
           }}
           variant="enclosed"
@@ -713,6 +752,195 @@ const PropertyMaster = () => {
                 transition="all 0.2s"
               >
                 Sold
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'cyan.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'cyan.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'cyan.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                Rent
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'pink.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'pink.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'pink.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                Rented
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'orange.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'orange.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'orange.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                Lease
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'green.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'green.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'green.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                Ready to Move
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'yellow.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'yellow.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'yellow.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                Under Construction
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'red.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'red.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'red.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                New Launch
+              </Tab>
+              <Tab 
+                fontSize={{ base: 'xs', sm: 'sm', md: 'md', lg: 'lg' }} 
+                fontWeight={{ base: 'medium', md: 'semibold' }}
+                px={{ base: 2, sm: 3, md: 4, lg: 6 }}
+                py={{ base: 1.5, sm: 2, md: 2.5, lg: 3 }}
+                borderRadius={{ base: 'md', md: 'lg' }}
+                minW={{ base: 'auto', sm: '120px' }}
+                textAlign="center"
+                whiteSpace="nowrap"
+                _selected={{
+                  bg: 'white',
+                  color: 'teal.600',
+                  boxShadow: 'md',
+                  border: '1px solid',
+                  borderColor: 'teal.200',
+                  transform: 'translateY(-1px)'
+                }}
+                _hover={{
+                  bg: 'white',
+                  color: 'teal.500',
+                  transform: 'translateY(-1px)',
+                  transition: 'all 0.2s'
+                }}
+                transition="all 0.2s"
+              >
+                After 1 Yr Possession
               </Tab>
             </TabList>
           </Box>

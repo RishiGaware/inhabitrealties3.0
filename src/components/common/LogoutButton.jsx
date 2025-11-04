@@ -19,12 +19,14 @@ import {
 import { FaSignOutAlt, FaExclamationTriangle, FaTimes } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useRef } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 const LogoutButton = ({ variant = 'ghost', size = 'md', ...props }) => {
   const navigate = useNavigate();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = useRef();
+  const { logout } = useAuth();
 
   // Color mode values
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -33,10 +35,10 @@ const LogoutButton = ({ variant = 'ghost', size = 'md', ...props }) => {
   const mutedTextColor = useColorModeValue('gray.600', 'gray.400');
 
   const handleLogout = () => {
-    // Clear any stored authentication data
-    document.cookie = "AuthToken=; Max-Age=0; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Use AuthContext logout function to properly clear all auth data
+    logout();
+    
+    // Clear any additional session storage
     sessionStorage.clear();
     
     // Show success message

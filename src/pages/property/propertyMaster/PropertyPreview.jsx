@@ -11,13 +11,14 @@ import {
   FaTimes, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaCalendarAlt,
   FaChevronLeft, FaChevronRight, FaExternalLinkAlt, FaPhone, FaEnvelope,
   FaUpload, FaTrash, FaDownload, FaExpand, FaCompress, FaShare, FaHome,
-  FaHeart, FaStar, FaBuilding, FaUser, FaTag
+  FaHeart, FaStar, FaBuilding, FaUser, FaTag, FaFilePdf, FaEye
 } from 'react-icons/fa';
 import { 
   fetchPropertyImages, 
   uploadPropertyImage, 
   uploadPropertyImageV2,
-  deletePropertyImage 
+  deletePropertyImage,
+  uploadPropertyBrochure
 } from '../../../services/propertyService';
 import { submitContactUs } from '../../../services/homeservices/homeService';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
@@ -49,7 +50,10 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
   const [imageToDelete, setImageToDelete] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [contactLoading, setContactLoading] = useState(false);
+  const [brochureUploading, setBrochureUploading] = useState(false);
+  const [brochureUrl, setBrochureUrl] = useState(null);
   const fileInputRef = useRef();
+  const brochureInputRef = useRef();
 
   // Color mode values
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -61,8 +65,10 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
   useEffect(() => {
     if (isOpen && property?._id) {
       fetchPropertyImagesData();
+      // Set brochure URL from property
+      setBrochureUrl(property?.brochureUrl || null);
     }
-  }, [isOpen, property?._id]);
+  }, [isOpen, property?._id, property?.brochureUrl]);
 
   const fetchPropertyImagesData = async () => {
     setLoading(true);
@@ -213,6 +219,66 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
+  };
+
+  const handleBrochureUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      showErrorToast('Please select a PDF file');
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      showErrorToast('Please select a PDF smaller than 10MB');
+      return;
+    }
+
+    setBrochureUploading(true);
+
+    try {
+      const response = await uploadPropertyBrochure(property._id, file);
+      setBrochureUrl(response.data.brochureUrl);
+      showSuccessToast('Brochure uploaded successfully');
+      
+      // Clear the file input
+      if (brochureInputRef.current) {
+        brochureInputRef.current.value = '';
+      }
+      
+      // Refresh property data if needed
+      if (property && property._id) {
+        // You might want to refresh the property data here
+      }
+    } catch (error) {
+      console.error('Failed to upload brochure:', error);
+      const errorMessage = error?.response?.data?.message || 'Failed to upload brochure';
+      showErrorToast(errorMessage);
+    } finally {
+      setBrochureUploading(false);
+    }
+  };
+
+  const handleViewBrochure = () => {
+    if (brochureUrl) {
+      window.open(brochureUrl, '_blank');
+    }
+  };
+
+  const handleDownloadBrochure = () => {
+    if (brochureUrl) {
+      const link = document.createElement('a');
+      link.href = brochureUrl;
+      link.download = `${property.name}_Brochure.pdf`;
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showSuccessToast('Brochure download started');
+    }
   };
 
   const handleContactAgent = async () => {
@@ -556,12 +622,19 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
               {property.propertyStatus}
             </Badge>
 
-            {/* Hidden file input */}
+            {/* Hidden file inputs */}
             <Input
               ref={fileInputRef}
               type="file"
               accept="image/*"
               onChange={handleImageUpload}
+              display="none"
+            />
+            <Input
+              ref={brochureInputRef}
+              type="file"
+              accept="application/pdf"
+              onChange={handleBrochureUpload}
               display="none"
             />
           </Box>
@@ -1036,6 +1109,170 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
                   </SimpleGrid>
                 </Box>
               )}
+
+              {/* Enhanced Brochure Section */}
+              <Box
+                bg="white"
+                borderRadius="3xl"
+                p={{ base: 6, sm: 8, md: 10 }}
+                border="1px solid"
+                borderColor={borderColor}
+                boxShadow="0 8px 32px rgba(0, 0, 0, 0.08)"
+              >
+                <Flex align="center" mb={{ base: 4, sm: 6 }} justify="space-between">
+                  <Flex align="center" gap={3}>
+                    <Box
+                      p={4}
+                      bg="red.50"
+                      borderRadius="2xl"
+                      color="red.600"
+                      display="flex"
+                      alignItems="center"
+                      justifyContent="center"
+                      _hover={{
+                        transform: 'rotate(8deg) scale(1.1)',
+                        boxShadow: '0 8px 24px rgba(239, 68, 68, 0.4)'
+                      }}
+                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    >
+                      <FaFilePdf size={24} />
+                    </Box>
+                    <Box>
+                      <Heading size={{ base: "md", sm: "lg" }} color={textColor} mb={2}>Property Brochure</Heading>
+                      <Text color={subTextColor} fontSize={{ base: "sm", sm: "md" }}>Download or view the property brochure</Text>
+                    </Box>
+                  </Flex>
+                  {!isViewOnly && (
+                    <Button
+                      leftIcon={<FaUpload />}
+                      size={{ base: "sm", sm: "md" }}
+                      variant="outline"
+                      colorScheme="brand"
+                      onClick={() => brochureInputRef.current?.click()}
+                      isLoading={brochureUploading}
+                      loadingText="Uploading..."
+                      borderRadius="xl"
+                      _hover={{
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 8px 24px rgba(102, 126, 234, 0.3)"
+                      }}
+                      transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                    >
+                      {brochureUrl ? 'Update Brochure' : 'Upload Brochure'}
+                    </Button>
+                  )}
+                </Flex>
+                
+                {brochureUrl ? (
+                  <VStack spacing={6} align="stretch">
+                    {/* PDF Viewer/Embed */}
+                    <Box
+                      bg={cardBg}
+                      borderRadius="xl"
+                      p={4}
+                      border="1px solid"
+                      borderColor={borderColor}
+                      minH="400px"
+                      maxH="600px"
+                      overflow="hidden"
+                      position="relative"
+                    >
+                      <iframe
+                        src={`${brochureUrl}#toolbar=1&navpanes=1&scrollbar=1`}
+                        width="100%"
+                        height="100%"
+                        style={{
+                          minHeight: '400px',
+                          border: 'none',
+                          borderRadius: '12px'
+                        }}
+                        title="Property Brochure PDF"
+                      />
+                      {/* Fallback message if PDF doesn't load */}
+                      <Box
+                        position="absolute"
+                        bottom={4}
+                        left="50%"
+                        transform="translateX(-50%)"
+                        bg="rgba(0, 0, 0, 0.7)"
+                        color="white"
+                        px={4}
+                        py={2}
+                        borderRadius="md"
+                        fontSize="sm"
+                      >
+                        If the PDF doesn't display, use the buttons below
+                      </Box>
+                    </Box>
+
+                    {/* Action Buttons */}
+                    <HStack spacing={4} justify="center" flexWrap="wrap">
+                      <Button
+                        leftIcon={<FaEye />}
+                        colorScheme="blue"
+                        variant="solid"
+                        size={{ base: "md", sm: "lg" }}
+                        borderRadius="xl"
+                        fontWeight="bold"
+                        onClick={handleViewBrochure}
+                        _hover={{
+                          transform: "translateY(-3px) scale(1.02)",
+                          boxShadow: "0 12px 32px rgba(59, 130, 246, 0.4)"
+                        }}
+                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                      >
+                        Open in New Tab
+                      </Button>
+                      <Button
+                        leftIcon={<FaDownload />}
+                        colorScheme="green"
+                        variant="solid"
+                        size={{ base: "md", sm: "lg" }}
+                        borderRadius="xl"
+                        fontWeight="bold"
+                        onClick={handleDownloadBrochure}
+                        _hover={{
+                          transform: "translateY(-3px) scale(1.02)",
+                          boxShadow: "0 12px 32px rgba(34, 197, 94, 0.4)"
+                        }}
+                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                      >
+                        Download PDF
+                      </Button>
+                    </HStack>
+                  </VStack>
+                ) : (
+                  <Box
+                    bg={cardBg}
+                    borderRadius="xl"
+                    p={8}
+                    textAlign="center"
+                    border="2px dashed"
+                    borderColor={borderColor}
+                  >
+                    <VStack spacing={4}>
+                      <Circle size="60px" bg="gray.200" color="gray.400">
+                        <FaFilePdf size={28} />
+                      </Circle>
+                      <Text color={subTextColor} fontSize="md">
+                        No brochure available for this property
+                      </Text>
+                      {!isViewOnly && (
+                        <Button
+                          leftIcon={<FaUpload />}
+                          size="sm"
+                          variant="outline"
+                          colorScheme="brand"
+                          onClick={() => brochureInputRef.current?.click()}
+                          borderRadius="xl"
+                        >
+                          Upload Brochure
+                        </Button>
+                      )}
+                    </VStack>
+                  </Box>
+                )}
+              </Box>
 
               {/* Enhanced Location & Actions - AdminMeetings Style */}
               <Box

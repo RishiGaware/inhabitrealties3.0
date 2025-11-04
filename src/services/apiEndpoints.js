@@ -71,6 +71,7 @@ export const PROPERTY_ENDPOINTS = {
   GET_IMAGES: (id) => `/property/images/all/${id}`,
   DELETE_IMAGE: (id) => `/property/image/delete/${id}`,
   DELETE_ALL_IMAGES: (id) => `/property/image/delete/all/${id}`,
+  UPLOAD_BROCHURE: (id) => `/property/brochure/upload/${id}`,
   GET_IMAGE_BY_ID: (id) => `/property/image/${id}`,
 };
 

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/auth/authService';
 import { registerNormalUser } from '../services/auth/authService';
 import { fetchRoleById } from '../services/rolemanagement/roleService';
+import Cookies from 'js-cookie';
 
 const AuthContext = createContext(null);  
 
@@ -11,22 +12,28 @@ const RegisterContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState(null); // stores complete login response: { message, token, data }
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Track initial auth check
 
   useEffect(() => {
     // Load auth data from localStorage on app start
     const savedAuth = localStorage.getItem('auth');
     const savedRole = localStorage.getItem('userRole');
-    const savedRoleName = localStorage.getItem('userRoleName');
     const savedRoleDetails = localStorage.getItem('userRoleDetails');
 
-    if (savedAuth) {
+    const initializeAuth = async () => {
       try {
-        const parsedAuth = JSON.parse(savedAuth);
-        
-        // If role details are missing, try to fetch them
-        if (parsedAuth.data?.role && !parsedAuth.data?.roleDetails) {
-          fetchRoleById(parsedAuth.data.role)
-            .then(roleResponse => {
+        if (savedAuth) {
+          const parsedAuth = JSON.parse(savedAuth);
+          
+          // Always restore token to cookies from localStorage to ensure sync
+          if (parsedAuth.token) {
+            Cookies.set('AuthToken', parsedAuth.token, { expires: 1, secure: true, sameSite: 'strict' });
+          }
+          
+          // If role details are missing, try to fetch them
+          if (parsedAuth.data?.role && !parsedAuth.data?.roleDetails) {
+            try {
+              const roleResponse = await fetchRoleById(parsedAuth.data.role);
               const enhancedAuth = {
                 ...parsedAuth,
                 data: {
@@ -44,25 +51,37 @@ export const AuthProvider = ({ children }) => {
               if (!savedRoleDetails) {
                 localStorage.setItem('userRoleDetails', JSON.stringify(roleResponse.data));
               }
-            })
-            .catch(roleError => {
+              setIsAuthenticated(true);
+            } catch (roleError) {
               console.error('Error fetching role details on app start:', roleError);
               // Continue with existing auth data even if role fetch fails
               setAuth(parsedAuth);
-            });
+              setIsAuthenticated(true);
+            }
+          } else {
+            setAuth(parsedAuth);
+            setIsAuthenticated(true);
+          }
         } else {
-          setAuth(parsedAuth);
+          // If no saved auth, make sure cookies are also cleared
+          Cookies.remove('AuthToken');
+          setIsAuthenticated(false);
         }
-        
-        setIsAuthenticated(true); 
       } catch (error) {
         console.error('Error parsing saved auth data:', error);
         localStorage.removeItem('auth');
         localStorage.removeItem('userRole');
         localStorage.removeItem('userRoleName');
         localStorage.removeItem('userRoleDetails');
+        Cookies.remove('AuthToken');
+        setIsAuthenticated(false);
+      } finally {
+        // Mark initial auth check as complete
+        setIsLoading(false);
       }
-    }
+    };
+
+    initializeAuth();
   }, []);
 
   const login = async (credentials) => {
@@ -135,6 +154,8 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userRoleName');
     localStorage.removeItem('userRoleDetails');
+    // Clear from cookies
+    Cookies.remove('AuthToken');
   };
 
   // Helper functions to access specific parts of the auth data
@@ -196,7 +217,8 @@ export const AuthProvider = ({ children }) => {
   return (
     <AuthContext.Provider value={{ 
       auth, 
-      isAuthenticated, 
+      isAuthenticated,
+      isLoading, // Expose loading state
       login, 
       logout,
       // Helper functions

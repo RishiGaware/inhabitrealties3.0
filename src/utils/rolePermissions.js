@@ -9,6 +9,9 @@ export const ROLE_PERMISSIONS = {
     description: 'Full system access with all permissions',
     allowedMenus: [
       'dashboard',
+      // 'sales-dashboard',
+      // 'executive-dashboard',
+      // 'user-dashboard',
       'admin',
       'documentManagement',
       'property',

@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   FaTimes, FaUser, FaHome, FaMapMarkerAlt, FaRupeeSign,
-  FaBed, FaBath, FaRulerCombined, FaListUl, FaCalendarAlt, FaCheckCircle
+  FaBed, FaBath, FaRulerCombined, FaListUl, FaCalendarAlt, FaCheckCircle,
+  FaPlus, FaFilePdf, FaUpload, FaTrash
 } from 'react-icons/fa';
 import {
   Box, Heading, Flex, Grid, Button, Input, Checkbox,
   CheckboxGroup, Stack, Tag, TagLabel, TagCloseButton,
-  FormControl, FormLabel, FormErrorMessage, VStack, Text, Textarea
+  FormControl, FormLabel, FormErrorMessage, VStack, Text, Textarea,
+  HStack, IconButton
 } from '@chakra-ui/react';
 import CommonCard from '../../../components/common/Card/CommonCard';
 import SearchableSelect from '../../../components/common/SearchableSelect';
@@ -110,6 +112,9 @@ const PropertyFormPopup = ({
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersError, setUsersError] = useState(null);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [customAmenityInput, setCustomAmenityInput] = useState('');
+  const [brochureFile, setBrochureFile] = useState(null);
+  const [brochurePreview, setBrochurePreview] = useState(null);
 
   useEffect(() => {
     if (isOpen && !hasInitialized) {
@@ -181,11 +186,25 @@ const PropertyFormPopup = ({
       setErrors({});
       setHasInitialized(true);
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, hasInitialized]);
 
   useEffect(() => {
-    if (!isOpen) setHasInitialized(false);
+    if (!isOpen) {
+      setHasInitialized(false);
+      setCustomAmenityInput('');
+      setBrochureFile(null);
+      setBrochurePreview(null);
+    }
   }, [isOpen]);
+
+  useEffect(() => {
+    // Set brochure preview from initialData if editing and no new file selected
+    if (isOpen && initialData?.brochureUrl && !brochureFile) {
+      setBrochurePreview(initialData.brochureUrl);
+    } else if (isOpen && !initialData?.brochureUrl && !brochureFile) {
+      setBrochurePreview(null);
+    }
+  }, [isOpen, initialData?.brochureUrl, brochureFile]);
 
   useEffect(() => {
     if (isOpen) {
@@ -222,10 +241,50 @@ const PropertyFormPopup = ({
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleBrochureFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (file.type !== 'application/pdf') {
+      setErrors(prev => ({ ...prev, brochure: 'Please select a PDF file' }));
+      return;
+    }
+
+    // Validate file size (10MB limit)
+    if (file.size > 10 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, brochure: 'File size must be less than 10MB' }));
+      return;
+    }
+
+    setBrochureFile(file);
+    setBrochurePreview(URL.createObjectURL(file));
+    if (errors.brochure) {
+      setErrors(prev => ({ ...prev, brochure: '' }));
+    }
+  };
+
+  const handleRemoveBrochure = () => {
+    setBrochureFile(null);
+    // If editing and there's an existing brochure, keep showing it
+    if (initialData?.brochureUrl && !brochureFile) {
+      // User removed the new file, keep existing brochure
+      return;
+    }
+    // If no existing brochure, clear preview
+    if (!initialData?.brochureUrl) {
+      setBrochurePreview(null);
+    } else {
+      // Restore to existing brochure preview
+      setBrochurePreview(initialData.brochureUrl);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      // Pass brochure file along with form data
+      onSubmit(formData, brochureFile);
     }
   };
 
@@ -260,13 +319,35 @@ const PropertyFormPopup = ({
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   }, [errors]);
 
-  const handleAmenityToggle = (amenity) => {
-    setFormData((prev) => {
-      const amenities = prev.features.amenities.includes(amenity)
-        ? prev.features.amenities.filter(a => a !== amenity)
-        : [...prev.features.amenities, amenity];
-      return { ...prev, features: { ...prev.features, amenities } };
-    });
+  const handleAddCustomAmenity = () => {
+    const amenity = customAmenityInput.trim();
+    if (amenity && !formData.features.amenities.includes(amenity)) {
+      setFormData((prev) => ({
+        ...prev,
+        features: {
+          ...prev.features,
+          amenities: [...prev.features.amenities, amenity]
+        }
+      }));
+      setCustomAmenityInput('');
+    }
+  };
+
+  const handleRemoveAmenity = (amenity) => {
+    setFormData((prev) => ({
+      ...prev,
+      features: {
+        ...prev.features,
+        amenities: prev.features.amenities.filter(a => a !== amenity)
+      }
+    }));
+  };
+
+  const handleAmenityInputKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleAddCustomAmenity();
+    }
   };
 
   if (!isOpen) return null;
@@ -279,6 +360,8 @@ const PropertyFormPopup = ({
       onSave={handleSubmit}
       size="6xl"
       initialData={initialData}
+      closeOnOverlayClick={false}
+      closeOnEsc={false}
       modalProps={{
         isCentered: true,
         borderRadius: '2xl',
@@ -450,17 +533,17 @@ const PropertyFormPopup = ({
 
           {/* Owner Details */}
         <Box borderLeft="4px solid #D69E2E" pl={3} mb={2} mt={4}>
-          <Text fontWeight="bold" fontSize="lg" color="gray.800">Owner Details</Text>
+          <Text fontWeight="bold" fontSize="lg" color="gray.800">Agent Details</Text>
               </Box>
         <SearchableSelect
-          label="Choose Owner"
+          label="Choose Agent"
           options={usersLoading ? [{ value: '', label: 'Loading users...' }] : usersError ? [{ value: '', label: usersError }] : users.map((user) => ({
             value: user._id,
             label: `${user.firstName} ${user.lastName} (${user.email})`
           }))}
                 value={formData.owner}
           onChange={val => handleInputChange('owner', val)}
-          placeholder="Select Owner"
+          placeholder="Select Agent"
           isRequired
           error={errors.owner}
         />
@@ -487,7 +570,13 @@ const PropertyFormPopup = ({
               { value: 'FOR SALE', label: 'FOR SALE' },
               { value: 'FOR RENT', label: 'FOR RENT' },
               { value: 'SOLD', label: 'SOLD' },
-              { value: 'RENTED', label: 'RENTED' }
+              { value: 'RENT', label: 'RENT' },
+              { value: 'RENTED', label: 'RENTED' },
+              { value: 'LEASE', label: 'LEASE' },
+              { value: 'READY TO MOVE', label: 'READY TO MOVE' },
+              { value: 'UNDER CONSTRUCTION', label: 'UNDER CONSTRUCTION' },
+              { value: 'NEW LAUNCH', label: 'NEW LAUNCH' },
+              { value: 'AFTER 1 YEAR POSSESSION', label: 'AFTER 1 YEAR POSSESSION' }
             ]}
                 value={formData.propertyStatus}
             onChange={val => handleInputChange('propertyStatus', val)}
@@ -540,28 +629,162 @@ const PropertyFormPopup = ({
           <Text fontWeight="medium" color="gray.700" fontSize="sm" mb={2}>
                 Amenities
           </Text>
-          <CheckboxGroup
-            colorScheme="purple"
-            value={formData.features.amenities}
-            onChange={(values) => handleFeatureChange('amenities', values)}
-          >
-            <Stack direction="row" wrap="wrap" spacing={2}>
-              {['Parking', 'Swimming Pool', 'Garden', 'Gym', 'Security', 'Balcony', 'Air Conditioning', 'Elevator', '24/7 Water', 'Power Backup'].map((amenity) => (
-                <Checkbox key={amenity} value={amenity} isDisabled={isSubmitting}>
-                      {amenity}
-                </Checkbox>
-              ))}
-            </Stack>
-          </CheckboxGroup>
-          <Flex mt={2} gap={2} wrap="wrap">
-            {formData.features.amenities.map((amenity) => (
-              <Tag key={amenity} colorScheme="purple" borderRadius="full" px={3} py={1} fontSize="sm">
-                <TagLabel>{amenity}</TagLabel>
-                <TagCloseButton onClick={() => handleAmenityToggle(amenity)} />
-              </Tag>
-            ))}
-          </Flex>
+          
+          {/* Quick Add Common Amenities */}
+          <Box mb={3}>
+            <Text fontSize="xs" color="gray.500" mb={2}>Quick Add Common Amenities:</Text>
+            <CheckboxGroup
+              colorScheme="purple"
+              value={formData.features.amenities}
+              onChange={(values) => handleFeatureChange('amenities', values)}
+            >
+              <Stack direction="row" wrap="wrap" spacing={2}>
+                {['Parking', 'Swimming Pool', 'Garden', 'Gym', 'Security', 'Balcony', 'Air Conditioning', 'Elevator', '24/7 Water', 'Power Backup'].map((amenity) => (
+                  <Checkbox key={amenity} value={amenity} isDisabled={isSubmitting}>
+                    {amenity}
+                  </Checkbox>
+                ))}
+              </Stack>
+            </CheckboxGroup>
+          </Box>
+
+          {/* Custom Amenity Input */}
+          <Box mb={3}>
+            <Text fontSize="xs" color="gray.500" mb={2}>Add Custom Amenity:</Text>
+            <HStack spacing={2}>
+              <Input
+                placeholder="Type custom amenity and press Enter or click Add"
+                value={customAmenityInput}
+                onChange={(e) => setCustomAmenityInput(e.target.value)}
+                onKeyPress={handleAmenityInputKeyPress}
+                isDisabled={isSubmitting}
+                size="sm"
+              />
+              <IconButton
+                icon={<FaPlus />}
+                colorScheme="purple"
+                onClick={handleAddCustomAmenity}
+                isDisabled={isSubmitting || !customAmenityInput.trim()}
+                aria-label="Add custom amenity"
+                size="sm"
+              />
+            </HStack>
+          </Box>
+
+          {/* Selected Amenities Display */}
+          {formData.features.amenities.length > 0 && (
+            <Box>
+              <Text fontSize="xs" color="gray.500" mb={2}>Selected Amenities:</Text>
+              <Flex gap={2} wrap="wrap">
+                {formData.features.amenities.map((amenity) => (
+                  <Tag key={amenity} colorScheme="purple" borderRadius="full" px={3} py={1} fontSize="sm">
+                    <TagLabel>{amenity}</TagLabel>
+                    <TagCloseButton onClick={() => handleRemoveAmenity(amenity)} isDisabled={isSubmitting} />
+                  </Tag>
+                ))}
+              </Flex>
+            </Box>
+          )}
         </Box>
+
+        {/* Property Brochure */}
+        <Box borderLeft="4px solid #DC143C" pl={3} mb={2} mt={4}>
+          <Text fontWeight="bold" fontSize="lg" color="gray.800">Property Brochure</Text>
+        </Box>
+        <FormControl isInvalid={!!errors.brochure}>
+          <FormLabel>Brochure PDF (Optional)</FormLabel>
+          {brochurePreview ? (
+            <Box
+              p={4}
+              border="2px dashed"
+              borderColor="gray.300"
+              borderRadius="md"
+              bg="gray.50"
+              mb={2}
+            >
+              <HStack justify="space-between" align="center">
+                <HStack spacing={3}>
+                  <Box
+                    p={2}
+                    bg="red.100"
+                    borderRadius="md"
+                    color="red.600"
+                  >
+                    <FaFilePdf size={24} />
+                  </Box>
+                  <VStack align="start" spacing={0}>
+                    <Text fontWeight="medium" fontSize="sm">
+                      {brochureFile ? brochureFile.name : (initialData?.brochureUrl ? 'Current Brochure' : 'New Brochure')}
+                    </Text>
+                    {brochureFile ? (
+                      <Text fontSize="xs" color="gray.500">
+                        {(brochureFile.size / 1024).toFixed(2)} KB
+                      </Text>
+                    ) : initialData?.brochureUrl ? (
+                      <Text fontSize="xs" color="gray.500">
+                        Click "Change" to upload a new brochure
+                      </Text>
+                    ) : null}
+                  </VStack>
+                </HStack>
+                <HStack spacing={2}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    leftIcon={<FaUpload />}
+                    onClick={() => document.getElementById('brochure-input')?.click()}
+                    isDisabled={isSubmitting}
+                  >
+                    {brochureFile ? 'Change' : 'Upload New'}
+                  </Button>
+                  <IconButton
+                    icon={<FaTrash />}
+                    size="sm"
+                    colorScheme="red"
+                    variant="outline"
+                    onClick={handleRemoveBrochure}
+                    isDisabled={isSubmitting}
+                    aria-label="Remove brochure"
+                  />
+                </HStack>
+              </HStack>
+            </Box>
+          ) : (
+            <Box
+              p={6}
+              border="2px dashed"
+              borderColor="gray.300"
+              borderRadius="md"
+              bg="gray.50"
+              textAlign="center"
+              cursor="pointer"
+              _hover={{
+                borderColor: "brand.400",
+                bg: "brand.50"
+              }}
+              onClick={() => document.getElementById('brochure-input')?.click()}
+              transition="all 0.2s"
+            >
+              <VStack spacing={2}>
+                <FaFilePdf size={32} color="gray.400" />
+                <Text fontSize="sm" color="gray.600">
+                  Click to upload PDF brochure (Max 10MB)
+                </Text>
+              </VStack>
+            </Box>
+          )}
+          <Input
+            id="brochure-input"
+            type="file"
+            accept="application/pdf"
+            onChange={handleBrochureFileChange}
+            display="none"
+            isDisabled={isSubmitting}
+          />
+          {errors.brochure && (
+            <FormErrorMessage>{errors.brochure}</FormErrorMessage>
+          )}
+        </FormControl>
 
         {/* Additional Details */}
         <Box borderLeft="4px solid #319795" pl={3} mb={2} mt={4}>

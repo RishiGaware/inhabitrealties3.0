@@ -95,4 +95,14 @@ export const deleteAllPropertyImages = async (propertyId) => {
     data: { propertyId },
   });
   return response.data;
+};
+
+// Upload property brochure PDF (multipart/form-data)
+export const uploadPropertyBrochure = async (propertyId, brochureFile) => {
+  const formData = new FormData();
+  formData.append('brochure', brochureFile);
+  const response = await api.post(PROPERTY_ENDPOINTS.UPLOAD_BROCHURE(propertyId), formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
 }; 
