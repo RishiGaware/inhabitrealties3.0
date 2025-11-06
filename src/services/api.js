@@ -2,8 +2,8 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Cookie } from 'lucide-react';
 
-const API_URL = 'http://localhost:3001/api';
-// const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
+// const API_URL = 'http://localhost:3001/api';
+const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
 
 
 const api = axios.create({
