@@ -268,3 +268,20 @@ export const getRoleDescription = (roleName) => {
   const role = ROLE_PERMISSIONS[roleName];
   return role ? role.description : 'Unknown role';
 };
+
+/**
+ * Get the dashboard route for a specific role
+ * @param {string} roleName - Role name
+ * @returns {string} Dashboard route path
+ */
+export const getDashboardRoute = (roleName) => {
+  const roleDashboardMap = {
+    'ADMIN': '/dashboard',
+    'SALES': '/sales-dashboard',
+    'EXECUTIVE': '/executive-dashboard',
+    'USER': '/user-dashboard',
+    'CLIENT': '/user-dashboard'
+  };
+  
+  return roleDashboardMap[roleName] || '/user-dashboard';
+};

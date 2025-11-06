@@ -166,6 +166,7 @@ const PropertyMaster = () => {
           bedRooms: propertyData.features?.bedRooms ? parseInt(propertyData.features.bedRooms) : 0,
           bathRooms: propertyData.features?.bathRooms ? parseInt(propertyData.features.bathRooms) : 0,
           areaInSquarFoot: propertyData.features?.areaInSquarFoot ? parseFloat(propertyData.features.areaInSquarFoot) : 0,
+          bhk: propertyData.features?.bhk ? parseInt(propertyData.features.bhk) : null,
           amenities: propertyData.features?.amenities || []
         },
         listedDate: propertyData.listedDate || new Date().toISOString(),
@@ -256,6 +257,7 @@ const PropertyMaster = () => {
           bedRooms: updatedData.features?.bedRooms ? parseInt(updatedData.features.bedRooms) : 0,
           bathRooms: updatedData.features?.bathRooms ? parseInt(updatedData.features.bathRooms) : 0,
           areaInSquarFoot: updatedData.features?.areaInSquarFoot ? parseFloat(updatedData.features.areaInSquarFoot) : 0,
+          bhk: updatedData.features?.bhk ? parseInt(updatedData.features.bhk) : null,
           amenities: updatedData.features?.amenities || []
         },
         listedDate: updatedData.listedDate || selectedProperty.listedDate,

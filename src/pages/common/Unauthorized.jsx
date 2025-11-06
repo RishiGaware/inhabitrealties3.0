@@ -3,6 +3,7 @@ import { Box, VStack, Text, Button, Heading, Icon } from '@chakra-ui/react';
 import { FaLock, FaHome } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { getDashboardRoute } from '../../utils/rolePermissions';
 
 const Unauthorized = () => {
   const navigate = useNavigate();
@@ -10,7 +11,8 @@ const Unauthorized = () => {
   const userRole = getUserRoleName() || 'USER';
 
   const handleGoHome = () => {
-    navigate('/dashboard');
+    const dashboardRoute = getDashboardRoute(userRole);
+    navigate(dashboardRoute);
   };
 
   const handleGoBack = () => {

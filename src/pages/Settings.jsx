@@ -7,6 +7,7 @@ import CommonCard from '../components/common/Card/CommonCard';
 import FloatingInput from '../components/common/floatingInput/FloatingInput';
 import LogoutButton from '../components/common/LogoutButton';
 import { editUser } from '../services/usermanagement/userService';
+import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
   const [loading, setLoading] = useState(true);
@@ -15,6 +16,7 @@ const Settings = () => {
   const [isEditing, setIsEditing] = useState(false);
   const toast = useToast();
   const navigate = useNavigate();
+  const { getUserRoleName, refreshRole } = useAuth();
   
   const [userData, setUserData] = useState({
     _id: '',
@@ -47,7 +49,10 @@ const Settings = () => {
     const fetchUserData = async () => {
       setLoading(true);
       try {
-        // Get user data from localStorage
+        // Refresh role from database to ensure it's up-to-date
+        await refreshRole();
+        
+        // Get user data from localStorage (after role refresh)
         const authData = localStorage.getItem('auth');
         if (authData) {
           const parsedAuth = JSON.parse(authData);
@@ -249,8 +254,17 @@ const Settings = () => {
                     </HStack>
                     <HStack justify="space-between" flexWrap="wrap" gap={1}>
                       <Text fontWeight="semibold" color="gray.600" fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}>Role:</Text>
-                      <Badge colorScheme="blue" variant="subtle" fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}>
-                        {userData.role === '68162f63ff2da55b40ca61b8' ? 'ADMIN' : 'USER'}
+                      <Badge 
+                        colorScheme={
+                          getUserRoleName() === 'ADMIN' ? 'red' : 
+                          getUserRoleName() === 'EXECUTIVE' ? 'purple' : 
+                          getUserRoleName() === 'SALES' ? 'green' : 
+                          'blue'
+                        } 
+                        variant="subtle" 
+                        fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}
+                      >
+                        {getUserRoleName() || 'USER'}
                       </Badge>
                     </HStack>
                     <HStack justify="space-between" flexWrap="wrap" gap={1}>

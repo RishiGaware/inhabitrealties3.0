@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import authService from '../services/auth/authService';
 import { registerNormalUser } from '../services/auth/authService';
 import { fetchRoleById } from '../services/rolemanagement/roleService';
+import { fetchUserById } from '../services/usermanagement/userService';
 import Cookies from 'js-cookie';
 
 const AuthContext = createContext(null);  
@@ -14,11 +15,53 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Track initial auth check
 
+  // Function to refresh role from database (useful when role is updated)
+  const refreshRole = async () => {
+    try {
+      const savedAuth = localStorage.getItem('auth');
+      if (!savedAuth) return;
+      
+      const parsedAuth = JSON.parse(savedAuth);
+      if (!parsedAuth.data?._id) return;
+      
+      // Fetch current user from database to get updated role
+      const userResponse = await fetchUserById(parsedAuth.data._id);
+      const currentUser = userResponse.data;
+      
+      if (!currentUser?.role) return;
+      
+      // Fetch current role details from database
+      const roleResponse = await fetchRoleById(currentUser.role);
+      const enhancedAuth = {
+        ...parsedAuth,
+        data: {
+          ...parsedAuth.data,
+          ...currentUser, // Update with current user data (including updated role)
+          roleDetails: roleResponse.data
+        }
+      };
+      
+      setAuth(enhancedAuth);
+      localStorage.setItem('auth', JSON.stringify(enhancedAuth));
+      
+      // Update role storage
+      if (currentUser.role) {
+        localStorage.setItem('userRole', currentUser.role);
+      }
+      if (roleResponse.data?.name) {
+        localStorage.setItem('userRoleName', roleResponse.data.name);
+      }
+      if (roleResponse.data) {
+        localStorage.setItem('userRoleDetails', JSON.stringify(roleResponse.data));
+      }
+    } catch (error) {
+      console.error('Error refreshing role:', error);
+    }
+  };
+
   useEffect(() => {
     // Load auth data from localStorage on app start
     const savedAuth = localStorage.getItem('auth');
-    const savedRole = localStorage.getItem('userRole');
-    const savedRoleDetails = localStorage.getItem('userRoleDetails');
 
     const initializeAuth = async () => {
       try {
@@ -30,31 +73,44 @@ export const AuthProvider = ({ children }) => {
             Cookies.set('AuthToken', parsedAuth.token, { expires: 1, secure: true, sameSite: 'strict' });
           }
           
-          // If role details are missing, try to fetch them
-          if (parsedAuth.data?.role && !parsedAuth.data?.roleDetails) {
+          // Always fetch current user and role from database to ensure it's up-to-date
+          if (parsedAuth.data?._id) {
             try {
-              const roleResponse = await fetchRoleById(parsedAuth.data.role);
-              const enhancedAuth = {
-                ...parsedAuth,
-                data: {
-                  ...parsedAuth.data,
-                  roleDetails: roleResponse.data
-                }
-              };
-              setAuth(enhancedAuth);
-              localStorage.setItem('auth', JSON.stringify(enhancedAuth));
+              // Fetch current user from database to get updated role
+              const userResponse = await fetchUserById(parsedAuth.data._id);
+              const currentUser = userResponse.data;
               
-              // Also store role separately if not already stored
-              if (!savedRole) {
-                localStorage.setItem('userRole', parsedAuth.data.role);
+              if (currentUser?.role) {
+                // Fetch current role details from database
+                const roleResponse = await fetchRoleById(currentUser.role);
+                const enhancedAuth = {
+                  ...parsedAuth,
+                  data: {
+                    ...parsedAuth.data,
+                    ...currentUser, // Update with current user data (including updated role)
+                    roleDetails: roleResponse.data
+                  }
+                };
+                setAuth(enhancedAuth);
+                localStorage.setItem('auth', JSON.stringify(enhancedAuth));
+                
+                // Update role storage
+                localStorage.setItem('userRole', currentUser.role);
+                if (roleResponse.data) {
+                  localStorage.setItem('userRoleDetails', JSON.stringify(roleResponse.data));
+                  if (roleResponse.data.name) {
+                    localStorage.setItem('userRoleName', roleResponse.data.name);
+                  }
+                }
+                setIsAuthenticated(true);
+              } else {
+                // Fallback if role not found
+                setAuth(parsedAuth);
+                setIsAuthenticated(true);
               }
-              if (!savedRoleDetails) {
-                localStorage.setItem('userRoleDetails', JSON.stringify(roleResponse.data));
-              }
-              setIsAuthenticated(true);
-            } catch (roleError) {
-              console.error('Error fetching role details on app start:', roleError);
-              // Continue with existing auth data even if role fetch fails
+            } catch (error) {
+              console.error('Error fetching user/role details on app start:', error);
+              // Continue with existing auth data even if fetch fails
               setAuth(parsedAuth);
               setIsAuthenticated(true);
             }
@@ -221,6 +277,7 @@ export const AuthProvider = ({ children }) => {
       isLoading, // Expose loading state
       login, 
       logout,
+      refreshRole, // Expose refresh role function
       // Helper functions
       getUser,
       getToken,

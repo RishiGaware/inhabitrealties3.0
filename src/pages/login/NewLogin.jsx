@@ -6,6 +6,7 @@ import { FiArrowLeft } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import { AUTH_IMAGES } from '../../config/images';
+import { getDashboardRoute } from '../../utils/rolePermissions';
 
 const NewLogin = () => {
   const [email, setEmail] = useState('');
@@ -13,7 +14,7 @@ const NewLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, getUserRoleName } = useAuth();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,7 +29,10 @@ const NewLogin = () => {
       // Check if login was successful
       if (result && result.data) {
         showSuccessToast('Sign in successful! Welcome back.');
-        navigate('/dashboard');
+        // Get the role-specific dashboard route
+        const userRole = getUserRoleName();
+        const dashboardRoute = getDashboardRoute(userRole);
+        navigate(dashboardRoute);
       } else {
         showErrorToast('Sign in failed. Please try again.');
       }

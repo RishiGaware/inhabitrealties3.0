@@ -1,269 +1,12 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import HouseItem from './HouseItem';
 import Loader from '../common/Loader';
 import PropertySearchBar from '../Search/PropertySearchBar';
 import { FaHome, FaMapMarkerAlt, FaRupeeSign, FaBuilding, FaCheckCircle, FaRegCalendarAlt, FaDoorOpen, FaTag } from 'react-icons/fa';
-import { fetchHomeProperties } from '../../services/propertyService';
+import { fetchPropertiesWithParams, fetchProperties } from '../../services/propertyService';
 import { getAllPropertyTypes } from '../../services/propertyTypeService';
 
-const staticHouses = [
-  {
-    id: 1,
-    name: 'Skyline Heights',
-    address: '123 Main St, Mumbai',
-    description: 'Luxury apartment in the heart of Mumbai.',
-    city: 'Mumbai',
-    type: 'Apartment',
-    price: 9500000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg',
-      'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg',
-      'https://images.pexels.com/photos/210617/pexels-photo-210617.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  {
-    id: 2,
-    name: 'Green Valley Villa',
-    address: '45 Green Lane, Bangalore',
-    description: 'Spacious villa with a private garden.',
-    city: 'Bangalore',
-    type: 'Villa',
-    price: 22000000,
-    possessionStatus: 'Under Construction',
-    images: [
-      'https://images.pexels.com/photos/210617/pexels-photo-210617.jpeg',
-      'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
-      'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg',
-      'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  {
-    id: 3,
-    name: 'Urban Residency',
-    address: '88 Residency Rd, Pune',
-    description: 'Modern apartment close to IT parks.',
-    city: 'Pune',
-    type: 'Apartment',
-    price: 7000000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-      'https://images.pexels.com/photos/210617/pexels-photo-210617.jpeg'
-    ],
-    listingType: 'Rent',
-  },
-  {
-    id: 4,
-    name: 'Lakeview Plot',
-    address: 'Plot 12, Lakeside, Hyderabad',
-    description: 'Prime plot with lake view.',
-    city: 'Hyderabad',
-    type: 'Plot',
-    price: 12000000,
-    possessionStatus: 'New Launch',
-    images: [
-      'https://images.pexels.com/photos/210617/pexels-photo-210617.jpeg',
-      'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
-      'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg',
-      'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  {
-    id: 5,
-    name: 'Downtown Office',
-    address: 'Business Bay, Delhi',
-    description: 'Commercial office space in central Delhi.',
-    city: 'Delhi',
-    type: 'Office',
-    price: 35000000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg',
-      'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg'
-    ],
-    listingType: 'Rent',
-  },
-  {
-    id: 6,
-    name: 'Sunshine PG',
-    address: 'Sunshine Hostel, Chennai',
-    description: 'Affordable PG for students and professionals.',
-    city: 'Chennai',
-    type: 'PG',
-    price: 300000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg',
-      'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg'
-    ],
-    listingType: 'Rent',
-  },
-  {
-    id: 7,
-    name: 'Elite Commercial',
-    address: 'Sector 21, Gurgaon',
-    description: 'Premium commercial shop in Gurgaon.',
-    city: 'Gurgaon',
-    type: 'Shop',
-    price: 18000000,
-    possessionStatus: 'Under Construction',
-    images: [
-      'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
-      'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg',
-      'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  {
-    id: 8,
-    name: 'Noida Greens',
-    address: 'Sector 62, Noida',
-    description: 'Spacious apartment with green views.',
-    city: 'Noida',
-    type: 'Apartment',
-    price: 8500000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-      'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg',
-      'https://images.pexels.com/photos/210617/pexels-photo-210617.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  // Buy
-  {
-    id: 9,
-    name: 'Sunshine Residency',
-    address: 'Sector 45, Gurgaon',
-    description: 'Modern 3BHK apartment in a gated society.',
-    city: 'Gurgaon',
-    type: 'Buy',
-    price: 12000000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-      'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  // Rental
-  {
-    id: 10,
-    name: 'Maple Heights Rental',
-    address: 'Maple Street, Pune',
-    description: 'Spacious 2BHK apartment available for rent.',
-    city: 'Pune',
-    type: 'Rental',
-    price: 35000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
-      'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg',
-      'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg'
-    ],
-    listingType: 'Rent',
-  },
-  // Projects
-  {
-    id: 11,
-    name: 'Emerald Towers',
-    address: 'Emerald Road, Navi Mumbai',
-    description: 'Upcoming luxury project with world-class amenities.',
-    city: 'Navi Mumbai',
-    type: 'Projects',
-    price: 18000000,
-    possessionStatus: 'Under Construction',
-    images: [
-      'https://images.pexels.com/photos/210617/pexels-photo-210617.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  // PG / Hostels
-  {
-    id: 12,
-    name: 'Student PG Hostel',
-    address: 'MG Road, Bangalore',
-    description: 'Affordable PG for students with all facilities.',
-    city: 'Bangalore',
-    type: 'PG / Hostels',
-    price: 12000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/271624/pexels-photo-271624.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg'
-    ],
-    listingType: 'Rent',
-  },
-  // Plot & Land
-  {
-    id: 13,
-    name: 'Green Acres Plot',
-    address: 'Plot 22, Thane',
-    description: 'Residential plot in a prime location.',
-    city: 'Thane',
-    type: 'Plot & Land',
-    price: 9500000,
-    possessionStatus: 'New Launch',
-    images: [
-      'https://images.pexels.com/photos/210617/pexels-photo-210617.jpeg',
-      'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
-      'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  // Commercial
-  {
-    id: 14,
-    name: 'Business Bay Commercial',
-    address: 'Business Bay, Delhi',
-    description: 'Premium commercial office space in central Delhi.',
-    city: 'Delhi',
-    type: 'Commercial',
-    price: 42000000,
-    possessionStatus: 'Ready to Move',
-    images: [
-      'https://images.pexels.com/photos/323705/pexels-photo-323705.jpeg',
-      'https://images.pexels.com/photos/373912/pexels-photo-373912.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg'
-    ],
-    listingType: 'Sale',
-  },
-  // Agents
-  {
-    id: 15,
-    name: 'Dream Homes Agent',
-    address: 'Navi Mumbai',
-    description: 'Top-rated real estate agent for Navi Mumbai projects.',
-    city: 'Navi Mumbai',
-    type: 'Agents',
-    price: 0,
-    possessionStatus: 'N/A',
-    images: [
-      'https://images.pexels.com/photos/439391/pexels-photo-439391.jpeg',
-      'https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg',
-      'https://images.pexels.com/photos/259950/pexels-photo-259950.jpeg'
-    ],
-    listingType: 'Agent',
-  },
-];
 
 function HousePreviewModal({ property, onClose }) {
   const navigate = useNavigate();
@@ -283,7 +26,7 @@ function HousePreviewModal({ property, onClose }) {
     property.bathrooms && { label: `${property.bathrooms} Bathrooms` },
     property.area && { label: `${property.area} sq.ft.` },
     property.listedDate && { label: `Listed: ${new Date(property.listedDate).toLocaleDateString()}` },
-    property.owner && { label: `Owner: ${property.owner}` },
+    property.owner && { label: `Agent: ${property.owner.firstName} ${property.owner.lastName}` },
     // Property type-specific details
     property.type === 'Apartment' && property.floor && { label: `Floor: ${property.floor}` },
     property.type === 'Apartment' && property.totalFloors && { label: `Total Floors: ${property.totalFloors}` },
@@ -461,78 +204,12 @@ const HouseList = () => {
     query: '',
     budget: 'Any',
     propertyType: 'Any',
+    propertyStatus: 'Any',
     possession: 'Any',
   });
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [cities, setCities] = useState([]);
-
-  // Fetch properties and property types from backend on component mount
-  useEffect(() => {
-    fetchProperties();
-    fetchPropertyTypes();
-  }, []);
-
-  const fetchPropertyTypes = async () => {
-    try {
-      const response = await getAllPropertyTypes();
-      setPropertyTypes(response.data || []);
-    } catch (err) {
-      console.error('Error fetching property types:', err);
-    }
-  };
-
-  const fetchProperties = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      
-      // Map frontend filters to backend parameters
-      const backendFilters = {
-        propertyType: filters.propertyType,
-        budget: filters.budget,
-        possession: filters.possession,
-        city: filters.city,
-        query: filters.query,
-        propertyStatus: filters.type, // 'Buy' -> 'FOR SALE', 'Rental' -> 'FOR RENT'
-        limit: 20,
-        page: 1
-      };
-
-      const response = await fetchHomeProperties(backendFilters);
-      
-      // Transform backend data to match frontend format
-      const transformedHouses = response.data.map(property => ({
-        id: property._id,
-        name: property.name,
-        address: `${property.propertyAddress.street}, ${property.propertyAddress.city}`,
-        description: property.description,
-        city: property.propertyAddress.city,
-        type: property.propertyTypeId?.typeName || 'House',
-        price: property.price,
-        possessionStatus: getPossessionStatus(property.listedDate),
-        images: property.images || [],
-        listingType: property.propertyStatus === 'FOR SALE' ? 'Sale' : 
-                    property.propertyStatus === 'FOR RENT' ? 'Rent' : 'Sale',
-        bedrooms: property.features?.bedRooms || 0,
-        bathrooms: property.features?.bathRooms || 0,
-        area: property.features?.areaInSquarFoot || 0,
-        amenities: property.features?.amenities || []
-      }));
-      
-      setHouses(transformedHouses);
-
-      // Build dynamic city list from backend data
-      const uniqueCities = Array.from(new Set((response.data || []).map(p => p?.propertyAddress?.city).filter(Boolean))).sort();
-      setCities(uniqueCities);
-    } catch (err) {
-      console.error('Error fetching properties:', err);
-      setError('Failed to load properties');
-      // Fallback to static data on error
-      setHouses(staticHouses);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const isInitialMount = useRef(true);
 
   // Helper function to determine possession status based on listedDate
   const getPossessionStatus = (listedDate) => {
@@ -546,6 +223,199 @@ const HouseList = () => {
     if (listed >= sixMonthsAgo) return 'New Launch';
     return 'Under Construction';
   };
+
+  const fetchPropertyTypes = async () => {
+    try {
+      const response = await getAllPropertyTypes();
+      setPropertyTypes(response.data || []);
+    } catch (err) {
+      console.error('Error fetching property types:', err);
+    }
+  };
+
+  const fetchPropertiesData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      
+      // Build search params similar to PropertyMaster's fetchPropertiesWithParams
+      const searchParams = {};
+      
+      // Add search query if provided
+      if (filters.query && filters.query.trim() !== '') {
+        searchParams.search = filters.query.trim();
+      }
+      
+      // Add property type filter (use typeName like PropertyMaster)
+      if (filters.propertyType && filters.propertyType !== 'Any') {
+        searchParams.propertyType = filters.propertyType;
+      }
+      
+      // Only add property status filter if explicitly selected (not based on tab)
+      // This allows all properties to show by default, matching PropertyMaster behavior
+      if (filters.propertyStatus && filters.propertyStatus !== 'Any') {
+        searchParams.propertyStatus = filters.propertyStatus;
+      }
+      
+      // Add city filter
+      if (filters.city && filters.city.trim() !== '') {
+        searchParams.city = filters.city.trim();
+      }
+
+      // Fetch properties using the same method as PropertyMaster
+      // Always fetch all published properties, then filter client-side if needed
+      let response;
+      if (Object.keys(searchParams).length > 0) {
+        // Use fetchPropertiesWithParams if filters are applied
+        response = await fetchPropertiesWithParams(searchParams);
+      } else {
+        // Use fetchProperties for no filters (same as PropertyMaster) - shows all published properties
+        response = await fetchProperties();
+      }
+      
+      // Check if response has data
+      if (!response || !response.data || !Array.isArray(response.data)) {
+        setHouses([]);
+        setCities([]);
+        return;
+      }
+      
+      // Use the same property format as PropertyMaster (no transformation needed)
+      // Properties already have the full structure: _id, name, propertyAddress, propertyTypeId, etc.
+      const properties = response.data;
+      
+      // Apply client-side filtering - show all properties by default (like PropertyMaster)
+      // Only filter by propertyStatus if explicitly selected in dropdown
+      let filteredProperties = properties;
+      
+      // Filter by property status only if explicitly selected (not based on tab)
+      // This matches PropertyMaster behavior - show all properties unless filtered
+      if (filters.propertyStatus && filters.propertyStatus !== 'Any') {
+        // Handle different status values
+        if (filters.propertyStatus === 'FOR SALE' || filters.propertyStatus === 'For Sale') {
+          filteredProperties = properties.filter(property => 
+            property.propertyStatus === 'FOR SALE'
+          );
+        } else if (filters.propertyStatus === 'FOR RENT' || filters.propertyStatus === 'For Rent' || filters.propertyStatus === 'RENT') {
+          filteredProperties = properties.filter(property => 
+            property.propertyStatus === 'FOR RENT' || property.propertyStatus === 'RENT'
+          );
+        } else if (filters.propertyStatus === 'Lease' || filters.propertyStatus === 'LEASE') {
+          filteredProperties = properties.filter(property => 
+            property.propertyStatus === 'FOR RENT' || property.propertyStatus === 'RENT' || property.propertyStatus === 'LEASE'
+          );
+        } else {
+          // For possession-based filters (Ready to Move, Under Construction, etc.), filter by listedDate
+          const now = new Date();
+          const sixMonthsAgo = new Date(now.getTime() - (6 * 30 * 24 * 60 * 60 * 1000));
+          const oneYearFromNow = new Date(now.getTime() + (365 * 24 * 60 * 60 * 1000));
+          
+          switch (filters.propertyStatus) {
+            case 'Ready to Move':
+              filteredProperties = properties.filter(property => {
+                if (!property.listedDate) return true;
+                return new Date(property.listedDate) <= now;
+              });
+              break;
+            case 'Under Construction':
+              filteredProperties = properties.filter(property => {
+                if (!property.listedDate) return false;
+                return new Date(property.listedDate) > now;
+              });
+              break;
+            case 'New Launch':
+              filteredProperties = properties.filter(property => {
+                if (!property.listedDate) return false;
+                const listed = new Date(property.listedDate);
+                return listed >= sixMonthsAgo;
+              });
+              break;
+            case 'After 1 Yr Possession':
+              filteredProperties = properties.filter(property => {
+                if (!property.listedDate) return false;
+                return new Date(property.listedDate) > oneYearFromNow;
+              });
+              break;
+            default:
+              // No filtering for unknown status
+              filteredProperties = properties;
+          }
+        }
+      }
+      
+      // Filter by city if needed (client-side filtering for city since backend might not support it)
+      if (filters.city && filters.city.trim() !== '') {
+        filteredProperties = filteredProperties.filter(property => {
+          const propertyCity = property.propertyAddress?.city || property.city || '';
+          return propertyCity.toLowerCase().includes(filters.city.toLowerCase());
+        });
+      }
+      
+      // Transform to frontend format while keeping all PropertyMaster fields
+      const transformedHouses = filteredProperties.map(property => ({
+        id: property._id,
+        _id: property._id, // Keep original _id for compatibility
+        name: property.name || 'Unnamed Property',
+        address: property.propertyAddress?.street && property.propertyAddress?.city 
+          ? `${property.propertyAddress.street}, ${property.propertyAddress.city}`
+          : property.propertyAddress?.city || property.address || 'Address not available',
+        description: property.description || '',
+        city: property.propertyAddress?.city || property.city || '',
+        type: property.propertyTypeId?.typeName || property.type || 'House',
+        propertyTypeId: property.propertyTypeId, // Keep full propertyTypeId object
+        price: property.price || 0,
+        propertyStatus: property.propertyStatus, // Keep original propertyStatus
+        possessionStatus: getPossessionStatus(property.listedDate),
+        listedDate: property.listedDate, // Keep listedDate
+        images: property.images && Array.isArray(property.images) && property.images.length > 0 
+          ? property.images 
+          : property.image 
+            ? [property.image] 
+            : [],
+        image: property.image, // Keep original image field
+        listingType: property.propertyStatus === 'FOR SALE' ? 'Sale' : 
+                    property.propertyStatus === 'FOR RENT' ? 'Rent' : 'Sale',
+        bedrooms: property.features?.bedRooms || property.bedrooms || 0,
+        bathrooms: property.features?.bathRooms || property.bathrooms || 0,
+        area: property.features?.areaInSquarFoot || property.area || 0,
+        features: property.features, // Keep full features object
+        amenities: property.features?.amenities || property.amenities || [],
+        propertyAddress: property.propertyAddress, // Keep full propertyAddress object
+        owner: property.owner, // Keep owner object
+        brochureUrl: property.brochureUrl, // Keep brochureUrl
+        published: property.published, // Keep published status
+        // Include all other fields from PropertyMaster format
+        ...property
+      }));
+      
+      setHouses(transformedHouses);
+
+      // Build dynamic city list from backend data
+      const uniqueCities = Array.from(
+        new Set(
+          properties
+            .map(p => p?.propertyAddress?.city || p?.city)
+            .filter(Boolean)
+        )
+      ).sort();
+      setCities(uniqueCities);
+    } catch (err) {
+      console.error('Error fetching properties:', err);
+      setError('Failed to load properties. Please try again later.');
+      setHouses([]);
+      setCities([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters.propertyType, filters.city, filters.query, filters.propertyStatus]);
+
+  // Fetch properties and property types from backend on component mount
+  useEffect(() => {
+    fetchPropertyTypes();
+    // Fetch properties with default filters on mount
+    fetchPropertiesData();
+    isInitialMount.current = false;
+  }, [fetchPropertiesData]);
 
   const filteredHouses = useMemo(() => {
     let filtered = houses;
@@ -589,17 +459,20 @@ const HouseList = () => {
   const handleSearchBarSearch = (newFilters) => {
     setFilters(prev => ({ ...prev, ...newFilters }));
     // Refetch properties with new filters
-    fetchProperties();
+    fetchPropertiesData();
     const el = document.getElementById('featured-properties');
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
-  // Refetch properties when filters change
+  // Refetch properties when filters change (but not on initial mount to avoid double fetch)
   useEffect(() => {
-    fetchProperties();
-  }, [filters.propertyType, filters.budget, filters.possession, filters.city, filters.query, filters.type]);
+    // Skip initial mount - properties are already fetched in the first useEffect
+    if (!isInitialMount.current) {
+      fetchPropertiesData();
+    }
+  }, [fetchPropertiesData]);
 
   if (isLoading) {
     return <Loader fullscreen={false} />;

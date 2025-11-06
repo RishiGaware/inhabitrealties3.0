@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Box, Spinner, Center } from '@chakra-ui/react';
 import { useAuth } from '../../context/AuthContext';
-import { hasRouteAccess } from '../../utils/rolePermissions';
+import { hasRouteAccess, getDashboardRoute } from '../../utils/rolePermissions';
 
 /**
  * Protected Route Component
@@ -49,6 +49,11 @@ const ProtectedRoute = ({ children, requiredRole = null, allowedRoles = [] }) =>
   const hasAccess = hasRouteAccess(userRole, location.pathname);
   
   if (!hasAccess) {
+    // If user is trying to access /dashboard but doesn't have access, redirect to their role-specific dashboard
+    if (location.pathname === '/dashboard') {
+      const dashboardRoute = getDashboardRoute(userRole);
+      return <Navigate to={dashboardRoute} replace />;
+    }
     return <Navigate to="/unauthorized" replace />;
   }
 

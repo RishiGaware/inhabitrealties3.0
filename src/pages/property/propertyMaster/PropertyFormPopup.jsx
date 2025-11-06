@@ -101,6 +101,7 @@ const PropertyFormPopup = ({
       bedRooms: '',
       bathRooms: '',
       areaInSquarFoot: '',
+      bhk: null,
       amenities: []
     },
     listedDate: '',
@@ -149,6 +150,7 @@ const PropertyFormPopup = ({
           bedRooms: initialData.features?.bedRooms || '',
           bathRooms: initialData.features?.bathRooms || '',
           areaInSquarFoot: initialData.features?.areaInSquarFoot || '',
+          bhk: initialData.features?.bhk || null,
           amenities: initialData.features?.amenities || []
         },
         listedDate: initialData.listedDate ? dayjs(initialData.listedDate).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
@@ -589,7 +591,7 @@ const PropertyFormPopup = ({
         <Box borderLeft="4px solid #805AD5" pl={3} mb={2} mt={4}>
           <Text fontWeight="bold" fontSize="lg" color="gray.800">Features</Text>
         </Box>
-        <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
+        <Grid templateColumns={{ base: '1fr', md: 'repeat(2, 1fr)' }} gap={4}>
           <FormControl isRequired isInvalid={!!errors.bedRooms}>
             <FormLabel>Number of Bedrooms</FormLabel>
             <Input 
@@ -623,7 +625,18 @@ const PropertyFormPopup = ({
             />
             <FormErrorMessage>{errors.areaInSquarFoot}</FormErrorMessage>
           </FormControl>
-            </Grid>
+          <FormControl isInvalid={!!errors.bhk}>
+            <FormLabel>BHK</FormLabel>
+            <Input 
+                type="number"
+                name="bhk"
+                value={formData.features.bhk || ''}
+              onChange={(e) => handleFeatureChange('bhk', e.target.value ? parseInt(e.target.value) : null)} 
+              placeholder="e.g., 1, 2, 3, 4, 5" 
+            />
+            <FormErrorMessage>{errors.bhk}</FormErrorMessage>
+          </FormControl>
+        </Grid>
         
             <Box>
           <Text fontWeight="medium" color="gray.700" fontSize="sm" mb={2}>
