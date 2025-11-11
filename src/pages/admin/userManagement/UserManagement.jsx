@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   Box,
   useDisclosure,
@@ -16,7 +16,6 @@ import {
   Heading,
   Switch,
   FormLabel,
-  useToast,
   Badge,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
@@ -54,7 +53,6 @@ const UserManagement = () => {
   const [userToDelete, setUserToDelete] = useState(null);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
-  const toast = useToast();
   const [loading, setLoading] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -123,6 +121,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     fetchUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Only reset page when filtered results change significantly
@@ -148,6 +147,7 @@ const UserManagement = () => {
       password: '',
       confirmPassword: '',
       published: true,
+      isAgent: false,
     });
     setOriginalFormData(null);
     setErrors({});
@@ -165,6 +165,7 @@ const UserManagement = () => {
       phoneNumber: user.phoneNumber || '',
       role: user.role || '', // This should be the role ID
       published: user.published !== undefined ? user.published : true,
+      isAgent: user.isAgent !== undefined ? user.isAgent : false,
     };
     setFormData(data);
     setOriginalFormData(data);
@@ -220,6 +221,7 @@ const UserManagement = () => {
           phoneNumber: formData.phoneNumber,
           role: formData.role, // This will be the role ID (e.g., "68162f63ff2da55b40ca61b8")
           published: formData.published !== undefined ? formData.published : true,
+          isAgent: formData.isAgent !== undefined ? formData.isAgent : false,
         };
         
         // Add password only if provided
@@ -227,7 +229,7 @@ const UserManagement = () => {
           editData.password = formData.password;
         }
         
-        const result = await updateUser(selectedUser._id, editData);
+        await updateUser(selectedUser._id, editData);
       } else {
         // Prepare add data
         const addData = {
@@ -237,10 +239,11 @@ const UserManagement = () => {
           phoneNumber: formData.phoneNumber,
           role: formData.role, // This will be the role ID (e.g., "68162f63ff2da55b40ca61b8")
           password: formData.password,
+          isAgent: formData.isAgent !== undefined ? formData.isAgent : false,
           published: formData.published !== undefined ? formData.published : true,
         };
         
-        const result = await addUser(addData);
+        await addUser(addData);
       }
       
       setIsSubmitting(false);
@@ -451,6 +454,7 @@ const UserManagement = () => {
       formData.phoneNumber !== originalFormData.phoneNumber ||
       formData.role !== originalFormData.role ||
       formData.published !== originalFormData.published ||
+      formData.isAgent !== originalFormData.isAgent ||
       formData.password // If password is provided, consider it a change
     );
   };
@@ -525,6 +529,7 @@ const UserManagement = () => {
             password: '',
             confirmPassword: '',
             published: true,
+            isAgent: false,
           });
           setOriginalFormData(null);
           setErrors({});
@@ -659,6 +664,20 @@ const UserManagement = () => {
               isChecked={formData.published !== undefined ? formData.published : true}
               onChange={handleInputChange}
               colorScheme="green"
+              size="md"
+            />
+          </FormControl>
+          
+          <FormControl display="flex" alignItems="center">
+            <FormLabel htmlFor="isAgent" mb="0">
+              Agent
+            </FormLabel>
+            <Switch
+              id="isAgent"
+              name="isAgent"
+              isChecked={formData.isAgent !== undefined ? formData.isAgent : false}
+              onChange={handleInputChange}
+              colorScheme="purple"
               size="md"
             />
           </FormControl>

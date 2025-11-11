@@ -149,3 +149,19 @@ export const fetchUsersByRole = async (roleName) => {
     throw error;
   }
 };
+
+// Fetch agents (public endpoint)
+export const fetchAgents = async () => {
+  try {
+    const response = await api.get(USER_ENDPOINTS.GET_AGENTS);
+    return response.data;
+  } catch (error) {
+    console.error('userService: Fetch agents error:', error);
+    console.error('userService: Error details:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    });
+    throw error;
+  }
+};

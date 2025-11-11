@@ -474,67 +474,84 @@ const HouseList = () => {
     }
   }, [fetchPropertiesData]);
 
-  if (isLoading) {
-    return <Loader fullscreen={false} />;
-  }
-
   return (
-    <div id="featured-properties" className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-4 sm:py-6 md:py-8">
-      <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-6 sm:mt-8 md:mt-10 text-center w-full px-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-        Featured Properties
-      </h2>
-      <PropertySearchBar 
-        value={filters} 
-        onChange={handleSearchBarChange} 
-        onSearch={handleSearchBarSearch}
-        propertyTypes={propertyTypes}
-        cities={cities}
-      />
-      <div className="mb-6 sm:mb-8">
-        <p className="text-center text-gray-600 text-sm sm:text-base mt-2 mb-4 sm:mb-6 max-w-2xl mx-auto px-4" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div id="featured-properties" className="w-full">
+      {/* Search Bar - Positioned over banner, always visible */}
+      <div className="relative -mt-20 sm:-mt-24 md:-mt-28 mb-4 sm:mb-8 md:mb-12 z-20 px-2 sm:px-0">
+        <PropertySearchBar 
+          value={filters} 
+          onChange={handleSearchBarChange} 
+          onSearch={handleSearchBarSearch}
+          propertyTypes={propertyTypes}
+          cities={cities}
+        />
+      </div>
+      
+      {/* Loader Below Search Bar */}
+      {isLoading && (
+        <div className="flex justify-center items-center py-12 px-4">
+          <Loader fullscreen={false} />
+        </div>
+      )}
+      
+      {/* Content Container */}
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8">
+      
+      {/* Content - Only show when not loading */}
+      {!isLoading && (
+        <>
+          <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mt-6 sm:mt-8 md:mt-10 text-center w-full px-4" style={{ fontFamily: "'Playfair Display', serif" }}>
+            Featured Properties
+          </h2>
+          <div className="mb-6 sm:mb-8">
+            <p className="text-center text-gray-600 text-sm sm:text-base mt-2 mb-4 sm:mb-6 max-w-2xl mx-auto px-4" style={{ fontFamily: "'Inter', sans-serif" }}>
               Here are some of our most popular properties. Use the filters above to find your perfect match.
             </p>
           </div>
+        
+          {error && (
+            <div className="text-center py-4 mb-6">
+              <p className="text-red-600 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
+                {error}
+              </p>
+            </div>
+          )}
+          {filteredHouses.length === 0 ? (
+            <div className="text-center py-12 sm:py-16 px-4">
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
+                No Properties Found
+              </h3>
+              <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
+                Try adjusting your search criteria or clear some filters.
+              </p>
+              <button
+                onClick={() => setFilters({ tabIndex: 0, type: 'Buy', city: '', query: '', budget: 'Any', propertyType: 'Any', propertyStatus: 'Any', possession: 'Any' })}
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
+              >
+                Clear Filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
+              {filteredHouses.map((house) => (
+                <button
+                  key={house.id}
+                  className="text-left"
+                  onClick={() => setSelectedProperty(house)}
+                >
+                  <HouseItem house={house} />
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
       
-      {error && (
-        <div className="text-center py-4 mb-6">
-          <p className="text-red-600 text-sm" style={{ fontFamily: "'Inter', sans-serif" }}>
-            {error}
-          </p>
-        </div>
-      )}
-      {filteredHouses.length === 0 ? (
-        <div className="text-center py-12 sm:py-16 px-4">
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2" style={{ fontFamily: "'Inter', sans-serif" }}>
-            No Properties Found
-          </h3>
-          <p className="text-sm sm:text-base text-gray-500 mb-4 sm:mb-6 max-w-md mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
-            Try adjusting your search criteria or clear some filters.
-          </p>
-          <button
-            onClick={() => setFilters({ tabIndex: 0, type: 'Buy', city: '', query: '', budget: 'Any', propertyType: 'Any', possession: 'Any' })}
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
-          >
-            Clear Filters
-          </button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-6">
-          {filteredHouses.map((house) => (
-            <button
-              key={house.id}
-              className="text-left"
-              onClick={() => setSelectedProperty(house)}
-            >
-              <HouseItem house={house} />
-            </button>
-          ))}
-        </div>
-      )}
       {/* Property Preview Modal */}
       {selectedProperty && (
         <HousePreviewModal property={selectedProperty} onClose={() => setSelectedProperty(null)} />
       )}
+      </div>
     </div>
   );
 };

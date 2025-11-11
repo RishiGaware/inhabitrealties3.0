@@ -3,7 +3,7 @@ import { BANNER_IMAGES } from '../config/images';
 
 const Banner = () => {
   return (
-    <div className="relative h-screen flex items-center justify-center text-white overflow-hidden">
+    <div className="relative h-[60vh] flex items-center justify-center text-white overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center animate-subtle-zoom"
         style={{

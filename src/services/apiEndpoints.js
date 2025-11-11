@@ -10,6 +10,7 @@ export const USER_ENDPOINTS = {
   EDIT: (id) => `/users/edit/${id}`,
   DELETE: (id) => `/users/delete/${id}`,
   GET_ALL_WITH_PARAMS: '/users/withparams',
+  GET_AGENTS: '/agents', // Public endpoint - separate from /users route
 };
 
 export const CUSTOMER_ENDPOINTS = {

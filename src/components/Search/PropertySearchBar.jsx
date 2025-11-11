@@ -89,106 +89,115 @@ const PropertySearchBar = ({ value = {}, onChange, onSearch, propertyTypes = [],
   }, [cities]);
 
   return (
-    <div className="w-full max-w-7xl mx-auto mt-6 mb-8 px-4 sm:px-6 md:px-8 bg-gradient-to-br from-white to-gray-50 rounded-3xl shadow-2xl border-2 border-gray-200">
-      {/* Enhanced Header */}
-      <div className="mb-6 pt-6">
-        <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2 text-center">Find Your Dream Property</h3>
-        <p className="text-sm text-gray-700 font-medium text-center">Search from thousands of properties</p>
+    <div className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl xl:max-w-5xl mx-auto mt-8 sm:mt-4 md:mt-4 mb-4 sm:mb-6 px-2 sm:px-3 md:px-4 lg:px-5 bg-white rounded-xl sm:rounded-2xl shadow-lg sm:shadow-xl border border-purple-200">
+      {/* Compact Header - Mobile Optimized */}
+      <div className="mb-2 sm:mb-3 pt-2 sm:pt-3">
+        <h3 className="text-sm sm:text-base md:text-lg font-bold text-gray-900 mb-0.5 sm:mb-1 text-center px-1" style={{ color: '#111827', fontWeight: 700 }}>Find Your Dream Property</h3>
       </div>
 
-      {/* Tabs - No Icons */}
-      <div className="flex gap-2 mb-6 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent pb-2 justify-center">
+      {/* Compact Tabs - Mobile Optimized */}
+      <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-3 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent pb-1 justify-center px-1">
         {tabOptions.map((tab, idx) => (
           <button
             key={tab.label}
-            className={`px-6 py-3 rounded-xl font-bold text-sm md:text-base transition-all duration-300 flex-shrink-0
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-md sm:rounded-lg font-bold text-[11px] sm:text-xs md:text-sm transition-all duration-300 flex-shrink-0 touch-manipulation 
               ${activeTab === idx
-                ? 'bg-gradient-to-r from-purple-700 to-purple-800 text-black shadow-xl transform scale-105 border-2 border-purple-800'
-                : 'bg-white text-gray-900 hover:bg-purple-50 hover:text-gray-900 border-2 border-gray-300 hover:border-purple-400 shadow-sm'}`}
+                ? 'bg-gradient-to-r from-purple-700 to-purple-800 shadow-md border border-purple-800'
+                : 'bg-white text-gray-900 hover:bg-purple-50 border border-gray-300 hover:border-purple-400 shadow-sm'}`}
             onClick={() => setActiveTab(idx)}
-            style={{ minWidth: '100px' }}
+            style={{ 
+              minWidth: '60px', 
+              WebkitTapHighlightColor: 'transparent',
+              color: '#000000',
+              fontWeight: 700
+            }}
           >
             {tab.label}
           </button>
         ))}
       </div>
       
-      {/* Enhanced Search Bar */}
-      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 pb-6">
+      {/* Compact Search Bar - Mobile First Responsive */}
+      <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-2.5 pb-2 sm:pb-3">
         {/* City Dropdown */}
         <div className="w-full">
-          <label className="block text-xs font-bold text-gray-900 mb-1.5">City</label>
+          <label className="block text-[10px] sm:text-xs font-semibold mb-0.5 sm:mb-1" style={{ color: '#111827', fontWeight: 600 }}>City</label>
           <select
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-medium text-gray-900 bg-white transition-all duration-200 hover:border-purple-400 hover:text-gray-900 shadow-sm"
+            className="w-full px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-md sm:rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-[11px] sm:text-xs font-semibold bg-white transition-all duration-200 hover:border-purple-400 shadow-sm touch-manipulation"
             value={city}
             onChange={e => setCity(e.target.value)}
+            style={{ WebkitTapHighlightColor: 'transparent', color: '#111827' }}
           >
-            <option value="">All Cities</option>
+            <option value="" style={{ color: '#111827' }}>All Cities</option>
             {allCities.map(c => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c} style={{ color: '#111827' }}>{c}</option>
             ))}
           </select>
         </div>
         
         {/* Search Input */}
         <div className="w-full sm:col-span-2">
-          <label className="block text-xs font-bold text-gray-900 mb-1.5">Search</label>
+          <label className="block text-[10px] sm:text-xs font-semibold mb-0.5 sm:mb-1" style={{ color: '#111827', fontWeight: 600 }}>Search</label>
           <div className="relative">
             <input
               type="text"
-              className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-gray-300 
-  focus:ring-2 focus:ring-purple-500 focus:border-purple-600 
-  text-sm font-semibold text-gray-900 bg-white transition-all duration-200 
-  hover:border-purple-400 hover:bg-gray-50 hover:text-gray-900 
-  shadow-md placeholder:text-gray-700"
+              className="w-full pl-8 sm:pl-9 pr-2.5 sm:pr-3 py-2 sm:py-2.5 rounded-md sm:rounded-lg border border-gray-300 
+                focus:ring-2 focus:ring-purple-500 focus:border-purple-600 
+                text-[11px] sm:text-xs font-semibold bg-white transition-all duration-200 
+                hover:border-purple-400 hover:bg-gray-50 
+                shadow-sm placeholder:text-gray-500"
               placeholder="Project, Locality, or Builder"
               value={query}
               onChange={e => setQuery(e.target.value)}
               onKeyPress={e => e.key === 'Enter' && handleSearch()}
+              style={{ color: '#111827' }}
             />
-            <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-600">
-              <FaSearch className="w-4 h-4" />
+            <span className="absolute left-2 sm:left-2.5 top-1/2 transform -translate-y-1/2 pointer-events-none" style={{ color: '#6B7280' }}>
+              <FaSearch className="w-3 h-3" />
             </span>
           </div>
         </div>
         
         {/* Property Type Dropdown */}
         <div className="w-full">
-          <label className="block text-xs font-bold text-gray-900 mb-1.5">Property Type</label>
+          <label className="block text-[10px] sm:text-xs font-semibold mb-0.5 sm:mb-1" style={{ color: '#111827', fontWeight: 600 }}>Property Type</label>
           <select
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-medium text-gray-900 bg-white transition-all duration-200 hover:border-purple-400 hover:text-gray-900 shadow-sm"
+            className="w-full px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-md sm:rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-[11px] sm:text-xs font-semibold bg-white transition-all duration-200 hover:border-purple-400 shadow-sm touch-manipulation"
             value={propertyType}
             onChange={e => setPropertyType(e.target.value)}
+            style={{ WebkitTapHighlightColor: 'transparent', color: '#111827' }}
           >
-            <option value="Any">All Types</option>
+            <option value="Any" style={{ color: '#111827' }}>All Types</option>
             {propertyTypes.map(type => (
-              <option key={type._id} value={type.typeName}>{type.typeName}</option>
+              <option key={type._id} value={type.typeName} style={{ color: '#111827' }}>{type.typeName}</option>
             ))}
           </select>
         </div>
 
         {/* Property Status Dropdown */}
         <div className="w-full">
-          <label className="block text-xs font-bold text-gray-900 mb-1.5">Status</label>
+          <label className="block text-[10px] sm:text-xs font-semibold mb-0.5 sm:mb-1" style={{ color: '#111827', fontWeight: 600 }}>Status</label>
           <select
-            className="w-full px-4 py-3 rounded-xl border-2 border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-medium text-gray-900 bg-white transition-all duration-200 hover:border-purple-400 hover:text-gray-900 shadow-sm"
+            className="w-full px-2.5 sm:px-3 py-2 sm:py-2.5 rounded-md sm:rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-[11px] sm:text-xs font-semibold bg-white transition-all duration-200 hover:border-purple-400 shadow-sm touch-manipulation"
             value={propertyStatus}
             onChange={e => setPropertyStatus(e.target.value)}
+            style={{ WebkitTapHighlightColor: 'transparent', color: '#111827' }}
           >
             {propertyStatusOptions.map(option => (
-              <option key={option.value} value={option.value}>{option.label}</option>
+              <option key={option.value} value={option.value} style={{ color: '#111827' }}>{option.label}</option>
             ))}
           </select>
         </div>
 
         {/* Search Button */}
-        <div className="w-full sm:col-span-2 lg:col-span-1 flex items-end">
+        <div className="w-full sm:col-span-2 lg:col-span-1 flex items-end justify-center">
           <button
-            className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-700 to-purple-800 text-white font-bold text-sm hover:from-purple-800 hover:to-purple-900 transition-all duration-300 shadow-xl border-2 border-purple-900 transform hover:scale-105 flex items-center justify-center gap-2"
+            className="w-full px-3 sm:px-4 py-2 sm:py-2.5 rounded-md sm:rounded-lg bg-gradient-to-r from-purple-700 to-purple-800 font-bold text-[11px] sm:text-xs hover:from-purple-800 hover:to-purple-900 transition-all duration-300 shadow-md active:scale-95 sm:hover:scale-105 flex items-center justify-center gap-1 sm:gap-1.5 touch-manipulation"
             onClick={handleSearch}
+            style={{ WebkitTapHighlightColor: 'transparent', color: '#000000', fontWeight: 700 }}
           >
-            <FaSearch className="w-4 h-4 text-black" />
-            <span className="text-black font-bold">Search</span>
+            <FaSearch className="w-3 h-3" style={{ color: '#000000' }} />
+            <span>Search</span>
           </button>
         </div>
       </div>

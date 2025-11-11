@@ -296,8 +296,8 @@ const AllRentalBookings = () => {
   );
 
   // Handle search
-  const handleSearch = (value) => {
-    setSearchTerm(value);
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
   };
 
   // Handle filters

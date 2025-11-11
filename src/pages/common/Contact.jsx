@@ -127,7 +127,7 @@ const Contact = () => {
                   style={{ fontFamily: "'Inter', sans-serif" }}
                   disabled={loading}
                 >
-                  {loading ? 'Sending...' : 'Send Message'}
+                  {loading ? 'Contacting...' : 'Contact Us'}
                 </button>
               </div>
             </form>

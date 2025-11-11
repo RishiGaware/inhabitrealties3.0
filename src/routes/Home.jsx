@@ -23,7 +23,7 @@ const Home = () => {
       <HowItWorks />
       <Testimonials />
       <Agents />
-      <PropertyFeatures />
+      {/* <PropertyFeatures /> */}
       {/* <ImageSlider /> */}
       <AboutUsWithBrochure />
       <TopDevelopers />
