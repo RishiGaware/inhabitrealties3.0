@@ -12,7 +12,8 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
+// console.log(API_URL);
+// console.log(api);
 
 
 api.interceptors.request.use(

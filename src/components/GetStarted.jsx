@@ -16,8 +16,7 @@ const GetStarted = () => {
           </h2>
           <p className="text-lg text-gray-600 leading-relaxed max-w-2xl mx-auto"
              style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" }}>
-            Join thousands of satisfied customers who found their perfect property with us. 
-            Start your journey today and discover the home you've always dreamed of.
+            Find out why so many people trust us to make their real estate dreams a reality — begin your search now and take the first step toward your ideal home.
           </p>
         </div>
         
