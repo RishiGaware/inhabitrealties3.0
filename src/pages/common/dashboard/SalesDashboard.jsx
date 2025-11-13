@@ -346,6 +346,7 @@ const SalesDashboard = () => {
               trend="up"
               trendValue="15"
               subtitle="Active leads assigned"
+              onClick={() => navigate('/lead/add')}
             />
             <StatCard
               title="My Properties"
@@ -355,6 +356,7 @@ const SalesDashboard = () => {
               trend="up"
               trendValue="8"
               subtitle="Properties to sell"
+              onClick={() => navigate('/property/property-master')}
             />
             <StatCard
               title="My Sales"
@@ -373,6 +375,7 @@ const SalesDashboard = () => {
               trend="up"
               trendValue="20"
               subtitle="Revenue generated"
+              onClick={() => navigate('/payment-history/assigned')}
             />
             <StatCard
               title="Pending Followups"
@@ -382,13 +385,7 @@ const SalesDashboard = () => {
               trend="down"
               trendValue="5"
               subtitle="Followups due"
-            />
-            <StatCard
-              title="Monthly Target"
-              value={formatCurrency(stats.thisMonthTarget)}
-              icon={FaBullseye}
-              color="teal"
-              subtitle={`${Math.round(targetProgress)}% achieved`}
+              onClick={() => navigate('/lead/add')}
             />
           </Grid>
 
@@ -402,6 +399,7 @@ const SalesDashboard = () => {
               trend="up"
               trendValue="12"
               subtitle="High priority leads"
+              onClick={() => navigate('/lead/add')}
             />
             <StatCard
               title="Warm Leads"
@@ -411,6 +409,7 @@ const SalesDashboard = () => {
               trend="up"
               trendValue="8"
               subtitle="Medium priority leads"
+              onClick={() => navigate('/lead/add')}
             />
             <StatCard
               title="Cold Leads"
@@ -420,6 +419,7 @@ const SalesDashboard = () => {
               trend="down"
               trendValue="5"
               subtitle="Low priority leads"
+              onClick={() => navigate('/lead/add')}
             />
           </Grid>
 
@@ -462,21 +462,6 @@ const SalesDashboard = () => {
               subtitle="This week's progress"
             />
           </Grid>
-
-          {/* Achievement Badge */}
-          {stats.topPerformer && (
-            <Card bg="linear(to-r, yellow.400, orange.500)" color="white" mb={8} borderRadius="xl">
-              <CardBody p={6} textAlign="center">
-                <FaTrophy size={48} style={{ margin: '0 auto 16px' }} />
-                <Text fontSize="2xl" fontWeight="bold" mb={2}>
-                  🏆 Top Performer!
-                </Text>
-                <Text fontSize="lg">
-                  You're among the top sales performers this month!
-                </Text>
-              </CardBody>
-            </Card>
-          )}
 
           {/* Performance Overview */}
           <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6} mb={8}>

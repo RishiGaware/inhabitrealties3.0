@@ -68,6 +68,7 @@ const DocumentManagement = () => {
   const [documentTypeFilter, setDocumentTypeFilter] = useState('');
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
@@ -85,7 +86,7 @@ const DocumentManagement = () => {
   const [originalFormData, setOriginalFormData] = useState(null);
 
   // Color mode values
-  const cardGradientBg = useColorModeValue('linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 'gray.800');
+  const cardGradientBg = useColorModeValue('gray.50', 'gray.800');
   const cardBorderColor = useColorModeValue('gray.200', 'gray.700');
   const fileNameColor = useColorModeValue('gray.800', 'white');
   const docTypeColor = useColorModeValue('purple.600', 'purple.200');
@@ -160,7 +161,8 @@ const DocumentManagement = () => {
       filtered = filtered.filter(doc => doc.documentTypeId === documentTypeFilter);
     }
     return filtered;
-  }, [documents, searchTerm, userFilter, documentTypeFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [documents, searchTerm, userFilter, documentTypeFilter, documentTypeOptions, userOptions]);
 
   useEffect(() => {
     getAllDocuments();
@@ -206,10 +208,16 @@ const DocumentManagement = () => {
     }
   };
 
-  const handleFileUpload = (file) => {
-    setUploadedFile(file);
-    if (errors.file) {
-      setErrors({ ...errors, file: '' });
+  const handleFilesChange = (files) => {
+    setUploadedFiles(files);
+    // Set the first file as uploadedFile for backward compatibility
+    if (files.length > 0) {
+      setUploadedFile(files[0].file);
+      if (errors.file) {
+        setErrors({ ...errors, file: '' });
+      }
+    } else {
+      setUploadedFile(null);
     }
   };
 
@@ -221,7 +229,7 @@ const DocumentManagement = () => {
     if (!formData.documentTypeId) {
       newErrors.documentTypeId = 'Document type is required';
     }
-    if (!uploadedFile && !selectedDocument) {
+    if ((!uploadedFile && uploadedFiles.length === 0) && !selectedDocument) {
       newErrors.file = 'Document file is required';
     }
     setErrors(newErrors);
@@ -237,6 +245,7 @@ const DocumentManagement = () => {
     setOriginalFormData(null);
     setErrors({});
     setUploadedFile(null);
+    setUploadedFiles([]);
     onOpen();
   };
 
@@ -250,6 +259,7 @@ const DocumentManagement = () => {
     setOriginalFormData(data);
     setErrors({});
     setUploadedFile(null);
+    setUploadedFiles([]);
     onOpen();
   };
 
@@ -311,8 +321,10 @@ const DocumentManagement = () => {
       formDataToSend.append('userId', formData.userId);
       formDataToSend.append('documentTypeId', formData.documentTypeId);
       
-      if (uploadedFile) {
-        formDataToSend.append('document', uploadedFile);
+      // Use uploadedFile if available, otherwise use first file from uploadedFiles
+      const fileToUpload = uploadedFile || (uploadedFiles.length > 0 ? uploadedFiles[0].file : null);
+      if (fileToUpload) {
+        formDataToSend.append('document', fileToUpload);
       }
 
       if (selectedDocument) {
@@ -326,6 +338,7 @@ const DocumentManagement = () => {
       setSelectedDocument(null);
       setFormData({});
       setUploadedFile(null);
+      setUploadedFiles([]);
       onClose();
     } catch (error) {
       console.error('Form submission error:', error);
@@ -339,7 +352,8 @@ const DocumentManagement = () => {
     return (
       formData.userId !== originalFormData.userId ||
       formData.documentTypeId !== originalFormData.documentTypeId ||
-      uploadedFile !== null
+      uploadedFile !== null ||
+      uploadedFiles.length > 0
     );
   };
 
@@ -671,6 +685,7 @@ const DocumentManagement = () => {
           setOriginalFormData(null);
           setErrors({});
           setUploadedFile(null);
+          setUploadedFiles([]);
         }}
         title={selectedDocument ? 'Edit Document' : 'Add New Document'}
         onSave={handleFormSubmit}
@@ -709,16 +724,21 @@ const DocumentManagement = () => {
           <FormControl isInvalid={!!errors.file}>
             <FormLabel>Document File</FormLabel>
             <DocumentUpload
-              onFileSelect={handleFileUpload}
-              acceptedFileTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']}
+              files={uploadedFiles}
+              onFilesChange={handleFilesChange}
+              maxFiles={1}
               maxFileSize={10 * 1024 * 1024} // 10MB
+              allowedTypes={['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']}
+              isDisabled={isSubmitting}
+              title="Add New Document"
+              description="Upload supporting documents"
             />
             {errors.file && (
               <Text color="red.500" fontSize="sm" mt={1}>
                 {errors.file}
               </Text>
             )}
-            {(uploadedFile || (selectedDocument && selectedDocument.fileName)) && (
+            {selectedDocument && selectedDocument.fileName && uploadedFiles.length === 0 && (
               <Box
                 mt={3}
                 p={3}
@@ -747,18 +767,14 @@ const DocumentManagement = () => {
                 </Box>
                 <Box flex={1} minW={0}>
                   <Text fontWeight="bold" fontSize="sm" color={fileNameTextColor} noOfLines={1}>
-                    {uploadedFile ? uploadedFile.name : selectedDocument.fileName}
+                    {selectedDocument.fileName}
                   </Text>
                   <Text fontSize="xs" color={fileMetaTextColor}>
-                    {uploadedFile
-                      ? `${(uploadedFile.size / 1024).toFixed(2)} KB`
-                      : selectedDocument.size
+                    {selectedDocument.size
                       ? `${(selectedDocument.size / 1024).toFixed(2)} KB`
                       : ''}
                     {' '}
-                    {uploadedFile
-                      ? uploadedFile.type || 'N/A'
-                      : selectedDocument.mimeType || 'N/A'}
+                    {selectedDocument.mimeType || 'N/A'}
                   </Text>
                 </Box>
               </Box>

@@ -321,8 +321,38 @@ const Dashboard = () => {
       case "pendingpayments":
         path = "/payment-history/all";
         break;
+      case "rentalbookings":
+        path = "/rental-bookings/all";
+        break;
+      case "purchasebookings":
+        path = "/purchase-bookings/all";
+        break;
+      case "soldproperties":
+        path = "/property/property-master";
+        break;
+      case "unsoldproperties":
+        path = "/property/property-master";
+        break;
+      case "activeleads":
+        path = "/lead/add";
+        break;
+      case "conversionrate":
+        path = "/lead/add";
+        break;
+      case "averagerating":
+        path = "/lead/add";
+        break;
+      case "pendingfollowups":
+        path = "/lead/qualification";
+        break;
+      case "todaysschedules":
+        path = "/admin-meetings";
+        break;
+      case "tomorrowsschedules":
+        path = "/admin-meetings";
+        break;
       default:
-        path = "/";
+        path = "/dashboard";
     }
     
     // Check if user has access to this route
@@ -399,7 +429,7 @@ const Dashboard = () => {
           }}
           transition="all 0.3s ease"
           onClick={() =>
-            handleStatCardClick(title.toLowerCase().replace(/\s/g, ""))
+            handleStatCardClick(title.toLowerCase().replace(/\s/g, "").replace(/'/g, ""))
           }
           cursor="pointer"
           role="button"
@@ -1164,7 +1194,7 @@ const Dashboard = () => {
                         size="sm"
                         variant="ghost"
                         colorScheme="green"
-                        onClick={() => navigate("/my-meetings")}
+                        onClick={() => navigate("/admin-meetings")}
                       >
                         <FaCalendarAlt size={14} />
                       </Button>
@@ -1208,7 +1238,7 @@ const Dashboard = () => {
                         size="sm"
                         variant="ghost"
                         colorScheme="blue"
-                        onClick={() => navigate("/my-meetings")}
+                        onClick={() => navigate("/admin-meetings")}
                       >
                         <FaCalendarAlt size={14} />
                       </Button>

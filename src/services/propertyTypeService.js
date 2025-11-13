@@ -31,3 +31,4 @@ export const deletePropertyType = async (id) => {
 
 
 
+

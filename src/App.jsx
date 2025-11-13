@@ -188,7 +188,7 @@ const App = () => {
             <Route path={ROUTES.PROPERTY_FAVORITES} element={<ProtectedRoute><DashboardLayout><PropertyFavoriteProperties /></DashboardLayout></ProtectedRoute>} />
             
             {/* Display Properties Routes - Public access */}
-            <Route path={ROUTES.PROPERTIES} element={<MainLayout><Properties /></MainLayout>} />
+            <Route path={ROUTES.PROPERTIES}element={<ProtectedRoute><DashboardLayout><PropertyMaster isViewOnly={true} /></DashboardLayout></ProtectedRoute>} />
             <Route path={ROUTES.DISPLAY_FAVORITES} element={<ProtectedRoute><DashboardLayout><FavoriteProperties /></DashboardLayout></ProtectedRoute>} />
             <Route path={ROUTES.PROPERTY_MASTER_DISPLAY} element={<ProtectedRoute><DashboardLayout><PropertyMasterDisplay /></DashboardLayout></ProtectedRoute>} />
             

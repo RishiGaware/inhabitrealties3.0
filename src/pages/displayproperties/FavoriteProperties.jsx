@@ -922,7 +922,7 @@ const FavoriteProperties = () => {
                         colorScheme="brand"
                         onClick={(e) => {
                             e.stopPropagation();
-                            removeFromFavorites(property._id);
+                            handlePreview(property);
                           }}
                         aria-label="View Property"
                         flex={1}

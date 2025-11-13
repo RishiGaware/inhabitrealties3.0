@@ -257,28 +257,28 @@ const RoleManagement = () => {
     }
   ];
 
-  // const renderRowActions = (role) => (
-  //   <HStack spacing={2}>
-  //     <IconButton
-  //       key="edit"
-  //       aria-label="Edit role"
-  //       icon={<EditIcon />}
-  //       size="sm"
-  //       onClick={() => handleEdit(role)}
-  //       colorScheme="brand"
-  //       variant="outline"
-  //     />
-  //     <IconButton
-  //       key="delete"
-  //       aria-label="Delete role"
-  //       icon={<DeleteIcon />}
-  //       size="sm"
-  //       onClick={() => handleDelete(role)}
-  //       colorScheme="red"
-  //       variant="outline"
-  //     />
-  //   </HStack>
-  // );
+  const renderRowActions = (role) => (
+    <HStack spacing={2}>
+      <IconButton
+        key="edit"
+        aria-label="Edit role"
+        icon={<EditIcon />}
+        size="sm"
+        onClick={() => handleEdit(role)}
+        colorScheme="brand"
+        variant="outline"
+      />
+      <IconButton
+        key="delete"
+        aria-label="Delete role"
+        icon={<DeleteIcon />}
+        size="sm"
+        onClick={() => handleDelete(role)}
+        colorScheme="red"
+        variant="outline"
+      />
+    </HStack>
+  );
 
 
   return (
@@ -291,7 +291,7 @@ const RoleManagement = () => {
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           Role Management
         </Heading>
-        <CommonAddButton onClick={handleAddNew} />
+       {/* <CommonAddButton onClick={handleAddNew} /> */}
       </Flex>
       {/* Search and Filter Section */}
       <SearchAndFilter

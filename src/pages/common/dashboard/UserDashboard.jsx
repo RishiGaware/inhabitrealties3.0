@@ -395,6 +395,7 @@ const UserDashboard = () => {
               trend="up"
               trendValue="12"
               subtitle="Properties you liked"
+              onClick={() => navigate('/properties/favorite-properties')}
             />
             <StatCard
               title="Viewed Properties"
@@ -404,6 +405,7 @@ const UserDashboard = () => {
               trend="up"
               trendValue="8"
               subtitle="Properties viewed"
+              onClick={() => navigate('/properties/favorite-properties')}
             />
             <StatCard
               title="Inquiries Made"
@@ -422,6 +424,7 @@ const UserDashboard = () => {
               trend="up"
               trendValue="15"
               subtitle="Site visits booked"
+              onClick={() => navigate('/my-meetings')}
             />
             <StatCard
               title="Saved Searches"
@@ -451,6 +454,7 @@ const UserDashboard = () => {
               trend="up"
               trendValue="18"
               subtitle="Properties in shortlist"
+              onClick={() => navigate('/properties')}
             />
             <StatCard
               title="Visited Properties"
@@ -460,6 +464,7 @@ const UserDashboard = () => {
               trend="up"
               trendValue="22"
               subtitle="Properties physically visited"
+              onClick={() => navigate('/properties')}
             />
             <StatCard
               title="Wishlist Items"
@@ -469,11 +474,12 @@ const UserDashboard = () => {
               trend="up"
               trendValue="10"
               subtitle="Items in your wishlist"
+              onClick={() => navigate('/properties')}
             />
           </Grid>
 
           {/* Profile & Preferences */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6} mb={8}>
+          {/* <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6} mb={8}>
             <StatCard
               title="Profile Completion"
               value={`${stats.profileCompletion}%`}
@@ -510,7 +516,7 @@ const UserDashboard = () => {
               trendValue="2"
               subtitle="Types you're interested in"
             />
-          </Grid>
+          </Grid> */}
 
           {/* Recommendations */}
           <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6} mb={8}>
@@ -522,6 +528,7 @@ const UserDashboard = () => {
               trend="up"
               trendValue="15"
               subtitle="AI recommended for you"
+              onClick={() => navigate('/properties')}
             />
             <StatCard
               title="Last Activity"

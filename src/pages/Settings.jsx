@@ -203,45 +203,48 @@ const Settings = () => {
             <Box>
               <Flex justify="space-between" align="center" mb={{ base: 3, md: 6 }} direction={{ base: 'column', sm: 'row' }} gap={{ base: 2, sm: 0 }}>
                 <Heading size={{ base: 'xs', sm: 'sm', md: 'md' }}>Profile Information</Heading>
-                {!isEditing ? (
-                  <Button
-                    leftIcon={<FaEdit />}
-                    colorScheme="blue"
-                    variant="outline"
-                    onClick={handleEdit}
-                    size={{ base: 'xs', sm: 'sm', md: 'md' }}
-                    fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
-                    px={{ base: 2, sm: 3, md: 4 }}
-                  >
-                    Edit Profile
-                  </Button>
-                ) : (
-                  <HStack spacing={{ base: 1, sm: 2 }} flexWrap="wrap" justify={{ base: 'center', sm: 'flex-end' }}>
+                {getUserRoleName() === 'ADMIN' && (
+                  !isEditing ? (
                     <Button
-                      leftIcon={<FaTimes />}
-                      colorScheme="red"
+                      leftIcon={<FaEdit />}
+                      colorScheme="blue"
                       variant="outline"
-                      onClick={handleCancel}
+                      onClick={handleEdit}
                       size={{ base: 'xs', sm: 'sm', md: 'md' }}
                       fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
                       px={{ base: 2, sm: 3, md: 4 }}
                     >
-                      Cancel
+                      Edit Profile
                     </Button>
-                    <Button
-                      leftIcon={<FaCheck />}
-                      colorScheme="green"
-                      onClick={handleSave}
-                      isLoading={saving}
-                      loadingText="Saving..."
-                      size={{ base: 'xs', sm: 'sm', md: 'md' }}
-                      fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
-                      px={{ base: 2, sm: 3, md: 4 }}
-                    >
-                      Save Changes
-                    </Button>
-                  </HStack>
+                  ) : (
+                    <HStack spacing={{ base: 1, sm: 2 }} flexWrap="wrap" justify={{ base: 'center', sm: 'flex-end' }}>
+                      <Button
+                        leftIcon={<FaTimes />}
+                        colorScheme="red"
+                        variant="outline"
+                        onClick={handleCancel}
+                        size={{ base: 'xs', sm: 'sm', md: 'md' }}
+                        fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
+                        px={{ base: 2, sm: 3, md: 4 }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        leftIcon={<FaCheck />}
+                        colorScheme="green"
+                        onClick={handleSave}
+                        isLoading={saving}
+                        loadingText="Saving..."
+                        size={{ base: 'xs', sm: 'sm', md: 'md' }}
+                        fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
+                        px={{ base: 2, sm: 3, md: 4 }}
+                      >
+                        Save Changes
+                      </Button>
+                    </HStack>
+                  )
                 )}
+
               </Flex>
 
               {/* User Info Display */}
@@ -337,7 +340,6 @@ const Settings = () => {
           {activeTab === 'system' && (
             <Box>
               <Heading size={{ base: 'xs', sm: 'sm', md: 'md' }} mb={{ base: 3, md: 6 }}>System Settings</Heading>
-              <Text color="gray.600" mb={{ base: 3, md: 6 }} fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}>Configure system-wide settings and preferences</Text>
               
               {/* System Information */}
               <CommonCard p={{ base: 2, sm: 3, md: 6 }} mb={{ base: 3, md: 6 }}>
@@ -379,89 +381,6 @@ const Settings = () => {
               </Grid>
                 </VStack>
               </CommonCard>
-
-              <VStack spacing={{ base: 2, md: 4 }} align="stretch">
-                {/* Property Types */}
-                <CommonCard p={{ base: 2, sm: 3, md: 4 }}>
-                  <HStack justify="space-between" align="center" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
-                    <Box>
-                      <Text fontWeight="semibold" fontSize={{ base: 'xs', sm: 'sm', md: 'lg' }}>Property Types</Text>
-                      <Text color="gray.600" fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}>Manage property categories and types</Text>
-                    </Box>
-                    <Button
-                      colorScheme="blue"
-                      variant="outline"
-                      onClick={() => navigate('/property/property-types')}
-                      size={{ base: 'xs', sm: 'sm', md: 'md' }}
-                      fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}
-                      px={{ base: 2, sm: 3, md: 4 }}
-                    >
-                      Manage Property Types
-                    </Button>
-                  </HStack>
-                </CommonCard>
-                
-                {/* Lead Status Management */}
-                <CommonCard p={{ base: 2, sm: 3, md: 4 }}>
-                  <HStack justify="space-between" align="center" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
-                    <Box>
-                      <Text fontWeight="semibold" fontSize={{ base: 'xs', sm: 'sm', md: 'lg' }}>Lead Status Management</Text>
-                      <Text color="gray.600" fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}>Configure lead statuses and workflows</Text>
-                    </Box>
-                    <Button
-                      colorScheme="green"
-                      variant="outline"
-                      onClick={() => navigate('/lead/view')}
-                      size={{ base: 'xs', sm: 'sm', md: 'md' }}
-                      fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}
-                      px={{ base: 2, sm: 3, md: 4 }}
-                    >
-                      Manage Lead Statuses
-                    </Button>
-                  </HStack>
-                </CommonCard>
-
-                {/* Follow-up Status Management */}
-                <CommonCard p={{ base: 2, sm: 3, md: 4 }}>
-                  <HStack justify="space-between" align="center" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
-                    <Box>
-                      <Text fontWeight="semibold" fontSize={{ base: 'xs', sm: 'sm', md: 'lg' }}>Follow-up Status Management</Text>
-                      <Text color="gray.600" fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}>Configure follow-up statuses and tracking</Text>
-                </Box>
-              <Button
-                      colorScheme="purple"
-                      variant="outline"
-                      onClick={() => navigate('/lead/qualification')}
-                      size={{ base: 'xs', sm: 'sm', md: 'md' }}
-                      fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}
-                      px={{ base: 2, sm: 3, md: 4 }}
-                    >
-                      Manage Follow-up Statuses
-              </Button>
-                  </HStack>
-                </CommonCard>
-
-                {/* Reference Source Management */}
-                <CommonCard p={{ base: 2, sm: 3, md: 4 }}>
-                  <HStack justify="space-between" align="center" flexWrap="wrap" gap={{ base: 2, md: 4 }}>
-                    <Box>
-                      <Text fontWeight="semibold" fontSize={{ base: 'xs', sm: 'sm', md: 'lg' }}>Reference Source Management</Text>
-                      <Text color="gray.600" fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}>Manage lead sources and referral channels</Text>
-                    </Box>
-              <Button
-                      colorScheme="orange"
-                      variant="outline"
-                      onClick={() => navigate('/lead/reference-source')}
-                      size={{ base: 'xs', sm: 'sm', md: 'md' }}
-                      fontSize={{ base: '2xs', sm: 'xs', md: 'sm' }}
-                      px={{ base: 2, sm: 3, md: 4 }}
-                    >
-                      Manage Reference Sources
-              </Button>
-                  </HStack>
-                </CommonCard>
-
-              </VStack>
             </Box>
           )}
         </CommonCard>

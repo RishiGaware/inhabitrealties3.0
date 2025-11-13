@@ -61,7 +61,7 @@ const SearchAndFilter = ({
     <Box
       mb={6}
       w="100%"
-      bgGradient="linear(135deg, #f8fafc 0%, #f3ebff 100%)"
+      bg="gray.50"
       borderRadius="2xl"
       boxShadow="0 4px 24px 0 rgba(80, 36, 143, 0.07)"
       p={{ base: 3, md: 6 }}
@@ -167,7 +167,7 @@ const SearchAndFilter = ({
           transition={{ duration: 0.3 }}
           mt={2}
           p={{ base: 1, md: 2 }}
-          bgGradient="linear(135deg, #fff 0%, #f3ebff 100%)"
+          bg="white"
           borderRadius="md"
           boxShadow="0 2px 8px 0 rgba(80, 36, 143, 0.08)"
           border="1px solid"

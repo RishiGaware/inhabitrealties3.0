@@ -23,17 +23,22 @@ import {
   Select,
   IconButton,
 } from '@chakra-ui/react';
-import { FaEye, FaCalendar, FaMapMarkerAlt, FaClock, FaUser, FaSearch, FaHome, FaEnvelope, FaStickyNote, FaUsers, FaMap } from 'react-icons/fa';
+import { FaEye, FaCalendar, FaMapMarkerAlt, FaClock, FaUser, FaSearch, FaHome, FaEnvelope, FaStickyNote, FaUsers, FaMap, FaEdit } from 'react-icons/fa';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
 import SearchAndFilter from '../../components/common/SearchAndFilter';
 import Loader from '../../components/common/Loader';
+import FormModal from '../../components/common/FormModal';
+import FloatingInput from '../../components/common/FloatingInput';
+import SearchableSelect from '../../components/common/SearchableSelect';
 import { 
   getMyMeetings,
+  updateMeetingSchedule,
+  formatMeetingDataForAPI,
 } from '../../services/meetings/meetingScheduleService';
 import { fetchAllMeetingScheduleStatuses } from '../../services/meetings/meetingScheduleStatusService';
-import { showErrorToast } from '../../utils/toastUtils';
+import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
 import { fetchProperties } from '../../services/propertyService';
 import { fetchUsers } from '../../services/usermanagement/userService';
 
@@ -56,8 +61,21 @@ const MyMeetings = () => {
     totalCancelled: 0
   });
   const [statuses, setStatuses] = useState([]);
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    meetingDate: '',
+    startTime: '',
+    endTime: '',
+    status: '',
+    customerId: '',
+    propertyId: '',
+    notes: ''
+  });
+  const [formErrors, setFormErrors] = useState({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onClose: onViewModalClose } = useDisclosure();
-
+  const { isOpen: isEditModalOpen, onOpen: onEditModalOpen, onClose: onEditModalClose } = useDisclosure();
   // Helper function to get customer details by ID
   const getCustomerDetails = (customerId) => {
     if (!customerId) {
@@ -334,6 +352,116 @@ const MyMeetings = () => {
     setSelectedMeeting(meeting);
     onViewModalOpen();
   };
+  const handleEditMeeting = (meeting) => {
+    setSelectedMeeting(meeting);
+    // Get the first customer ID from customerIds array if available
+    const customerId = meeting.customerIds && meeting.customerIds.length > 0 
+      ? meeting.customerIds[0] 
+      : meeting.customerId || '';
+    
+    setFormData({
+      title: meeting.title || '',
+      description: meeting.description || '',
+      meetingDate: meeting.meetingDate ? meeting.meetingDate.split('T')[0] : '',
+      startTime: meeting.startTime || '',
+      endTime: meeting.endTime || '',
+      status: meeting.statusId || '',
+      customerId: customerId,
+      propertyId: meeting.propertyId || '',
+      notes: meeting.notes || ''
+    });
+    setFormErrors({});
+    onEditModalOpen();
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      
+      // Calculate duration automatically
+      const calculatedDuration = formData.startTime && formData.endTime 
+        ? calculateDuration(formData.startTime, formData.endTime) 
+        : null;
+      const formDataWithDuration = {
+        ...formData,
+        duration: calculatedDuration
+      };
+      
+      const apiData = formatMeetingDataForAPI(formDataWithDuration);
+      
+      if (selectedMeeting) {
+        // Update existing meeting
+        await updateMeetingSchedule(selectedMeeting.id, apiData);
+        showSuccessToast('Meeting updated successfully');
+      }
+      
+      onEditModalClose();
+      setSelectedMeeting(null);
+      resetForm();
+      // Refresh data
+      fetchMyMeetingsData();
+    } catch (error) {
+      console.error('Form submission error:', error);
+      showErrorToast('Failed to update meeting');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.title?.trim()) {
+      errors.title = 'Title is required';
+    }
+    
+    if (!formData.meetingDate) {
+      errors.meetingDate = 'Meeting date is required';
+    }
+    
+    if (!formData.startTime) {
+      errors.startTime = 'Start time is required';
+    }
+    
+    if (!formData.status) {
+      errors.status = 'Status is required';
+    }
+    
+    if (!formData.customerId) {
+      errors.customerId = 'Customer is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const resetForm = () => {
+    setFormData({
+      title: '',
+      description: '',
+      meetingDate: '',
+      startTime: '',
+      endTime: '',
+      status: '',
+      customerId: '',
+      propertyId: '',
+      notes: ''
+    });
+    setFormErrors({});
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (formErrors[field]) {
+      setFormErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
 
   const handleMapRedirect = (location) => {
     if (location && location !== 'No location') {
@@ -490,6 +618,14 @@ const MyMeetings = () => {
           transform: "translateY(0px)"
         }}
         transition="all 0.2s ease"
+      />
+      <IconButton
+        aria-label="Edit meeting"
+        icon={<FaEdit />}
+        size="sm"
+        onClick={() => handleEditMeeting(meeting)}
+        colorScheme="green"
+        variant="outline"
       />
     </HStack>
   );
@@ -1163,6 +1299,254 @@ const MyMeetings = () => {
           </ModalBody>
         </ModalContent>
       </Modal>
+
+      {/* Edit Meeting Modal */}
+      <FormModal
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          onEditModalClose();
+          setSelectedMeeting(null);
+          resetForm();
+        }}
+        title="Edit Meeting"
+        onSubmit={handleFormSubmit}
+        isSubmitting={isSubmitting}
+        buttonLabel="Update"
+        loadingText="Updating..."
+        size={{ base: "full", sm: "xl", md: "4xl" }}
+        maxW={{ base: "95vw", sm: "70vw", md: "70vw", lg: "70vw", xl: "70vw" }}
+      >
+        <Box 
+          bg="white" 
+          borderRadius={{ base: "lg", md: "xl" }}
+          border="1px solid"
+          borderColor="gray.200"
+          boxShadow="0 4px 12px rgba(0, 0, 0, 0.05)"
+          overflow="hidden"
+        >
+          {/* Form Header */}
+          <Box
+            bg="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+            p={{ base: 4, md: 6 }}
+            borderBottom="1px solid"
+            borderColor="gray.100"
+          >
+            <VStack spacing={2} align="start">
+              <Text color="white" fontSize={{ base: "lg", md: "xl" }} fontWeight="bold">
+                Edit Meeting Details
+              </Text>
+              <Text color="white" opacity="0.9" fontSize={{ base: "sm", md: "md" }}>
+                Update the meeting information below
+              </Text>
+            </VStack>
+          </Box>
+
+          {/* Form Body */}
+          <Box p={{ base: 4, md: 6 }}>
+            <VStack spacing={6} align="stretch">
+              {/* Basic Information Section */}
+              <Box w="full">
+                <Box fontSize={{ base: "md", md: "lg" }} fontWeight="semibold" color="gray.800" mb={4} display="flex" alignItems="center" gap={2}>
+                  <Box w={2} h={2} bg="purple.500" borderRadius="full" />
+                  Basic Information
+                </Box>
+                <VStack spacing={4}>
+                  <FloatingInput
+                    label="Meeting Title"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange('title', e.target.value)}
+                    error={formErrors.title}
+                    isRequired
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                  />
+                  <FloatingInput
+                    label="Description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    as="textarea"
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                  />
+                </VStack>
+              </Box>
+
+              {/* Participants & Property Section */}
+              <Box w="full">
+                <Box fontSize={{ base: "md", md: "lg" }} fontWeight="semibold" color="gray.800" mb={4} display="flex" alignItems="center" gap={2}>
+                  <Box w={2} h={2} bg="blue.500" borderRadius="full" />
+                  Participants & Property
+                </Box>
+                <VStack spacing={4}>
+                  <SearchableSelect
+                    label="Customer"
+                    placeholder="Select customer"
+                    options={users.map(user => ({
+                      value: user._id,
+                      label: `${user.firstName} ${user.lastName}`
+                    }))}
+                    value={formData.customerId}
+                    onChange={(value) => handleInputChange('customerId', value)}
+                    error={formErrors.customerId}
+                    isRequired
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                    w="full"
+                  />
+                  <SearchableSelect
+                    label="Property"
+                    placeholder="Select property"
+                    options={properties.map(prop => ({
+                      value: prop._id,
+                      label: prop.name
+                    }))}
+                    value={formData.propertyId}
+                    onChange={(value) => handleInputChange('propertyId', value)}
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                    w="full"
+                  />
+                </VStack>
+              </Box>
+
+              {/* Schedule Section */}
+              <Box w="full">
+                <Box fontSize={{ base: "md", md: "lg" }} fontWeight="semibold" color="gray.800" mb={4} display="flex" alignItems="center" gap={2}>
+                  <Box w={2} h={2} bg="green.500" borderRadius="full" />
+                  Schedule
+                </Box>
+                <VStack spacing={4}>
+                  <FloatingInput
+                    label="Meeting Date"
+                    type="date"
+                    value={formData.meetingDate}
+                    onChange={(e) => handleInputChange('meetingDate', e.target.value)}
+                    error={formErrors.meetingDate}
+                    isRequired
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                  />
+                  <HStack spacing={4} w="full">
+                    <FloatingInput
+                      label="Start Time"
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) => handleInputChange('startTime', e.target.value)}
+                      error={formErrors.startTime}
+                      isRequired
+                      bg="white"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      _focus={{
+                        borderColor: "purple.400",
+                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                      }}
+                    />
+                    <FloatingInput
+                      label="End Time"
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) => handleInputChange('endTime', e.target.value)}
+                      bg="white"
+                      border="1px solid"
+                      borderColor="gray.200"
+                      _focus={{
+                        borderColor: "purple.400",
+                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                      }}
+                    />
+                  </HStack>
+                  <FloatingInput
+                    label="Duration"
+                    value={calculateDuration(formData.startTime, formData.endTime) || ''}
+                    onChange={() => {}}
+                    disabled={true}
+                    bg="gray.50"
+                    border="1px solid"
+                    borderColor="gray.300"
+                    color="gray.600"
+                    _focus={{
+                      borderColor: "gray.400",
+                      boxShadow: "0 0 0 1px rgba(156, 163, 175, 0.2)"
+                    }}
+                    _hover={{
+                      borderColor: "gray.400"
+                    }}
+                  />
+                </VStack>
+              </Box>
+
+              {/* Status & Notes Section */}
+              <Box w="full">
+                <Box fontSize={{ base: "md", md: "lg" }} fontWeight="semibold" color="gray.800" mb={4} display="flex" alignItems="center" gap={2}>
+                  <Box w={2} h={2} bg="orange.500" borderRadius="full" />
+                  Status & Notes
+                </Box>
+                <VStack spacing={4}>
+                  <SearchableSelect
+                    label="Status"
+                    placeholder="Select status"
+                    options={statuses.map(status => ({
+                      value: status._id,
+                      label: status.name
+                    }))}
+                    value={formData.status}
+                    onChange={(value) => handleInputChange('status', value)}
+                    error={formErrors.status}
+                    isRequired
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                    w="full"
+                  />
+                  <FloatingInput
+                    label="Notes"
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange('notes', e.target.value)}
+                    as="textarea"
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                  />
+                </VStack>
+              </Box>
+            </VStack>
+          </Box>
+        </Box>
+      </FormModal>
     </Box>
   );
 };

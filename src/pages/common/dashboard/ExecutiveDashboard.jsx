@@ -209,19 +209,20 @@ const ExecutiveDashboard = () => {
       'Total Leads': '/lead/add',
       'Rental Bookings': '/rental-bookings/all',
       'Purchase Bookings': '/purchase-bookings/all',
-      'Sold Properties': '/properties',
+      'Sold Properties': '/property/property-master',
       'Monthly Revenue': '/payment-history/all',
       'Quarterly Growth': '/admin/reports',
-      'Team Performance': '/admin/user-management',
+      'Team Performance': null, // No navigation for Team Performance
       'Active Leads': '/lead/add',
       'Average Rating': '/admin/reports',
-      'Pending Followups': '/lead/qualification'
+      'Pending Followups': '/lead/add'
     };
-    return routeMap[title] || '/';
+    return routeMap[title] || null;
   };
 
   const StatCard = ({ title, value, icon: Icon, color, trend, trendValue }) => {
     const route = getRouteForStat(title);
+    const isClickable = route !== null;
     return (
       <motion.div
         whileHover={{ scale: 1.02 }}
@@ -233,8 +234,8 @@ const ExecutiveDashboard = () => {
           boxShadow="lg" 
           border="1px" 
           borderColor={borderColor}
-          cursor="pointer"
-          onClick={() => handleCardClick(route)}
+          cursor={isClickable ? "pointer" : "default"}
+          onClick={isClickable ? () => handleCardClick(route) : undefined}
           _hover={{ boxShadow: 'xl' }}
         >
         <CardBody p={6}>
@@ -465,15 +466,6 @@ const ExecutiveDashboard = () => {
               trend="up"
               trendValue="18"
               subtitle="Current month revenue"
-            />
-            <StatCard
-              title="Quarterly Growth"
-              value={`${stats.quarterlyGrowth}%`}
-              icon={FaTrendingUp}
-              color="purple"
-              trend="up"
-              trendValue="8"
-              subtitle="Q3 vs Q2 growth"
             />
             <StatCard
               title="Team Performance"

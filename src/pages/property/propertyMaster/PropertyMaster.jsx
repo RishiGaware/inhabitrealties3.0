@@ -30,7 +30,7 @@ import NoInternet from '../../../components/common/errors/NoInternet';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
 
-const PropertyMaster = () => {
+const PropertyMaster = ({ isViewOnly = false }) => {
   const [selectedType, setSelectedType] = useState('ALL');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
   const [properties, setProperties] = useState([]);
@@ -63,6 +63,7 @@ const PropertyMaster = () => {
     if (isAuthenticated) {
       fetchUserFavorites();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [getAllPropertyTypes, isAuthenticated]);
 
   const fetchUserFavorites = async () => {
@@ -90,7 +91,7 @@ const PropertyMaster = () => {
       
       setFavorites(favoritePropertyIds);
       setFavoriteRecordIds(recordIdsMap);
-    } catch (error) {
+    } catch {
       showErrorToast('Failed to load favorites');
     }
   };
@@ -101,11 +102,6 @@ const PropertyMaster = () => {
     try {
       const response = await fetchProperties();
       setProperties(response.data || []);
-      
-      // Debug: Log all unique property statuses
-      const uniqueStatuses = [...new Set(response.data?.map(p => p.propertyStatus) || [])];
-      
-      // Debug: Log properties with their propertyTypeId
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');
       else if (error.response?.status === 500) setErrorType('server');
@@ -332,7 +328,7 @@ const PropertyMaster = () => {
         
         const successMessage = response?.message || 'Property deleted successfully';
         showSuccessToast(successMessage);
-      } catch (error) {
+      } catch {
         showErrorToast('Failed to delete property');
       } finally {
         setIsApiCallInProgress(false);
@@ -531,25 +527,6 @@ const PropertyMaster = () => {
     return finalMatch;
   });
 
-  // Debug: Log filtering summary
-  useEffect(() => {
-    if (properties.length > 0) {
-      properties.forEach(property => {
-        let type = null;
-        let propertyTypeName = null;
-        
-        if (typeof property.propertyTypeId === 'string') {
-          type = propertyTypes.find(t => t._id === property.propertyTypeId);
-          propertyTypeName = type?.typeName;
-        } else if (property.propertyTypeId && typeof property.propertyTypeId === 'object') {
-          type = property.propertyTypeId;
-          propertyTypeName = property.propertyTypeId.typeName;
-        }
-        
-      });
-    }
-  }, [selectedType, selectedStatus, properties, filteredProperties, propertyTypes]);
-
   if (errorType === 'network') return <NoInternet onRetry={fetchAllProperties} />;
   if (errorType === 'server') return <ServerError onRetry={fetchAllProperties} />;
 
@@ -566,7 +543,7 @@ const PropertyMaster = () => {
         gap={{ base: 3, sm: 0 }}
       >
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
-          Property Master
+          {isViewOnly ? 'Properties' : 'Property Master'}
         </Heading>
         <Flex gap={2}>
           <Button
@@ -576,15 +553,17 @@ const PropertyMaster = () => {
             leftIcon={<FaHeart />}
             onClick={() => {
               sessionStorage.setItem('previousPath', location.pathname);
-              navigate(ROUTES.PROPERTY_FAVORITES);
+              navigate(isViewOnly ? ROUTES.DISPLAY_FAVORITES : ROUTES.PROPERTY_FAVORITES);
             }}
           >
             Favorites
           </Button>
-          <CommonAddButton onClick={() => {
-            setSelectedProperty(null);
-            setIsModalOpen(true);
-          }} />
+          {!isViewOnly && (
+            <CommonAddButton onClick={() => {
+              setSelectedProperty(null);
+              setIsModalOpen(true);
+            }} />
+          )}
         </Flex>
       </Flex>
 
@@ -1269,24 +1248,28 @@ const PropertyMaster = () => {
                     aria-label="Preview Property"
                     flex={1}
                   />
-                  <IconButton
-                    icon={<FaEdit />}
-                    size="xs"
-                    variant="ghost"
-                    colorScheme="brand"
-                    onClick={() => handleEditProperty(property)}
-                    aria-label="Edit Property"
-                    flex={1}
-                  />
-                  <IconButton
-                    icon={<FaTrash />}
-                    size="xs"
-                    variant="ghost"
-                    colorScheme="red"
-                    onClick={() => handleDeleteProperty(property)}
-                    aria-label="Delete Property"
-                    flex={1}
-                  />
+                  {!isViewOnly && (
+                    <>
+                      <IconButton
+                        icon={<FaEdit />}
+                        size="xs"
+                        variant="ghost"
+                        colorScheme="brand"
+                        onClick={() => handleEditProperty(property)}
+                        aria-label="Edit Property"
+                        flex={1}
+                      />
+                      <IconButton
+                        icon={<FaTrash />}
+                        size="xs"
+                        variant="ghost"
+                        colorScheme="red"
+                        onClick={() => handleDeleteProperty(property)}
+                        aria-label="Delete Property"
+                        flex={1}
+                      />
+                    </>
+                  )}
                 </Flex>
               </Box>
             </Box>
@@ -1295,17 +1278,19 @@ const PropertyMaster = () => {
       </Grid>
 
       {/* Property Form Popup */}
-      <PropertyFormPopup
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setSelectedProperty(null);
-        }}
-        onSubmit={selectedProperty ? handleUpdateProperty : handleAddProperty}
-        propertyTypes={propertyTypes}
-        initialData={selectedProperty}
-        isSubmitting={isSubmitting}
-      />
+      {!isViewOnly && (
+        <PropertyFormPopup
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setSelectedProperty(null);
+          }}
+          onSubmit={selectedProperty ? handleUpdateProperty : handleAddProperty}
+          propertyTypes={propertyTypes}
+          initialData={selectedProperty}
+          isSubmitting={isSubmitting}
+        />
+      )}
 
       {/* Property Preview Popup */}
       {selectedProperty && (
@@ -1315,18 +1300,21 @@ const PropertyMaster = () => {
             setIsPreviewOpen(false);
             setSelectedProperty(null);
           }}
-          property={selectedProperty} 
+          property={selectedProperty}
+          isViewOnly={isViewOnly}
         />
       )}
 
       {/* Delete Confirmation Modal */}
-      <DeleteConfirmationModal
-        isOpen={isDeleteOpen}
-        onClose={onDeleteClose}
-        onConfirm={confirmDelete}
-        title="Delete Property"
-        message={`Are you sure you want to delete the property "${propertyToDelete?.name}"?`}
-      />
+      {!isViewOnly && (
+        <DeleteConfirmationModal
+          isOpen={isDeleteOpen}
+          onClose={onDeleteClose}
+          onConfirm={confirmDelete}
+          title="Delete Property"
+          message={`Are you sure you want to delete the property "${propertyToDelete?.name}"?`}
+        />
+      )}
     </Box>
   );
 };

@@ -66,6 +66,7 @@ const Documents = () => {
   const [documentTypeFilter, setDocumentTypeFilter] = useState('');
   const [isApiCallInProgress, setIsApiCallInProgress] = useState(false);
   const [uploadedFile, setUploadedFile] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState([]);
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
@@ -186,16 +187,22 @@ const Documents = () => {
   };
 
   const handleDocumentTypeChange = (value) => {
-    setFormData({ ...formData, documentTypeId: value });
+    setFormData(prev => ({ ...prev, documentTypeId: value || '' }));
     if (errors.documentTypeId) {
       setErrors({ ...errors, documentTypeId: '' });
     }
   };
 
-  const handleFileUpload = (file) => {
-    setUploadedFile(file);
-    if (errors.file) {
-      setErrors({ ...errors, file: '' });
+  const handleFilesChange = (files) => {
+    setUploadedFiles(files);
+    // Set the first file as uploadedFile for backward compatibility
+    if (files.length > 0) {
+      setUploadedFile(files[0].file);
+      if (errors.file) {
+        setErrors({ ...errors, file: '' });
+      }
+    } else {
+      setUploadedFile(null);
     }
   };
 
@@ -204,7 +211,7 @@ const Documents = () => {
     if (!formData.documentTypeId) {
       newErrors.documentTypeId = 'Document type is required';
     }
-    if (!uploadedFile && !selectedDocument) {
+    if ((!uploadedFile && uploadedFiles.length === 0) && !selectedDocument) {
       newErrors.file = 'Document file is required';
     }
     setErrors(newErrors);
@@ -220,6 +227,7 @@ const Documents = () => {
     setOriginalFormData(null);
     setErrors({});
     setUploadedFile(null);
+    setUploadedFiles([]);
     onOpen();
   };
 
@@ -233,6 +241,7 @@ const Documents = () => {
     setOriginalFormData(data);
     setErrors({});
     setUploadedFile(null);
+    setUploadedFiles([]);
     onOpen();
   };
 
@@ -293,8 +302,11 @@ const Documents = () => {
       const userId = auth?.data?._id;
       formDataToSend.append('userId', userId);
       formDataToSend.append('documentTypeId', formData.documentTypeId);
-      if (uploadedFile) {
-        formDataToSend.append('document', uploadedFile);
+      
+      // Use uploadedFile if available, otherwise use first file from uploadedFiles
+      const fileToUpload = uploadedFile || (uploadedFiles.length > 0 ? uploadedFiles[0].file : null);
+      if (fileToUpload) {
+        formDataToSend.append('document', fileToUpload);
       }
 
       if (selectedDocument) {
@@ -308,6 +320,7 @@ const Documents = () => {
       setSelectedDocument(null);
       setFormData({});
       setUploadedFile(null);
+      setUploadedFiles([]);
       onClose();
     } catch (error) {
       console.error('Form submission error:', error);
@@ -321,7 +334,8 @@ const Documents = () => {
     return (
       formData.userId !== originalFormData.userId ||
       formData.documentTypeId !== originalFormData.documentTypeId ||
-      uploadedFile !== null
+      uploadedFile !== null ||
+      uploadedFiles.length > 0
     );
   };
 
@@ -658,6 +672,7 @@ const Documents = () => {
           setOriginalFormData(null);
           setErrors({});
           setUploadedFile(null);
+          setUploadedFiles([]);
         }}
         title={selectedDocument ? 'Edit Document' : 'Add New Document'}
         onSave={handleFormSubmit}
@@ -669,8 +684,9 @@ const Documents = () => {
         <VStack spacing={4}>
           <FormControl isInvalid={!!errors.documentTypeId}>
             <SearchableSelect
+              key={`doc-type-select-${formData.documentTypeId || 'empty'}-${documentTypeOptions.length}`}
               options={documentTypeOptions}
-              value={formData.documentTypeId || ''}
+              value={String(formData.documentTypeId || '')}
               onChange={handleDocumentTypeChange}
               placeholder="Select document type"
               searchPlaceholder="Search document types..."
@@ -682,16 +698,21 @@ const Documents = () => {
           <FormControl isInvalid={!!errors.file}>
             <FormLabel>Document File</FormLabel>
             <DocumentUpload
-              onFileSelect={handleFileUpload}
-              acceptedFileTypes={['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png']}
+              files={uploadedFiles}
+              onFilesChange={handleFilesChange}
+              maxFiles={1}
               maxFileSize={10 * 1024 * 1024} // 10MB
+              allowedTypes={['pdf']}
+              isDisabled={isSubmitting}
+              title="Add New Document"
+              description="Upload supporting documents for this booking"
             />
             {errors.file && (
               <Text color="red.500" fontSize="sm" mt={1}>
                 {errors.file}
               </Text>
             )}
-            {(uploadedFile || (selectedDocument && selectedDocument.fileName)) && (
+            {selectedDocument && selectedDocument.fileName && uploadedFiles.length === 0 && (
               <Box
                 mt={3}
                 p={3}
@@ -720,18 +741,14 @@ const Documents = () => {
                 </Box>
                 <Box flex={1} minW={0}>
                   <Text fontWeight="bold" fontSize="sm" color={fileNameTextColor} noOfLines={1}>
-                    {uploadedFile ? uploadedFile.name : selectedDocument.fileName}
+                    {selectedDocument.fileName}
                   </Text>
                   <Text fontSize="xs" color={fileMetaTextColor}>
-                    {uploadedFile
-                      ? `${(uploadedFile.size / 1024).toFixed(2)} KB`
-                      : selectedDocument.size
+                    {selectedDocument.size
                       ? `${(selectedDocument.size / 1024).toFixed(2)} KB`
                       : ''}
                     {' '}
-                    {uploadedFile
-                      ? uploadedFile.type || 'N/A'
-                      : selectedDocument.mimeType || 'N/A'}
+                    {selectedDocument.mimeType || 'N/A'}
                   </Text>
                 </Box>
               </Box>

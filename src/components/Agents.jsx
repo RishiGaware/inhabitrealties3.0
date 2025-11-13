@@ -68,7 +68,7 @@ const Agents = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-gray-800 mb-4" style={{ fontFamily: "'Playfair Display', serif" }}>
-            Meet Our Expert Agents
+            Meet Our Property Experts
           </h2>
           <p className="text-lg text-gray-600 max-w-2xl mx-auto" style={{ fontFamily: "'Inter', sans-serif" }}>
             Our dedicated team of professionals is here to help you find your perfect home.
