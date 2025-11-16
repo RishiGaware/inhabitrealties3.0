@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Flex,
@@ -12,7 +11,7 @@ import {
   Heading,
   VStack,
 } from '@chakra-ui/react';
-import { FiDownload, FiEye, FiEdit } from 'react-icons/fi';
+import { FiDownload, FiEye, FiInfo } from 'react-icons/fi';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
 import TableContainer from '../../components/common/Table/TableContainer';
@@ -24,7 +23,6 @@ import PurchaseBookingEditForm from '../../components/common/PurchaseBookingEdit
 import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
 
 const MyPurchaseBookings = () => {
-  const navigate = useNavigate();
   const toast = useToast({
     position: 'top-right',
     duration: 3000,
@@ -60,7 +58,7 @@ const MyPurchaseBookings = () => {
   };
 
   // Fetch user's purchase bookings
-  const fetchMyPurchaseBookings = async () => {
+  const fetchMyPurchaseBookings = useCallback(async () => {
     try {
       setIsLoading(true);
 
@@ -115,10 +113,12 @@ const MyPurchaseBookings = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     fetchMyPurchaseBookings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Filter options - dynamically generated like AllPurchaseBookings
@@ -142,20 +142,28 @@ const MyPurchaseBookings = () => {
         { value: '', label: 'All Statuses' }
       ];
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookings]);
 
   // Filter and search functionality
   useEffect(() => {
     let filtered = bookings;
 
-    if (searchTerm) {
-      filtered = filtered.filter(booking =>
-        (booking.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
-      );
+    if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(booking => {
+        const bookingId = String(booking.bookingId || '').toLowerCase();
+        const firstName = String(booking.customerId?.firstName || '').toLowerCase();
+        const lastName = String(booking.customerId?.lastName || '').toLowerCase();
+        const propertyName = String(booking.propertyId?.name || '').toLowerCase();
+        const bookingIdShort = String(booking._id || '').toLowerCase();
+        
+        return bookingId.includes(searchLower) ||
+               firstName.includes(searchLower) ||
+               lastName.includes(searchLower) ||
+               propertyName.includes(searchLower) ||
+               bookingIdShort.includes(searchLower);
+      });
     }
 
     if (statusFilter && statusFilter !== 'all') {
@@ -167,7 +175,8 @@ const MyPurchaseBookings = () => {
   }, [searchTerm, statusFilter, bookings]);
 
   // Handle search
-  const handleSearch = (value) => {
+  const handleSearch = (e) => {
+    const value = typeof e === 'string' ? e : (e?.target?.value || '');
     setSearchTerm(value);
   };
 
@@ -226,48 +235,84 @@ const MyPurchaseBookings = () => {
   // Handle view booking
   const handleView = (id) => {
     const booking = bookings.find(b => b._id === id);
-    if (!booking) return;
-    (async () => {
-      try {
-        // Always fetch full booking to ensure installmentSchedule and all details
-        const full = await purchaseBookingService.getPurchaseBookingById(id);
-        const fullData = full?.data || full;
-        // If schedule is missing, fetch from schedule endpoint
-        let installmentSchedule = fullData?.installmentSchedule;
-        if (!Array.isArray(installmentSchedule) || installmentSchedule.length === 0) {
-          try {
-            const scheduleRes = await purchaseBookingService.getInstallmentSchedule(id);
-            installmentSchedule = scheduleRes?.data || scheduleRes || [];
-          } catch {}
-        }
-        // Ensure property details populated
-        let propertyData = booking.propertyId;
-        if (!propertyData?.name && (booking.propertyId || fullData?.propertyId)) {
-          try {
-            const prop = await getPropertyById(booking.propertyId?._id || booking.propertyId || fullData.propertyId);
-            propertyData = prop?.data || prop || propertyData;
-          } catch {}
-        }
-        setSelectedBooking({ ...booking, ...fullData, installmentSchedule, propertyId: propertyData });
-        setIsViewerOpen(true);
-      } catch {
-        // Fallback: at least open with what we have
-        setSelectedBooking(booking);
-        setIsViewerOpen(true);
-      }
-    })();
-  };
-
-  // Handle edit booking
-  const handleEdit = (id) => {
-    const booking = bookings.find(b => b._id === id);
     if (booking) {
-      setEditingBooking(booking);
-      setIsEditFormOpen(true);
+      setSelectedBooking(booking);
+      setIsViewerOpen(true);
     }
   };
 
+  // Handle edit booking - fetch full booking details
+  const handleEdit = async (id) => {
+    try {
+      const booking = bookings.find(b => b._id === id);
+      if (!booking) {
+        console.error('Booking not found for ID:', id);
+        toast({
+          title: 'Error',
+          description: 'Booking not found',
+          status: 'error',
+        });
+        return;
+      }
+
+      // Backend expects bookingId (custom string), not _id
+      if (!booking.bookingId) {
+        // If bookingId is missing, use the booking from list directly
+        console.warn('Booking ID not found, using booking from list');
+        setEditingBooking(booking);
+        setIsEditFormOpen(true);
+        toast({
+          title: 'Warning',
+          description: 'Booking ID not available. Showing limited information.',
+          status: 'warning',
+        });
+        return;
+      }
+
+      // Fetch full booking details with populated fields using bookingId
+      const fullBookingResponse = await purchaseBookingService.getPurchaseBookingById(booking.bookingId);
+      
+      // Handle response format
+      const fullBooking = fullBookingResponse?.data || fullBookingResponse;
+      
+      if (fullBooking) {
+        setEditingBooking(fullBooking);
+        setIsEditFormOpen(true);
+      } else {
+        // Fallback to the booking from list if API fails
+        setEditingBooking(booking);
+        setIsEditFormOpen(true);
+        toast({
+          title: 'Warning',
+          description: 'Could not fetch full booking details. Showing limited information.',
+          status: 'warning',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching booking details:', error);
+      // Fallback to the booking from list
+      const booking = bookings.find(b => b._id === id);
+      if (booking) {
+        setEditingBooking(booking);
+        setIsEditFormOpen(true);
+        toast({
+          title: 'Warning',
+          description: 'Could not fetch full booking details. Showing limited information.',
+          status: 'warning',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: 'Failed to load booking details',
+          status: 'error',
+        });
+      }
+    }
+  };
+
+  // Handle edit form update
   const handleEditFormUpdate = () => {
+    // Refresh the bookings data after update
     fetchMyPurchaseBookings();
     setIsEditFormOpen(false);
     setEditingBooking(null);
@@ -368,16 +413,25 @@ const MyPurchaseBookings = () => {
     },
   ];
 
-  // Row actions - view and edit
+  // Row actions - view and info (read-only)
   const renderRowActions = (booking) => (
     <HStack spacing={2}>
-      <IconButton
+      {/* <IconButton
         key="view"
         aria-label="View booking"
         icon={<FiEye />}
         size="sm"
         onClick={() => handleView(booking._id)}
         colorScheme="blue"
+        variant="outline"
+      /> */}
+      <IconButton
+        key="info"
+        aria-label="View full information"
+        icon={<FiInfo />}
+        size="sm"
+        onClick={() => handleEdit(booking._id)}
+        colorScheme="purple"
         variant="outline"
       />
     </HStack>
@@ -459,6 +513,7 @@ const MyPurchaseBookings = () => {
         hideCustomerDetails
       />
 
+      {/* Purchase Booking Edit Form - Read-only for My Purchase Bookings */}
       <PurchaseBookingEditForm
         isOpen={isEditFormOpen}
         onClose={() => {
@@ -467,6 +522,7 @@ const MyPurchaseBookings = () => {
         }}
         bookingData={editingBooking}
         onUpdate={handleEditFormUpdate}
+        isReadOnly={true}
       />
     </Box>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -18,6 +18,7 @@ import CommonPagination from '../../components/common/pagination/CommonPaginatio
 import TableContainer from '../../components/common/Table/TableContainer';
 import SearchAndFilter from '../../components/common/SearchAndFilter';
 import Loader from '../../components/common/Loader';
+import { useAuth } from '../../context/AuthContext';
 
 import PurchaseBookingViewer from '../../components/common/PurchaseBookingViewer';
 import PurchaseBookingEditForm from '../../components/common/PurchaseBookingEditForm';
@@ -27,6 +28,7 @@ import { purchaseBookingService } from '../../services/paymentManagement/purchas
 const MyAssignedBookings = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { getUserId } = useAuth();
 
   // State management
   const [bookings, setBookings] = useState([]);
@@ -64,20 +66,28 @@ const MyAssignedBookings = () => {
         { value: '', label: 'All Statuses' }
       ];
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookings]);
 
   // Fetch data from assigned bookings API
-  useEffect(() => {
-    fetchAssignedBookings();
-  }, []);
-
-  const fetchAssignedBookings = async () => {
+  const fetchAssignedBookings = useCallback(async () => {
     try {
       setIsLoading(true);
       
-      // Use the assigned bookings API endpoint
-      // Note: You'll need to get the current user's ID from context or auth
-      const currentUserId = '68347215de3d56d44b9cbcad'; // This should come from user context
+      // Get the current user's ID from auth context
+      const currentUserId = getUserId();
+      if (!currentUserId) {
+        toast({
+          title: "Error",
+          description: "User ID not found. Please login again.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await purchaseBookingService.getPurchaseBookingsBySalesperson(currentUserId);
       
       // Handle the actual API response format
@@ -107,20 +117,31 @@ const MyAssignedBookings = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [getUserId, toast]);
+
+  useEffect(() => {
+    fetchAssignedBookings();
+  }, [fetchAssignedBookings]);
 
   // Filter and search functionality
   useEffect(() => {
     let filtered = bookings;
 
-    if (searchTerm) {
-      filtered = filtered.filter(booking =>
-        (booking.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
-      );
+    if (searchTerm && typeof searchTerm === 'string' && searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(booking => {
+        const bookingId = String(booking.bookingId || '').toLowerCase();
+        const firstName = String(booking.customerId?.firstName || '').toLowerCase();
+        const lastName = String(booking.customerId?.lastName || '').toLowerCase();
+        const propertyName = String(booking.propertyId?.name || '').toLowerCase();
+        const bookingIdShort = String(booking._id || '').toLowerCase();
+        
+        return bookingId.includes(searchLower) ||
+               firstName.includes(searchLower) ||
+               lastName.includes(searchLower) ||
+               propertyName.includes(searchLower) ||
+               bookingIdShort.includes(searchLower);
+      });
     }
 
     if (statusFilter && statusFilter !== 'all') {
@@ -137,11 +158,19 @@ const MyAssignedBookings = () => {
       key: 'bookingId',
       label: 'Booking ID',
       render: (value, row) => (
-        <Text fontWeight="semibold" color="blue.600" noOfLines={1} maxW="150px">
-          {value || row._id?.slice(-8) || 'N/A'}
+        <Text 
+          fontWeight="semibold" 
+          color="blue.600" 
+          noOfLines={1} 
+          maxW="200px"
+          fontFamily="mono"
+          fontSize="sm"
+          title={value || row._id || 'N/A'}
+        >
+          {value || row._id || 'N/A'}
         </Text>
       ),
-      width: "150px"
+      width: "200px"
     },
     {
       key: 'propertyName',
@@ -269,7 +298,8 @@ const MyAssignedBookings = () => {
   );
 
   // Handle search
-  const handleSearch = (value) => {
+  const handleSearch = (e) => {
+    const value = typeof e === 'string' ? e : (e?.target?.value || '');
     setSearchTerm(value);
   };
 

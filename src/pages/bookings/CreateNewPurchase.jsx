@@ -42,28 +42,37 @@ import {
   Divider,
   Grid,
   GridItem,
+  Radio,
+  RadioGroup,
+  Stack,
+  Checkbox,
+  CheckboxGroup,
 } from "@chakra-ui/react";
 import {
-  FiSave,
-  FiX,
-  FiHome,
-  FiUser,
-  FiDollarSign,
-  FiSettings,
-  FiCalendar,
-  FiCheckCircle,
-  FiMapPin,
-  FiInfo,
-  FiRefreshCw,
-} from "react-icons/fi";
+  Save,
+  X,
+  Home,
+  User,
+  DollarSign,
+  Settings,
+  Calendar,
+  CheckCircle,
+  MapPin,
+  Info,
+  RefreshCw,
+  Eye,
+} from "lucide-react";
 import { purchaseBookingService } from "../../services/paymentManagement/purchaseBookingService";
 import { fetchProperties } from "../../services/propertyService";
 import { fetchUsers } from "../../services/usermanagement/userService";
 import { fetchRoles } from "../../services/rolemanagement/roleService";
+import { fetchPropertyTypes } from "../../services/propertytypes/propertyTypeService";
 import toast from "react-hot-toast";
 import Loader from "../../components/common/Loader";
 import SearchableSelect from "../../components/common/SearchableSelect";
 import DocumentUpload from "../../components/common/DocumentUpload";
+import PropertyPreview from "../property/propertyMaster/PropertyPreview";
+import { FiChrome } from "react-icons/fi";
 
 // Helper function to validate MongoDB ObjectId
 const isValidObjectId = (id) => {
@@ -98,15 +107,57 @@ const CreateNewPurchase = () => {
     interestRate: "",
     emiAmount: "",
     bookingStatus: "CONFIRMED",
+    flatNo: "",
+    floorNo: "",
+    balconies: "",
+    otherDetails: "",
+    // Property Booking Form Fields
+    developer: "",
+    channelPartnerName: "Inhabit Pro Realities",
+    projectName: "",
+    location: "",
+    tcfNumber: "",
+    // Buyer Details
+    buyerFullName: "",
+    buyerAddress: "",
+    buyerCityPin: "",
+    buyerMobileNo: "",
+    buyerEmailId: "",
+    buyerAadharNo: "",
+    buyerPanNo: "",
+    // Property Details (additional)
+    towerWing: "",
+    propertyType: "",
+    propertyTypeOther: "",
+    carpetArea: "",
+    facing: "",
+    parkingNo: "",
+    specialFeatures: "",
+    // Financial Details (additional)
+    bookingAmount: "",
+    paymentMode: "",
+    financeMode: "",
+    totalEmi: "",
+    transactionChequeNo: "",
+    bookingDate: "",
   });
+
+  // File uploads for buyer documents
+  const [aadharFile, setAadharFile] = useState(null);
+  const [panFile, setPanFile] = useState(null);
+  const [transactionFile, setTransactionFile] = useState(null);
 
   // Data for dropdowns
   const [properties, setProperties] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [salespeople, setSalespeople] = useState([]); // Add salespeople data
+  const [propertyTypes, setPropertyTypes] = useState([]);
 
   // Selected property details
   const [selectedProperty, setSelectedProperty] = useState(null);
+  
+  // Property preview modal
+  const { isOpen: isPreviewOpen, onOpen: onPreviewOpen, onClose: onPreviewClose } = useDisclosure();
 
   // Document upload state
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -134,10 +185,14 @@ const CreateNewPurchase = () => {
       // Step 1: Fetch roles first to get role IDs
       const rolesData = await fetchRoles();
 
-      // Step 2: Fetch properties
+      // Step 2: Fetch property types
+      const propertyTypesData = await fetchPropertyTypes();
+      setPropertyTypes(propertyTypesData.data || []);
+
+      // Step 3: Fetch properties
       const propertiesData = await fetchProperties();
 
-      // Step 3: Fetch all users and filter by role
+      // Step 4: Fetch all users and filter by role
       const allUsersData = await fetchUsers();
 
       // Filter users by role on the frontend
@@ -220,6 +275,10 @@ const CreateNewPurchase = () => {
         ...prev,
         propertyId,
         totalPropertyValue: property.price,
+        flatNo: "",
+        floorNo: "",
+        balconies: "",
+        otherDetails: "",
       }));
       
       // Hide errors when property is selected
@@ -232,8 +291,25 @@ const CreateNewPurchase = () => {
         ...prev,
         propertyId: "",
         totalPropertyValue: "",
+        flatNo: "",
+        floorNo: "",
+        balconies: "",
+        otherDetails: "",
       }));
     }
+  };
+
+  // Check if property is building/apartment type
+  const isBuildingType = () => {
+    if (!selectedProperty) return false;
+    const propertyType = selectedProperty.propertyTypeId;
+    if (!propertyType) return false;
+    
+    const typeName = typeof propertyType === 'object' ? propertyType.typeName : 
+                     propertyTypes.find(pt => pt._id === propertyType)?.typeName || '';
+    
+    const buildingTypes = ['APARTMENT', 'BUILDING', 'FLAT', 'CONDOMINIUM', 'TOWER'];
+    return buildingTypes.some(type => typeName?.toUpperCase().includes(type));
   };
 
   const handleCustomerChange = (customerId) => {
@@ -295,18 +371,6 @@ const CreateNewPurchase = () => {
     return parts.join(', ');
   };
 
-  const formatFeatures = (property) => {
-    if (!property.features) return 'Features not available';
-    
-    const features = property.features;
-    const parts = [];
-    
-    if (features.bedRooms > 0) parts.push(`${features.bedRooms} Bedrooms`);
-    if (features.bathRooms > 0) parts.push(`${features.bathRooms} Bathrooms`);
-    if (features.areaInSquarFoot > 0) parts.push(`${features.areaInSquarFoot} sq ft`);
-    
-    return parts.join(' • ');
-  };
 
   const formatAmenities = (property) => {
     if (!property.features?.amenities || property.features.amenities.length === 0) {
@@ -425,6 +489,50 @@ const CreateNewPurchase = () => {
         formDataToSend.append('isFinanced', 'false');
       }
 
+      // Add new Property Booking Form fields
+      formDataToSend.append('developer', formData.developer || '');
+      formDataToSend.append('channelPartnerName', formData.channelPartnerName || 'inhabit pro realities');
+      formDataToSend.append('projectName', formData.projectName || '');
+      formDataToSend.append('location', formData.location || '');
+      formDataToSend.append('tcfNumber', formData.tcfNumber || '');
+
+      // Add Buyer Details
+      formDataToSend.append('buyerFullName', formData.buyerFullName || '');
+      formDataToSend.append('buyerAddress', formData.buyerAddress || '');
+      formDataToSend.append('buyerCityPin', formData.buyerCityPin || '');
+      formDataToSend.append('buyerMobileNo', formData.buyerMobileNo || '');
+      formDataToSend.append('buyerEmailId', formData.buyerEmailId || '');
+      formDataToSend.append('buyerAadharNo', formData.buyerAadharNo || '');
+      formDataToSend.append('buyerPanNo', formData.buyerPanNo || '');
+
+      // Add Property Details (additional)
+      formDataToSend.append('towerWing', formData.towerWing || '');
+      formDataToSend.append('propertyType', formData.propertyType || '');
+      formDataToSend.append('propertyTypeOther', formData.propertyTypeOther || '');
+      formDataToSend.append('carpetArea', formData.carpetArea || '');
+      formDataToSend.append('facing', formData.facing || '');
+      formDataToSend.append('parkingNo', formData.parkingNo || '');
+      formDataToSend.append('specialFeatures', formData.specialFeatures || '');
+
+      // Add Financial Details (additional)
+      formDataToSend.append('bookingAmount', formData.bookingAmount || '');
+      formDataToSend.append('paymentMode', formData.paymentMode || '');
+      formDataToSend.append('financeMode', formData.financeMode || '');
+      formDataToSend.append('totalEmi', formData.totalEmi || '');
+      formDataToSend.append('transactionChequeNo', formData.transactionChequeNo || '');
+      formDataToSend.append('bookingDate', formData.bookingDate || '');
+
+      // Add buyer document files
+      if (aadharFile) {
+        formDataToSend.append('aadharCard', aadharFile);
+      }
+      if (panFile) {
+        formDataToSend.append('panCard', panFile);
+      }
+      if (transactionFile) {
+        formDataToSend.append('transactionDocument', transactionFile);
+      }
+
       // Add documents if any are selected
       if (selectedFiles.length > 0) {
         selectedFiles.forEach((fileObj, index) => {
@@ -466,17 +574,42 @@ const CreateNewPurchase = () => {
       interestRate: "",
       emiAmount: "",
       bookingStatus: "CONFIRMED",
+      flatNo: "",
+      floorNo: "",
+      balconies: "",
+      otherDetails: "",
+      developer: "",
+      channelPartnerName: "inhabit pro realities",
+      projectName: "",
+      location: "",
+      tcfNumber: "",
+      buyerFullName: "",
+      buyerAddress: "",
+      buyerCityPin: "",
+      buyerMobileNo: "",
+      buyerEmailId: "",
+      buyerAadharNo: "",
+      buyerPanNo: "",
+      towerWing: "",
+      propertyType: "",
+      propertyTypeOther: "",
+      carpetArea: "",
+      facing: "",
+      parkingNo: "",
+      specialFeatures: "",
+      bookingAmount: "",
+      paymentMode: "",
+      financeMode: "",
+      totalEmi: "",
+      transactionChequeNo: "",
+      bookingDate: "",
     });
     setSelectedProperty(null);
     setSelectedFiles([]); // Reset selected files
     setShowErrors(false); // Reset error display state
-  };
-
-  const handleSuccessModalClose = () => {
-    onClose();
-    setCreatedBooking(null);
-    resetForm();
-    navigate("/purchase-bookings/all");
+    setAadharFile(null);
+    setPanFile(null);
+    setTransactionFile(null);
   };
 
   const handleModalClose = () => {
@@ -506,29 +639,258 @@ const CreateNewPurchase = () => {
   // Always show the form - let dropdowns handle empty states
 
   return (
-    <Box p={{ base: 3, md: 6 }} bg="gray.50" minH="100vh">
+    <Box p={{ base: 2, sm: 3, md: 6 }} bg="gray.50" minH="100vh">
       {/* Header */}
-      <Flex justify="space-between" align="center" mb={{ base: 4, md: 6 }} direction={{ base: 'column', md: 'row' }} gap={{ base: 3, md: 0 }}>
-        <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
+      <Flex justify="space-between" align="center" mb={{ base: 3, sm: 4, md: 6 }} direction={{ base: 'column', md: 'row' }} gap={{ base: 2, sm: 3, md: 0 }}>
+        <Heading as="h1" fontSize={{ base: 'md', sm: 'lg', md: 'xl', lg: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
           Create New Purchase Booking
         </Heading>
       </Flex>
 
-      <form id="purchase-booking-form" onSubmit={handleSubmit} noValidate>
-        <VStack spacing={{ base: 4, md: 6 }} align="stretch">
+      <form id="purchase-booking-form" onSubmit={handleSubmit} noValidate autoComplete="off">
+        <VStack spacing={{ base: 3, sm: 4, md: 6 }} align="stretch">
+          {/* Property Booking Form Section */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={{ base: 2, md: 3 }} px={{ base: 3, md: 6 }} pt={{ base: 3, md: 6 }}>
+              <HStack spacing={2}>
+                <Box as={Home} color="blue.500" boxSize={{ base: "16px", md: "18px" }} />
+                <Heading size={{ base: "sm", sm: "md" }} color="blue.700" fontSize={{ base: 'sm', sm: 'md', md: 'lg' }}>
+                  Property Booking Form
+                </Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0} px={{ base: 3, md: 6 }} pb={{ base: 4, md: 6 }}>
+              <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, sm: 3, md: 4 }}>
+                <FormControl>
+                  <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Developer</FormLabel>
+                  <Input
+                    name="developer"
+                    placeholder="Enter developer name"
+                    value={formData.developer}
+                    onChange={(e) => handleInputChange("developer", e.target.value)}
+                    isDisabled={isSubmitting}
+                    size={{ base: "sm", md: "md" }}
+                    autoComplete="off"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Channel Partner Name</FormLabel>
+                  <Input
+                    name="channelPartnerName"
+                    placeholder="Enter channel partner name"
+                    value={formData.channelPartnerName}
+                    onChange={(e) => handleInputChange("channelPartnerName", e.target.value)}
+                    isDisabled={isSubmitting}
+                    size={{ base: "sm", md: "md" }}
+                    autoComplete="off"
+                    readOnly
+                  />
+                  <FormHelperText fontSize={{ base: "xs", md: "sm" }}>Default: inhabit pro realities</FormHelperText>
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Project Name</FormLabel>
+                  <Input
+                    name="projectName"
+                    placeholder="Enter project name"
+                    value={formData.projectName}
+                    onChange={(e) => handleInputChange("projectName", e.target.value)}
+                    isDisabled={isSubmitting}
+                    size={{ base: "sm", md: "md" }}
+                    autoComplete="off"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Location</FormLabel>
+                  <Input
+                    name="location"
+                    placeholder="Enter location"
+                    value={formData.location}
+                    onChange={(e) => handleInputChange("location", e.target.value)}
+                    isDisabled={isSubmitting}
+                    size={{ base: "sm", md: "md" }}
+                    autoComplete="off"
+                  />
+                </FormControl>
+
+                <FormControl>
+                  <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>TCF Number</FormLabel>
+                  <Input
+                    name="tcfNumber"
+                    placeholder="Enter TCF number"
+                    value={formData.tcfNumber}
+                    onChange={(e) => handleInputChange("tcfNumber", e.target.value)}
+                    isDisabled={isSubmitting}
+                    size={{ base: "sm", md: "md" }}
+                    autoComplete="off"
+                  />
+                </FormControl>
+              </SimpleGrid>
+            </CardBody>
+          </Card>
+
+          {/* Buyer Details Section */}
+          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
+            <CardHeader pb={{ base: 2, md: 3 }} px={{ base: 3, md: 6 }} pt={{ base: 3, md: 6 }}>
+              <HStack spacing={2}>
+                <Box as={User} color="green.500" boxSize={{ base: "16px", md: "18px" }} />
+                <Heading size={{ base: "sm", sm: "md" }} color="green.700" fontSize={{ base: 'sm', sm: 'md', md: 'lg' }}>
+                  🧾 Buyer Details
+                </Heading>
+              </HStack>
+            </CardHeader>
+            <CardBody pt={0} px={{ base: 3, md: 6 }} pb={{ base: 4, md: 6 }}>
+              <VStack spacing={{ base: 3, md: 4 }}>
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Full Name</FormLabel>
+                    <Input
+                      name="buyerFullName"
+                      placeholder="Enter full name"
+                      value={formData.buyerFullName}
+                      onChange={(e) => handleInputChange("buyerFullName", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Address</FormLabel>
+                    <Input
+                      name="buyerAddress"
+                      placeholder="Enter address"
+                      value={formData.buyerAddress}
+                      onChange={(e) => handleInputChange("buyerAddress", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>City / PIN</FormLabel>
+                    <Input
+                      name="buyerCityPin"
+                      placeholder="Enter city and PIN code"
+                      value={formData.buyerCityPin}
+                      onChange={(e) => handleInputChange("buyerCityPin", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Mobile No.</FormLabel>
+                    <Input
+                      name="buyerMobileNo"
+                      type="tel"
+                      placeholder="Enter mobile number"
+                      value={formData.buyerMobileNo}
+                      onChange={(e) => handleInputChange("buyerMobileNo", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Email ID</FormLabel>
+                    <Input
+                      name="buyerEmailId"
+                      type="email"
+                      placeholder="Enter email address"
+                      value={formData.buyerEmailId}
+                      onChange={(e) => handleInputChange("buyerEmailId", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Aadhar No.</FormLabel>
+                    <Input
+                      name="buyerAadharNo"
+                      placeholder="Enter Aadhar number"
+                      value={formData.buyerAadharNo}
+                      onChange={(e) => handleInputChange("buyerAadharNo", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>PAN No.</FormLabel>
+                    <Input
+                      name="buyerPanNo"
+                      placeholder="Enter PAN number"
+                      value={formData.buyerPanNo}
+                      onChange={(e) => handleInputChange("buyerPanNo", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
+                </SimpleGrid>
+
+                {/* Document Uploads for Buyer */}
+                <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Aadhar Card (PDF)</FormLabel>
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setAadharFile(e.target.files[0])}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                    />
+                    <FormHelperText fontSize={{ base: "xs", md: "sm" }}>PDF files only</FormHelperText>
+                    {aadharFile && (
+                      <Text fontSize={{ base: "xs", md: "sm" }} color="green.600" mt={1}>
+                        Selected: {aadharFile.name}
+                      </Text>
+                    )}
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>PAN Card (PDF)</FormLabel>
+                    <Input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(e) => setPanFile(e.target.files[0])}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                    />
+                    <FormHelperText fontSize={{ base: "xs", md: "sm" }}>PDF files only</FormHelperText>
+                    {panFile && (
+                      <Text fontSize={{ base: "xs", md: "sm" }} color="green.600" mt={1}>
+                        Selected: {panFile.name}
+                      </Text>
+                    )}
+                  </FormControl>
+                </SimpleGrid>
+              </VStack>
+            </CardBody>
+          </Card>
+
           {/* Property Selection */}
           <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
-            <CardHeader pb={3}>
-              <HStack>
-                <FiHome color="blue.500" size={20} />
-                <Heading size="md" color="blue.700">
+            <CardHeader pb={{ base: 2, md: 3 }} px={{ base: 3, md: 6 }} pt={{ base: 3, md: 6 }}>
+              <HStack spacing={2}>
+                <Box as={Home} color="blue.500" boxSize={{ base: "16px", md: "18px" }} />
+                <Heading size={{ base: "sm", sm: "md" }} color="blue.700" fontSize={{ base: 'sm', sm: 'md', md: 'lg' }}>
                   Property Selection
                 </Heading>
               </HStack>
             </CardHeader>
-            <CardBody pt={0}>
+            <CardBody pt={0} px={{ base: 3, md: 6 }} pb={{ base: 4, md: 6 }}>
               <FormControl isRequired>
-                <FormLabel fontWeight="semibold">Select Property</FormLabel>
+                <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Select Property</FormLabel>
                 <SearchableSelect
                   name="propertyId"
                   placeholder="Search and choose a property"
@@ -560,16 +922,29 @@ const CreateNewPurchase = () => {
               {selectedProperty && (
                 <Box mt={4} p={{ base: 3, md: 4 }} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200">
                   <VStack spacing={3} align="stretch">
+                    <HStack justify="space-between" w="full">
                     <HStack>
-                      <FiInfo color="blue.600" />
+                      <Box as={Info} color="blue.600" boxSize="14px" />
                       <Text fontWeight="semibold" color="blue.800" fontSize={{ base: 'sm', md: 'md' }}>Selected Property Details</Text>
+                      </HStack>
+                      <Button
+                        leftIcon={<Box as={Eye} boxSize="14px" />}
+                        size={{ base: "xs", sm: "sm" }}
+                        colorScheme="blue"
+                        variant="outline"
+                        onClick={onPreviewOpen}
+                        _hover={{ bg: "blue.100" }}
+                        fontSize={{ base: "xs", sm: "sm" }}
+                      >
+                        View Full Details
+                      </Button>
                     </HStack>
                     
                     <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={{ base: 3, md: 4 }}>
                       <GridItem>
                         <VStack spacing={2} align="stretch">
                           <HStack>
-                            <FiHome color="blue.600" size={16} />
+                            <Box as={Home} color="blue.600" boxSize="12px" />
                             <Text fontWeight="medium">Name</Text>
                           </HStack>
                           <Text fontSize="sm" color="gray.700">{selectedProperty.name}</Text>
@@ -579,7 +954,19 @@ const CreateNewPurchase = () => {
                       <GridItem>
                         <VStack spacing={2} align="stretch">
                           <HStack>
-                            <FiDollarSign color="blue.600" size={16} />
+                            <Box as={Info} color="blue.600" boxSize="12px" />
+                            <Text fontWeight="medium">Type</Text>
+                          </HStack>
+                          <Text fontSize="sm" color="gray.700">
+                            {selectedProperty.propertyTypeId?.typeName || 'N/A'}
+                          </Text>
+                        </VStack>
+                      </GridItem>
+
+                      <GridItem>
+                        <VStack spacing={2} align="stretch">
+                          <HStack>
+                            <Box as={DollarSign} color="blue.600" boxSize="12px" />
                             <Text fontWeight="medium">Price</Text>
                           </HStack>
                           <Text fontSize="sm" color="gray.700" fontWeight="semibold">
@@ -591,27 +978,71 @@ const CreateNewPurchase = () => {
                       <GridItem>
                         <VStack spacing={2} align="stretch">
                           <HStack>
-                            <FiMapPin color="blue.600" size={16} />
+                            <Box as={MapPin} color="blue.600" boxSize="12px" />
                             <Text fontWeight="medium">Address</Text>
                           </HStack>
                           <Text fontSize="sm" color="gray.700">{formatAddress(selectedProperty)}</Text>
                         </VStack>
                       </GridItem>
 
+                      {selectedProperty.features && (
+                        <>
                       <GridItem>
                         <VStack spacing={2} align="stretch">
                           <HStack>
-                            <FiInfo color="blue.600" size={16} />
-                            <Text fontWeight="medium">Features</Text>
+                                <Box as={Home} color="blue.600" boxSize="12px" />
+                                <Text fontWeight="medium">Bedrooms</Text>
                           </HStack>
-                          <Text fontSize="sm" color="gray.700">{formatFeatures(selectedProperty)}</Text>
+                              <Text fontSize="sm" color="gray.700">
+                                {selectedProperty.features.bedRooms || 0}
+                              </Text>
                         </VStack>
                       </GridItem>
+
+                          <GridItem>
+                            <VStack spacing={2} align="stretch">
+                              <HStack>
+                                <Box as={Home} color="blue.600" boxSize="12px" />
+                                <Text fontWeight="medium">Bathrooms</Text>
+                              </HStack>
+                              <Text fontSize="sm" color="gray.700">
+                                {selectedProperty.features.bathRooms || 0}
+                              </Text>
+                            </VStack>
+                          </GridItem>
+
+                          <GridItem>
+                            <VStack spacing={2} align="stretch">
+                              <HStack>
+                                <Box as={Home} color="blue.600" boxSize="12px" />
+                                <Text fontWeight="medium">Area</Text>
+                              </HStack>
+                              <Text fontSize="sm" color="gray.700">
+                                {selectedProperty.features.areaInSquarFoot || 0} sq ft
+                              </Text>
+                            </VStack>
+                          </GridItem>
+
+                          {selectedProperty.features.bhk && (
+                            <GridItem>
+                              <VStack spacing={2} align="stretch">
+                                <HStack>
+                                  <Box as={Home} color="blue.600" boxSize="12px" />
+                                  <Text fontWeight="medium">BHK</Text>
+                                </HStack>
+                                <Text fontSize="sm" color="gray.700">
+                                  {selectedProperty.features.bhk} BHK
+                                </Text>
+                              </VStack>
+                            </GridItem>
+                          )}
+                        </>
+                      )}
 
                       <GridItem colSpan={{ base: 1, md: 2 }}>
                         <VStack spacing={2} align="stretch">
                           <HStack>
-                            <FiSettings color="blue.600" size={16} />
+                            <Box as={Settings} color="blue.600" boxSize="12px" />
                             <Text fontWeight="medium">Amenities</Text>
                           </HStack>
                           <Text fontSize="sm" color="gray.700">{formatAmenities(selectedProperty)}</Text>
@@ -622,11 +1053,232 @@ const CreateNewPurchase = () => {
                         <GridItem colSpan={{ base: 1, md: 2 }}>
                           <VStack spacing={2} align="stretch">
                             <Text fontWeight="medium">Description</Text>
-                            <Text fontSize="sm" color="gray.700">{selectedProperty.description}</Text>
+                            <Text fontSize="sm" color="gray.700" noOfLines={3}>{selectedProperty.description}</Text>
                           </VStack>
                         </GridItem>
                       )}
                     </Grid>
+                  </VStack>
+                </Box>
+              )}
+
+              {/* Building/Apartment Specific Fields */}
+              {selectedProperty && isBuildingType() && (
+                <Box mt={4} p={{ base: 3, md: 4 }} bg="purple.50" borderRadius="md" border="1px" borderColor="purple.200">
+                  <VStack spacing={4} align="stretch">
+                    <HStack>
+                      <Box as={Info} color="purple.600" boxSize={{ base: "14px", md: "16px" }} />
+                      <Text fontWeight="semibold" color="purple.800" fontSize={{ base: 'sm', md: 'md' }}>
+                        Building/Apartment Details
+                      </Text>
+                    </HStack>
+                    
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }}>
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Flat/Apartment Number</FormLabel>
+                        <Input
+                          name="flatNo"
+                          placeholder="e.g., A-101, 2B, etc."
+                          value={formData.flatNo}
+                          onChange={(e) => handleInputChange("flatNo", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                          autoComplete="off"
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Floor Number</FormLabel>
+                        <NumberInput
+                          name="floorNo"
+                          value={formData.floorNo}
+                          onChange={(value) => handleInputChange("floorNo", value)}
+                          min={0}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                        >
+                          <NumberInputField placeholder="Enter floor number" fontSize={{ base: "sm", md: "md" }} />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Number of Balconies</FormLabel>
+                        <NumberInput
+                          name="balconies"
+                          value={formData.balconies}
+                          onChange={(value) => handleInputChange("balconies", value)}
+                          min={0}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                        >
+                          <NumberInputField placeholder="Enter number of balconies" fontSize={{ base: "sm", md: "md" }} />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      </FormControl>
+                    </SimpleGrid>
+
+                    <FormControl>
+                      <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Other Details</FormLabel>
+                      <Input
+                        name="otherDetails"
+                        placeholder="Any additional details about the flat/apartment"
+                        value={formData.otherDetails}
+                        onChange={(e) => handleInputChange("otherDetails", e.target.value)}
+                        isDisabled={isSubmitting}
+                        size={{ base: "sm", md: "md" }}
+                        autoComplete="off"
+                      />
+                      <FormHelperText fontSize={{ base: "xs", md: "sm" }}>Optional: Add any other relevant details about this specific unit</FormHelperText>
+                    </FormControl>
+                  </VStack>
+                </Box>
+              )}
+
+              {/* Additional Property Details Section */}
+              {selectedProperty && (
+                <Box mt={4} p={{ base: 3, md: 4 }} bg="orange.50" borderRadius="md" border="1px" borderColor="orange.200">
+                  <VStack spacing={4} align="stretch">
+                    <HStack>
+                      <FiChrome color="orange.600" />
+                      <Text fontWeight="semibold" color="orange.800" fontSize={{ base: 'sm', md: 'md' }}>
+                        🏢 Property Details
+                      </Text>
+                    </HStack>
+                    
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }}>
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Flat / Plot No.</FormLabel>
+                        <Input
+                          name="flatNo"
+                          placeholder="Enter flat or plot number"
+                          value={formData.flatNo}
+                          onChange={(e) => handleInputChange("flatNo", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                          autoComplete="off"
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Tower / Wing</FormLabel>
+                        <Input
+                          name="towerWing"
+                          placeholder="Enter tower or wing"
+                          value={formData.towerWing}
+                          onChange={(e) => handleInputChange("towerWing", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                          autoComplete="off"
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Floor</FormLabel>
+                        <NumberInput
+                          name="floorNo"
+                          value={formData.floorNo}
+                          onChange={(value) => handleInputChange("floorNo", value)}
+                          min={0}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                        >
+                          <NumberInputField placeholder="Enter floor number" fontSize={{ base: "sm", md: "md" }} />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Type</FormLabel>
+                        <RadioGroup
+                          value={formData.propertyType}
+                          onChange={(value) => handleInputChange("propertyType", value)}
+                        >
+                          <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 2, sm: 4 }} flexWrap="wrap">
+                            <Radio value="1 BHK" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>1 BHK</Radio>
+                            <Radio value="2 BHK" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>2 BHK</Radio>
+                            <Radio value="3 BHK" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>3 BHK</Radio>
+                            <Radio value="Plot" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>Plot</Radio>
+                            <Radio value="Other" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>Other</Radio>
+                          </Stack>
+                        </RadioGroup>
+                        {formData.propertyType === "Other" && (
+                          <Input
+                            mt={2}
+                            name="propertyTypeOther"
+                            placeholder="Specify property type"
+                            value={formData.propertyTypeOther}
+                            onChange={(e) => handleInputChange("propertyTypeOther", e.target.value)}
+                            isDisabled={isSubmitting}
+                            size={{ base: "sm", md: "md" }}
+                            autoComplete="off"
+                          />
+                        )}
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Carpet Area (sq.ft / sq.yd)</FormLabel>
+                        <Input
+                          name="carpetArea"
+                          placeholder="Enter carpet area"
+                          value={formData.carpetArea}
+                          onChange={(e) => handleInputChange("carpetArea", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                          autoComplete="off"
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Facing</FormLabel>
+                        <RadioGroup
+                          value={formData.facing}
+                          onChange={(value) => handleInputChange("facing", value)}
+                        >
+                          <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 2, sm: 4 }} flexWrap="wrap">
+                            <Radio value="East" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>East</Radio>
+                            <Radio value="West" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>West</Radio>
+                            <Radio value="North" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>North</Radio>
+                            <Radio value="South" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>South</Radio>
+                          </Stack>
+                        </RadioGroup>
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Parking No.</FormLabel>
+                        <Input
+                          name="parkingNo"
+                          placeholder="Enter parking number"
+                          value={formData.parkingNo}
+                          onChange={(e) => handleInputChange("parkingNo", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                          autoComplete="off"
+                        />
+                      </FormControl>
+                    </SimpleGrid>
+
+                    <FormControl>
+                      <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Special Flat / Corner / Garden View / Amenities</FormLabel>
+                      <Input
+                        name="specialFeatures"
+                        placeholder="Enter special features, corner flat, garden view, or amenities"
+                        value={formData.specialFeatures}
+                        onChange={(e) => handleInputChange("specialFeatures", e.target.value)}
+                        isDisabled={isSubmitting}
+                        size={{ base: "sm", md: "md" }}
+                        autoComplete="off"
+                      />
+                    </FormControl>
                   </VStack>
                 </Box>
               )}
@@ -635,17 +1287,17 @@ const CreateNewPurchase = () => {
 
           {/* Customer Selection */}
           <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
-            <CardHeader pb={3}>
-              <HStack>
-                <FiUser color="green.500" size={20} />
-                <Heading size="md" color="green.700">
+            <CardHeader pb={{ base: 2, md: 3 }} px={{ base: 3, md: 6 }} pt={{ base: 3, md: 6 }}>
+              <HStack spacing={2}>
+                <Box as={User} color="green.500" boxSize={{ base: "16px", md: "18px" }} />
+                <Heading size={{ base: "sm", sm: "md" }} color="green.700" fontSize={{ base: 'sm', sm: 'md', md: 'lg' }}>
                   Customer Selection
                 </Heading>
               </HStack>
             </CardHeader>
-            <CardBody pt={0}>
+            <CardBody pt={0} px={{ base: 3, md: 6 }} pb={{ base: 4, md: 6 }}>
               <FormControl isRequired>
-                <FormLabel fontWeight="semibold">Select Customer</FormLabel>
+                <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Select Customer</FormLabel>
                 <SearchableSelect
                   name="customerId"
                   placeholder="Search and choose a customer"
@@ -681,17 +1333,17 @@ const CreateNewPurchase = () => {
 
           {/* Salesperson Assignment */}
           <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
-            <CardHeader pb={3}>
-              <HStack>
-                <FiUser color="purple.500" size={20} />
-                <Heading size="md" color="purple.700">
-                  Assign Salesperson
+            <CardHeader pb={{ base: 2, md: 3 }} px={{ base: 3, md: 6 }} pt={{ base: 3, md: 6 }}>
+              <HStack spacing={2}>
+                <Box as={User} color="purple.500" boxSize={{ base: "16px", md: "18px" }} />
+                <Heading size={{ base: "sm", sm: "md" }} color="purple.700" fontSize={{ base: 'sm', sm: 'md', md: 'lg' }}>
+                  Sales Executive Name
                 </Heading>
               </HStack>
             </CardHeader>
-            <CardBody pt={0}>
+            <CardBody pt={0} px={{ base: 3, md: 6 }} pb={{ base: 4, md: 6 }}>
               <FormControl isRequired>
-                <FormLabel fontWeight="semibold">Assign Salesperson</FormLabel>
+                <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Assign Salesperson</FormLabel>
                 <SearchableSelect
                   name="assignedSalespersonId"
                   placeholder="Search and choose a salesperson"
@@ -728,41 +1380,61 @@ const CreateNewPurchase = () => {
 
           {/* Financial Details */}
           <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
-            <CardHeader pb={3}>
-              <HStack>
-                <FiDollarSign color="orange.500" size={20} />
-                <Heading size="md" color="orange.700">
-                  Financial Details
+            <CardHeader pb={{ base: 2, md: 3 }} px={{ base: 3, md: 6 }} pt={{ base: 3, md: 6 }}>
+              <HStack spacing={2}>
+                <Box as={DollarSign} color="orange.500" boxSize={{ base: "16px", md: "18px" }} />
+                <Heading size={{ base: "sm", sm: "md" }} color="orange.700" fontSize={{ base: 'sm', sm: 'md', md: 'lg' }}>
+                  💰 Financial Details
                 </Heading>
               </HStack>
             </CardHeader>
-            <CardBody pt={0}>
-              <VStack spacing={4}>
+            <CardBody pt={0} px={{ base: 3, md: 6 }} pb={{ base: 4, md: 6 }}>
+              <VStack spacing={{ base: 3, md: 4 }}>
+                {/* Basic Financial Information */}
                 <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
                   <FormControl isRequired>
-                    <FormLabel fontWeight="semibold">
-                      Total Property Value
-                    </FormLabel>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Total Cost</FormLabel>
                     <NumberInput
                       name="totalPropertyValue"
                       value={formData.totalPropertyValue}
                       isReadOnly={true}
-                      size="md"
+                      size={{ base: "sm", md: "md" }}
                     >
                       <NumberInputField 
                         placeholder="Property value will be set automatically" 
                         bg="gray.100"
+                        fontSize={{ base: "sm", md: "md" }}
                         _readOnly={{
                           bg: "gray.100",
                           cursor: "not-allowed"
                         }}
                       />
                     </NumberInput>
-                    <FormHelperText>This value is automatically set from the selected property (in ₹)</FormHelperText>
+                    <FormHelperText fontSize={{ base: "xs", md: "sm" }}>This value is automatically set from the selected property (in ₹)</FormHelperText>
+                  </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Booking Amount</FormLabel>
+                    <NumberInput
+                      name="bookingAmount"
+                      value={formData.bookingAmount}
+                      onChange={(value) =>
+                        handleInputChange("bookingAmount", value)
+                      }
+                      min={0}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                    >
+                      <NumberInputField placeholder="Enter booking amount" fontSize={{ base: "sm", md: "md" }} />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
                   </FormControl>
 
                   <FormControl isRequired>
-                    <FormLabel fontWeight="semibold">Down Payment</FormLabel>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Down Payment</FormLabel>
                     <NumberInput
                       name="downPayment"
                       value={formData.downPayment}
@@ -772,21 +1444,147 @@ const CreateNewPurchase = () => {
                       min={0}
                       max={formData.totalPropertyValue}
                       isDisabled={isSubmitting}
-                      size="md"
+                      size={{ base: "sm", md: "md" }}
                     >
-                      <NumberInputField placeholder="Enter down payment amount" />
+                      <NumberInputField placeholder="Enter down payment amount" fontSize={{ base: "sm", md: "md" }} />
                       <NumberInputStepper>
                         <NumberIncrementStepper />
                         <NumberDecrementStepper />
                       </NumberInputStepper>
                     </NumberInput>
                   </FormControl>
+
+                  <FormControl>
+                    <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Booking Date</FormLabel>
+                    <Input
+                      name="bookingDate"
+                      type="date"
+                      value={formData.bookingDate}
+                      onChange={(e) => handleInputChange("bookingDate", e.target.value)}
+                      isDisabled={isSubmitting}
+                      size={{ base: "sm", md: "md" }}
+                      autoComplete="off"
+                    />
+                  </FormControl>
                 </SimpleGrid>
 
+                {/* Payment Information */}
+                <Box w="full" p={{ base: 3, md: 4 }} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200">
+                  <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+                    <Text fontWeight="semibold" color="blue.800" fontSize={{ base: "sm", md: "md" }}>Payment Information</Text>
+
                 <FormControl>
-                  <FormLabel>
-                    <HStack>
-                      <Text fontWeight="semibold">Financed Purchase</Text>
+                      <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Payment Mode</FormLabel>
+                      <RadioGroup
+                        value={formData.paymentMode}
+                        onChange={(value) => handleInputChange("paymentMode", value)}
+                      >
+                        <Stack direction={{ base: "column", sm: "row" }} spacing={{ base: 2, sm: 4 }} flexWrap="wrap">
+                          <Radio value="Cash" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>Cash</Radio>
+                          <Radio value="Cheque" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>Cheque</Radio>
+                          <Radio value="Online" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>Online</Radio>
+                          <Radio value="UPI" isDisabled={isSubmitting} size={{ base: "sm", md: "md" }}>UPI</Radio>
+                        </Stack>
+                      </RadioGroup>
+                    </FormControl>
+
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Transaction / Cheque No.</FormLabel>
+                        <Input
+                          name="transactionChequeNo"
+                          placeholder="Enter transaction or cheque number"
+                          value={formData.transactionChequeNo}
+                          onChange={(e) => handleInputChange("transactionChequeNo", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                          autoComplete="off"
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Transaction / Cheque Document (PDF)</FormLabel>
+                        <Input
+                          type="file"
+                          accept=".pdf"
+                          onChange={(e) => setTransactionFile(e.target.files[0])}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                        />
+                        <FormHelperText fontSize={{ base: "xs", md: "sm" }}>PDF files only</FormHelperText>
+                        {transactionFile && (
+                          <Text fontSize={{ base: "xs", md: "sm" }} color="green.600" mt={1}>
+                            Selected: {transactionFile.name}
+                          </Text>
+                        )}
+                      </FormControl>
+                    </SimpleGrid>
+                  </VStack>
+                </Box>
+
+                {/* Payment Terms & Finance Information - Merged */}
+                <Box w="full" p={{ base: 3, md: 4 }} bg="purple.50" borderRadius="md" border="1px" borderColor="purple.200">
+                  <VStack spacing={{ base: 3, md: 4 }} align="stretch">
+                    <Text fontWeight="semibold" color="purple.800" fontSize={{ base: "sm", md: "md" }}>Payment Terms & Finance Information</Text>
+
+                    {/* Payment Terms */}
+                    <FormControl isRequired>
+                      <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Payment Terms</FormLabel>
+                      <Select
+                        name="paymentTerms"
+                        value={formData.paymentTerms}
+                        onChange={(e) =>
+                          handleInputChange("paymentTerms", e.target.value)
+                        }
+                        isDisabled={isSubmitting}
+                        size={{ base: "sm", md: "md" }}
+                      >
+                        <option value="FULL_PAYMENT">Full Payment</option>
+                        <option value="INSTALLMENTS">Installments</option>
+                      </Select>
+                      <FormHelperText fontSize={{ base: "xs", md: "sm" }}>
+                        Select payment method - Full Payment or Installments
+                      </FormHelperText>
+                    </FormControl>
+
+                    {/* Number of Installments - Only shown when Installments is selected */}
+                    {formData.paymentTerms === "INSTALLMENTS" && (
+                      <FormControl isRequired>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>
+                          Number of Installments
+                        </FormLabel>
+                        <NumberInput
+                          name="installmentCount"
+                          value={formData.installmentCount}
+                          onChange={(value) =>
+                            handleInputChange("installmentCount", value)
+                          }
+                          min={2}
+                          max={60}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                        >
+                          <NumberInputField placeholder="Enter number of installments" fontSize={{ base: "sm", md: "md" }} />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                        <FormHelperText fontSize={{ base: "xs", md: "sm" }}>
+                          Minimum 2 installments required
+                        </FormHelperText>
+                      </FormControl>
+                    )}
+
+                    <Divider borderColor="purple.300" />
+
+                    {/* Financed Purchase Toggle */}
+                    <HStack justify="space-between" w="full" flexWrap={{ base: "wrap", sm: "nowrap" }}>
+                      <Text fontWeight="semibold" color="purple.800" fontSize={{ base: "sm", md: "md" }}>Finance Information</Text>
+                      <FormControl display="flex" alignItems="center" w={{ base: "full", sm: "auto" }}>
+                        <FormLabel mb={0} mr={3}>
+                          <Text fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Financed Purchase</Text>
+                        </FormLabel>
                       <Switch
                         name="isFinanced"
                         isChecked={formData.isFinanced}
@@ -795,15 +1593,52 @@ const CreateNewPurchase = () => {
                         }
                         colorScheme="blue"
                         isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
                       />
+                      </FormControl>
                     </HStack>
-                  </FormLabel>
+
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Finance Mode</FormLabel>
+                        <Input
+                          name="financeMode"
+                          placeholder="Enter finance mode"
+                          value={formData.financeMode}
+                          onChange={(e) => handleInputChange("financeMode", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                          autoComplete="off"
+                        />
                 </FormControl>
 
+                      <FormControl>
+                        <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Total EMI</FormLabel>
+                        <NumberInput
+                          name="totalEmi"
+                          value={formData.totalEmi}
+                          onChange={(value) => handleInputChange("totalEmi", value)}
+                          min={0}
+                          isDisabled={isSubmitting}
+                          size={{ base: "sm", md: "md" }}
+                        >
+                          <NumberInputField placeholder="Enter total EMI amount" fontSize={{ base: "sm", md: "md" }} />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      </FormControl>
+                    </SimpleGrid>
+
+                    {/* Loan Details - Only shown when Financed Purchase is enabled */}
                 {formData.isFinanced && (
+                      <>
+                        <Divider borderColor="purple.300" />
+                        <Text fontWeight="semibold" color="purple.800" fontSize={{ base: "sm", md: "md" }} mb={2}>Loan Details</Text>
                   <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }} w="full">
                     <FormControl isRequired>
-                      <FormLabel fontWeight="semibold">Bank Name</FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Bank Name</FormLabel>
                       <Input
                         name="bankName"
                         placeholder="Enter bank name"
@@ -812,14 +1647,13 @@ const CreateNewPurchase = () => {
                           handleInputChange("bankName", e.target.value)
                         }
                         isDisabled={isSubmitting}
-                        size="md"
+                              size={{ base: "sm", md: "md" }}
+                              autoComplete="off"
                       />
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontWeight="semibold">
-                        Loan Tenure (Years)
-                      </FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Loan Tenure (Years)</FormLabel>
                       <NumberInput
                         name="loanTenure"
                         value={formData.loanTenure}
@@ -829,9 +1663,9 @@ const CreateNewPurchase = () => {
                         min={1}
                         max={30}
                         isDisabled={isSubmitting}
-                        size="md"
+                              size={{ base: "sm", md: "md" }}
                       >
-                        <NumberInputField placeholder="Enter loan tenure" />
+                              <NumberInputField placeholder="Enter loan tenure" fontSize={{ base: "sm", md: "md" }} />
                         <NumberInputStepper>
                           <NumberIncrementStepper />
                           <NumberDecrementStepper />
@@ -840,9 +1674,7 @@ const CreateNewPurchase = () => {
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontWeight="semibold">
-                        Interest Rate (%)
-                      </FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Interest Rate (%)</FormLabel>
                       <NumberInput
                         name="interestRate"
                         value={formData.interestRate}
@@ -853,9 +1685,9 @@ const CreateNewPurchase = () => {
                         max={20}
                         step={0.1}
                         isDisabled={isSubmitting}
-                        size="md"
+                              size={{ base: "sm", md: "md" }}
                       >
-                        <NumberInputField placeholder="Enter interest rate" />
+                              <NumberInputField placeholder="Enter interest rate" fontSize={{ base: "sm", md: "md" }} />
                         <NumberInputStepper>
                           <NumberIncrementStepper />
                           <NumberDecrementStepper />
@@ -864,7 +1696,7 @@ const CreateNewPurchase = () => {
                     </FormControl>
 
                     <FormControl isRequired>
-                      <FormLabel fontWeight="semibold">EMI Amount</FormLabel>
+                            <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>EMI Amount</FormLabel>
                       <NumberInput
                         name="emiAmount"
                         value={formData.emiAmount}
@@ -873,9 +1705,9 @@ const CreateNewPurchase = () => {
                         }
                         min={0}
                         isDisabled={isSubmitting}
-                        size="md"
+                              size={{ base: "sm", md: "md" }}
                       >
-                        <NumberInputField placeholder="Enter EMI amount" />
+                              <NumberInputField placeholder="Enter EMI amount" fontSize={{ base: "sm", md: "md" }} />
                         <NumberInputStepper>
                           <NumberIncrementStepper />
                           <NumberDecrementStepper />
@@ -883,69 +1715,13 @@ const CreateNewPurchase = () => {
                       </NumberInput>
                     </FormControl>
                   </SimpleGrid>
-                )}
-              </VStack>
-            </CardBody>
-          </Card>
+                      </>
+                    )}
 
-          {/* Payment Terms */}
-          <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
-            <CardHeader pb={3}>
-              <HStack>
-                <FiSettings color="teal.500" size={20} />
-                <Heading size="md" color="teal.700">
-                  Payment Terms
-                </Heading>
-              </HStack>
-            </CardHeader>
-            <CardBody pt={0}>
-              <VStack spacing={4}>
+                    {/* Booking Status */}
+                    <Divider borderColor="purple.300" />
                 <FormControl isRequired>
-                  <FormLabel fontWeight="semibold">Payment Terms</FormLabel>
-                  <Select
-                    name="paymentTerms"
-                    value={formData.paymentTerms}
-                    onChange={(e) =>
-                      handleInputChange("paymentTerms", e.target.value)
-                    }
-                    isDisabled={isSubmitting}
-                    size="md"
-                  >
-                    <option value="FULL_PAYMENT">Full Payment</option>
-                    <option value="INSTALLMENTS">Installments</option>
-                  </Select>
-                </FormControl>
-
-                {formData.paymentTerms === "INSTALLMENTS" && (
-                  <FormControl isRequired>
-                    <FormLabel fontWeight="semibold">
-                      Number of Installments
-                    </FormLabel>
-                    <NumberInput
-                      name="installmentCount"
-                      value={formData.installmentCount}
-                      onChange={(value) =>
-                        handleInputChange("installmentCount", value)
-                      }
-                      min={2}
-                      max={60}
-                      isDisabled={isSubmitting}
-                      size="md"
-                    >
-                      <NumberInputField placeholder="Enter number of installments" />
-                      <NumberInputStepper>
-                        <NumberIncrementStepper />
-                        <NumberDecrementStepper />
-                      </NumberInputStepper>
-                    </NumberInput>
-                    <FormHelperText>
-                      Minimum 2 installments required
-                    </FormHelperText>
-                  </FormControl>
-                )}
-
-                <FormControl isRequired>
-                  <FormLabel fontWeight="semibold">Booking Status</FormLabel>
+                      <FormLabel fontWeight="semibold" fontSize={{ base: "sm", md: "md" }}>Booking Status</FormLabel>
                   <Select
                     name="bookingStatus"
                     value={formData.bookingStatus}
@@ -953,7 +1729,7 @@ const CreateNewPurchase = () => {
                       handleInputChange("bookingStatus", e.target.value)
                     }
                     isDisabled={isSubmitting}
-                    size="md"
+                        size={{ base: "sm", md: "md" }}
                   >
                     <option value="PENDING">Pending</option>
                     <option value="CONFIRMED">Confirmed</option>
@@ -961,10 +1737,12 @@ const CreateNewPurchase = () => {
                     <option value="COMPLETED">Completed</option>
                     <option value="CANCELLED">Cancelled</option>
                   </Select>
-                  <FormHelperText>
+                      <FormHelperText fontSize={{ base: "xs", md: "sm" }}>
                     Select the initial booking status
                   </FormHelperText>
                 </FormControl>
+                  </VStack>
+                </Box>
               </VStack>
             </CardBody>
           </Card>
@@ -973,7 +1751,7 @@ const CreateNewPurchase = () => {
           <Card bg={cardBg} border="1px" borderColor={cardBorder} shadow="sm">
             <CardHeader pb={3}>
               <HStack>
-                <FiInfo color="purple.500" size={20} />
+                <Box as={Info} color="purple.500" boxSize="16px" />
                 <Heading size="md" color="purple.700">
                   Upload Documents
                 </Heading>
@@ -1036,6 +1814,16 @@ const CreateNewPurchase = () => {
         </Flex>
       </Box>
 
+      {/* Property Preview Modal */}
+      {selectedProperty && (
+        <PropertyPreview
+          isOpen={isPreviewOpen}
+          onClose={onPreviewClose}
+          property={selectedProperty}
+          isViewOnly={true}
+        />
+      )}
+
       {/* Success Modal */}
       <Modal isOpen={isOpen} onClose={handleModalClose} size={{ base: "full", sm: "xl" }} isCentered>
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
@@ -1043,7 +1831,7 @@ const CreateNewPurchase = () => {
           <ModalHeader color="green.600" bg="green.50" borderBottom="1px" borderColor="green.200">
             <HStack spacing={3}>
               <Box p={2} bg="green.100" borderRadius="full">
-                <FiCheckCircle size={24} color="#059669" />
+                <Box as={CheckCircle} boxSize="20px" color="#059669" />
               </Box>
               <VStack align="start" spacing={0}>
                 <Text fontSize={{ base: 'lg', md: 'xl' }} fontWeight="bold">Purchase Booking Created Successfully!</Text>
@@ -1256,7 +2044,7 @@ const CreateNewPurchase = () => {
               colorScheme="brand" 
               // onClick={handleSuccessModalClose}
               size="md"
-              leftIcon={<FiCheckCircle />}
+              leftIcon={<Box as={CheckCircle} boxSize="16px" />}
             >
               View All Bookings
             </Button>

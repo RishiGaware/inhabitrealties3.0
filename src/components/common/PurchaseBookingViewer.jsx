@@ -63,6 +63,47 @@ const PurchaseBookingViewer = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const getDocumentDisplayName = (document) => {
+    // Check document type first (most reliable)
+    const docType = document.documentType?.toUpperCase() || '';
+    const originalName = document.originalName?.toLowerCase() || '';
+    
+    // Map specific document types to clear names
+    if (docType === 'AADHAR_CARD' || docType === 'AADHAR_FRONT' || docType === 'AADHAR_BACK' || 
+        (docType.includes('ID_PROOF') && originalName.includes('aadhar'))) {
+      return 'Aadhar Card';
+    }
+    if (docType === 'PAN_CARD' || (docType.includes('ID_PROOF') && originalName.includes('pan'))) {
+      return 'PAN Card';
+    }
+    if (docType === 'TRANSACTION_DOCUMENT' || docType.includes('TRANSACTION') || docType.includes('CHEQUE') || 
+        originalName.includes('transaction') || originalName.includes('cheque')) {
+      return 'Transaction / Cheque Document';
+    }
+    if (docType.includes('BANK_STATEMENT') || originalName.includes('bank') || originalName.includes('statement')) {
+      return 'Bank Statement';
+    }
+    if (docType.includes('INSTALLMENT_PROOF') || originalName.includes('installment') || originalName.includes('proof')) {
+      return 'Installment Proof';
+    }
+    if (docType.includes('PAYMENT_RECEIPT') || originalName.includes('payment') || originalName.includes('receipt')) {
+      return 'Payment Receipt';
+    }
+    // Generic ID Proof - try to identify from filename
+    if (docType.includes('ID_PROOF')) {
+      if (originalName.includes('aadhar')) {
+        return 'Aadhar Card';
+      }
+      if (originalName.includes('pan')) {
+        return 'PAN Card';
+      }
+      return 'ID Proof Document';
+    }
+    
+    // Fallback to original name or document type
+    return document.originalName || document.documentType?.replace(/_/g, ' ') || 'Document';
+  };
+
   const downloadDocument = (url, filename) => {
     const link = document.createElement('a');
     link.href = url;
@@ -169,6 +210,50 @@ const PurchaseBookingViewer = ({
               </Grid>
             </Box>
 
+            {/* Property Booking Form Details */}
+            {(bookingData.developer || bookingData.channelPartnerName || bookingData.projectName || bookingData.location || bookingData.tcfNumber) && (
+              <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="blue.100" shadow="sm">
+                <HStack mb={3} align="center">
+                  <Box p={2} bg="blue.100" borderRadius="full">
+                    <Text fontSize={{ base: "md", sm: "lg" }} color="blue.600">📋</Text>
+                  </Box>
+                  <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="blue.700">Property Booking Form</Text>
+                </HStack>
+                <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={{ base: 2, sm: 3, md: 4 }}>
+                  {bookingData.developer && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="blue.600" fontWeight="medium" mb={1}>Developer</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.developer}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.channelPartnerName && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="blue.600" fontWeight="medium" mb={1}>Channel Partner Name</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.channelPartnerName}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.projectName && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="blue.600" fontWeight="medium" mb={1}>Project Name</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.projectName}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.location && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="blue.600" fontWeight="medium" mb={1}>Location</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.location}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.tcfNumber && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="blue.600" fontWeight="medium" mb={1}>TCF Number</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.tcfNumber}</Text>
+                    </GridItem>
+                  )}
+                </Grid>
+              </Box>
+            )}
+
             {/* Property & Customer Details */}
             <SimpleGrid columns={{ base: 1, md: hideCustomerDetails ? 1 : 2 }} spacing={{ base: 2, sm: 3, md: 4 }}>
               <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
@@ -222,8 +307,134 @@ const PurchaseBookingViewer = ({
               )}
             </SimpleGrid>
 
+            {/* Buyer Details Section */}
+            {(bookingData.buyerFullName || bookingData.buyerAddress || bookingData.buyerCityPin || bookingData.buyerMobileNo || bookingData.buyerEmailId || bookingData.buyerAadharNo || bookingData.buyerPanNo) && (
+              <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
+                <HStack mb={3} align="center">
+                  <Box p={2} bg="green.100" borderRadius="full">
+                    <Text fontSize={{ base: "md", sm: "lg" }} color="green.600">🧾</Text>
+                  </Box>
+                  <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="green.700">Buyer Details</Text>
+                </HStack>
+                <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={{ base: 2, sm: 3, md: 4 }}>
+                  {bookingData.buyerFullName && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="green.600" fontWeight="medium" mb={1}>Full Name</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.buyerFullName}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.buyerAddress && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="green.600" fontWeight="medium" mb={1}>Address</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.buyerAddress}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.buyerCityPin && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="green.600" fontWeight="medium" mb={1}>City / PIN</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.buyerCityPin}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.buyerMobileNo && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="green.600" fontWeight="medium" mb={1}>Mobile No.</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.buyerMobileNo}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.buyerEmailId && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="green.600" fontWeight="medium" mb={1}>Email ID</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.buyerEmailId}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.buyerAadharNo && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="green.600" fontWeight="medium" mb={1}>Aadhar No.</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.buyerAadharNo}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.buyerPanNo && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="green.600" fontWeight="medium" mb={1}>PAN No.</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.buyerPanNo}</Text>
+                    </GridItem>
+                  )}
+                </Grid>
+              </Box>
+            )}
+
+            {/* Additional Property Details */}
+            {(bookingData.flatNo || bookingData.floorNo || bookingData.balconies || bookingData.towerWing || bookingData.propertyType || bookingData.carpetArea || bookingData.facing || bookingData.parkingNo || bookingData.specialFeatures) && (
+              <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="orange.100" shadow="sm">
+                <HStack mb={3} align="center">
+                  <Box p={2} bg="orange.100" borderRadius="full">
+                    <Text fontSize={{ base: "md", sm: "lg" }} color="orange.600">🏢</Text>
+                  </Box>
+                  <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="orange.700">Additional Property Details</Text>
+                </HStack>
+                <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={{ base: 2, sm: 3, md: 4 }}>
+                  {bookingData.flatNo && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Flat / Plot No.</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.flatNo}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.towerWing && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Tower / Wing</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.towerWing}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.floorNo && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Floor</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.floorNo}</Text>
+                    </GridItem>
+                  )}
+                  {(bookingData.propertyType || bookingData.propertyTypeOther) && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Type</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">
+                        {bookingData.propertyType === "Other" ? bookingData.propertyTypeOther : bookingData.propertyType || 'N/A'}
+                      </Text>
+                    </GridItem>
+                  )}
+                  {bookingData.carpetArea && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Carpet Area</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.carpetArea}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.facing && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Facing</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.facing}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.parkingNo && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Parking No.</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.parkingNo}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.balconies && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Balconies</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.balconies}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.specialFeatures && (
+                    <GridItem colSpan={{ base: 1, sm: 2 }}>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Special Features / Amenities</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.specialFeatures}</Text>
+                    </GridItem>
+                  )}
+                </Grid>
+              </Box>
+            )}
+
             {/* Financial Details - Only show if data exists */}
-            {(bookingData.totalPropertyValue || bookingData.downPayment || bookingData.loanAmount) && (
+            {(bookingData.totalPropertyValue || bookingData.downPayment || bookingData.loanAmount || bookingData.bookingAmount || bookingData.paymentMode || bookingData.financeMode || bookingData.totalEmi || bookingData.transactionChequeNo || bookingData.bookingDate) && (
               <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="teal.100" shadow="sm">
                 <HStack mb={3} align="center">
                   <Box p={2} bg="teal.100" borderRadius="full">
@@ -241,9 +452,17 @@ const PurchaseBookingViewer = ({
                 >
                   {bookingData.totalPropertyValue && (
                     <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Total Property Value</Text>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Total Cost</Text>
                       <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="teal.700" noOfLines={1}>
                         {formatCurrency(bookingData.totalPropertyValue)}
+                      </Text>
+                    </GridItem>
+                  )}
+                  {bookingData.bookingAmount && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Booking Amount</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="teal.700" noOfLines={1}>
+                        {formatCurrency(bookingData.bookingAmount)}
                       </Text>
                     </GridItem>
                   )}
@@ -253,6 +472,40 @@ const PurchaseBookingViewer = ({
                       <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="teal.700" noOfLines={1}>
                         {formatCurrency(bookingData.downPayment)}
                       </Text>
+                    </GridItem>
+                  )}
+                  {bookingData.paymentMode && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Payment Mode</Text>
+                      <Badge colorScheme="teal" variant="subtle" fontSize={{ base: "2xs", sm: "xs", md: "sm" }} px={2} py={1} borderRadius="full">
+                        {bookingData.paymentMode}
+                      </Badge>
+                    </GridItem>
+                  )}
+                  {bookingData.financeMode && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Finance Mode</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.financeMode}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.totalEmi && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Total EMI</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="bold" color="teal.700" noOfLines={1}>
+                        {formatCurrency(bookingData.totalEmi)}
+                      </Text>
+                    </GridItem>
+                  )}
+                  {bookingData.transactionChequeNo && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Transaction / Cheque No.</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.transactionChequeNo}</Text>
+                    </GridItem>
+                  )}
+                  {bookingData.bookingDate && (
+                    <GridItem>
+                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="teal.600" fontWeight="semibold">Booking Date</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{formatDate(bookingData.bookingDate)}</Text>
                     </GridItem>
                   )}
                   {bookingData.loanAmount && (
@@ -540,7 +793,10 @@ const PurchaseBookingViewer = ({
                             
                             {/* Document Name */}
                             <VStack spacing={{ base: 1, sm: 1 }} align="start" w="full">
-                              <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} fontWeight="semibold" color="gray.800" noOfLines={2}>
+                              <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} fontWeight="bold" color="blue.700" noOfLines={2}>
+                                {getDocumentDisplayName(document)}
+                              </Text>
+                              <Text fontSize={{ base: "3xs", sm: "2xs", md: "xs" }} color="gray.500" fontStyle="italic" noOfLines={1}>
                                 {document.originalName}
                               </Text>
                               
@@ -555,11 +811,6 @@ const PurchaseBookingViewer = ({
                                   <strong>Uploaded:</strong> {formatDate(document.uploadedAt)}
                                 </Text>
                               )}
-                              
-                              {/* MIME Type */}
-                              <Text fontSize={{ base: "3xs", sm: "2xs", md: "xs" }} color="gray.600">
-                                <strong>Type:</strong> {document.mimeType?.toUpperCase() || 'N/A'}
-                              </Text>
                             </VStack>
                             
                             {/* Action Buttons */}

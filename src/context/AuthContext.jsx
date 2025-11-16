@@ -205,11 +205,10 @@ export const AuthProvider = ({ children }) => {
     authService.logout();
     setAuth(null);
     setIsAuthenticated(false);
-    // Clear from localStorage
-    localStorage.removeItem('auth');
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('userRoleName');
-    localStorage.removeItem('userRoleDetails');
+    // Clear all localStorage
+    localStorage.clear();
+    // Clear all sessionStorage
+    sessionStorage.clear();
     // Clear from cookies
     Cookies.remove('AuthToken');
   };

@@ -94,7 +94,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       {
         title: "Schedule Meetings",
         icon: <FaCalendarAlt />,
-        subMenu: ["Admin Meetings", "Sales Meetings", "My Meetings"],
+        subMenu: ["Admin Meetings", "Sales Meetings", "My Meetings", "Meetings Status"],
         key: "scheduleMeetings"
       },
       
@@ -217,7 +217,8 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     'scheduleMeetings': {
       'admin-meetings': ROUTES.ADMIN_MEETINGS,
       'sales-meetings': ROUTES.SALES_MEETINGS,
-      'my-meetings': ROUTES.MY_MEETINGS
+      'my-meetings': ROUTES.MY_MEETINGS,
+      'meetings-status': ROUTES.ADMIN_MEETING_STATUS_MANAGEMENT
     },
     'purchaseBookings': {
       'all-purchase-bookings': ROUTES.PURCHASE_ALL_BOOKINGS,

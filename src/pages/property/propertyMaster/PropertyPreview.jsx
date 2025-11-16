@@ -11,7 +11,8 @@ import {
   FaTimes, FaBed, FaBath, FaRuler, FaMapMarkerAlt, FaCalendarAlt,
   FaChevronLeft, FaChevronRight, FaExternalLinkAlt, FaPhone, FaEnvelope,
   FaUpload, FaTrash, FaDownload, FaExpand, FaCompress, FaShare, FaHome,
-  FaHeart, FaStar, FaBuilding, FaUser, FaTag, FaFilePdf, FaEye
+  FaHeart, FaStar, FaBuilding, FaUser, FaTag, FaFilePdf, FaEye,
+  FaSearchPlus, FaSearchMinus
 } from 'react-icons/fa';
 import { 
   fetchPropertyImages, 
@@ -51,8 +52,15 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
   const [contactLoading, setContactLoading] = useState(false);
   const [brochureUploading, setBrochureUploading] = useState(false);
   const [brochureUrl, setBrochureUrl] = useState(null);
+  const [isImageViewerOpen, setIsImageViewerOpen] = useState(false);
+  const [imageZoom, setImageZoom] = useState(1);
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const fileInputRef = useRef();
   const brochureInputRef = useRef();
+  const imageViewerRef = useRef(null);
+  const lastTouchDistance = useRef(0);
 
   // Color mode values
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -156,7 +164,7 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
     if (!imageToDelete) return;
 
     try {
-      await deletePropertyImage(property._id, imageToDelete._id);
+      await deletePropertyImage(imageToDelete._id);
       
       // Remove image from the list
       setPropertyImages(prev => prev.filter(img => img._id !== imageToDelete._id));
@@ -226,6 +234,99 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
 
   const toggleFullscreen = () => {
     setIsFullscreen(!isFullscreen);
+  };
+
+  const openImageViewer = () => {
+    setIsImageViewerOpen(true);
+    setImageZoom(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const closeImageViewer = () => {
+    setIsImageViewerOpen(false);
+    setImageZoom(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  const handleZoomIn = () => {
+    setImageZoom(prev => Math.min(prev + 0.25, 5));
+  };
+
+  const handleZoomOut = () => {
+    setImageZoom(prev => Math.max(prev - 0.25, 0.5));
+  };
+
+  const handleResetZoom = () => {
+    setImageZoom(1);
+    setImagePosition({ x: 0, y: 0 });
+  };
+
+  // Mouse wheel zoom
+  const handleWheel = (e) => {
+    if (!isImageViewerOpen) return;
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -0.1 : 0.1;
+    setImageZoom(prev => Math.max(0.5, Math.min(5, prev + delta)));
+  };
+
+  // Touch gesture handlers for pinch to zoom
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 2) {
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      lastTouchDistance.current = distance;
+    } else if (e.touches.length === 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.touches[0].clientX - imagePosition.x,
+        y: e.touches[0].clientY - imagePosition.y
+      });
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const touch1 = e.touches[0];
+      const touch2 = e.touches[1];
+      const distance = Math.hypot(
+        touch2.clientX - touch1.clientX,
+        touch2.clientY - touch1.clientY
+      );
+      
+      if (lastTouchDistance.current > 0) {
+        const scale = distance / lastTouchDistance.current;
+        setImageZoom(prev => Math.max(0.5, Math.min(5, prev * scale)));
+      }
+      lastTouchDistance.current = distance;
+    } else if (e.touches.length === 1 && isDragging) {
+      e.preventDefault();
+      setImagePosition({
+        x: e.touches[0].clientX - dragStart.x,
+        y: e.touches[0].clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastTouchDistance.current = 0;
+    setIsDragging(false);
+  };
+
+  // Mouse drag handlers
+  const handleMouseDown = (e) => {
+    if (imageZoom > 1) {
+      e.preventDefault();
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - imagePosition.x,
+        y: e.clientY - imagePosition.y
+      });
+    }
   };
 
   const handleBrochureUpload = async (event) => {
@@ -358,6 +459,55 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
     }
   }, [isOpen]);
 
+  // Handle global mouse events for image viewer
+  useEffect(() => {
+    if (isImageViewerOpen) {
+      const handleGlobalMouseMove = (e) => {
+        if (isDragging && imageZoom > 1) {
+          setImagePosition({
+            x: e.clientX - dragStart.x,
+            y: e.clientY - dragStart.y
+          });
+        }
+      };
+
+      const handleGlobalMouseUp = () => {
+        setIsDragging(false);
+      };
+
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          closeImageViewer();
+        } else if (e.key === '+' || e.key === '=') {
+          handleZoomIn();
+        } else if (e.key === '-') {
+          handleZoomOut();
+        } else if (e.key === '0') {
+          handleResetZoom();
+        } else if (e.key === 'ArrowLeft' && propertyImages.length > 1) {
+          prevImage();
+          setImageZoom(1);
+          setImagePosition({ x: 0, y: 0 });
+        } else if (e.key === 'ArrowRight' && propertyImages.length > 1) {
+          nextImage();
+          setImageZoom(1);
+          setImagePosition({ x: 0, y: 0 });
+        }
+      };
+
+      window.addEventListener('mousemove', handleGlobalMouseMove);
+      window.addEventListener('mouseup', handleGlobalMouseUp);
+      window.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        window.removeEventListener('mousemove', handleGlobalMouseMove);
+        window.removeEventListener('mouseup', handleGlobalMouseUp);
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isImageViewerOpen, isDragging, imageZoom, dragStart]);
+
   if (!isOpen || !property) return null;
 
   const currentImage = propertyImages[currentImageIndex] || null;
@@ -413,17 +563,29 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
             ) : hasImages ? (
               <>
                 {/* Enhanced Main Image with Better Styling */}
-                <Box position="relative" h="full" overflow="hidden">
+                <Box 
+                  position="relative" 
+                  h="full" 
+                  overflow="hidden" 
+                  display="flex" 
+                  alignItems="center" 
+                  justifyContent="center" 
+                  bg="gray.100"
+                  cursor="pointer"
+                  onClick={openImageViewer}
+                >
                   <Image
                     src={currentImage?.displayUrl || currentImage?.originalUrl}
                     alt={`${property.name} - Image ${currentImageIndex + 1}`}
-                    w="full"
-                    h="full"
-                    objectFit="cover"
+                    maxW="100%"
+                    maxH="100%"
+                    w="auto"
+                    h="auto"
+                    objectFit="contain"
                     fallbackSrc="https://via.placeholder.com/800x500?text=Property+Image"
                     transition="all 0.5s cubic-bezier(0.4, 0, 0.2, 1)"
-                    _hover={{ transform: 'scale(1.05)' }}
                     filter="brightness(0.9) contrast(1.1)"
+                    _hover={{ opacity: 0.9 }}
                   />
                   
                   {/* Gradient Overlay for Better Text Visibility */}
@@ -1073,75 +1235,77 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
                   </Flex>
                   <SimpleGrid columns={{ base: 3, sm: 4, md: 6, lg: 8 }} spacing={{ base: 2, sm: 3 }}>
                     {propertyImages.map((image, index) => (
-                      <Box
+                      <VStack
                         key={image._id}
-                        position="relative"
-                        cursor="pointer"
-                        borderRadius="xl"
-                        overflow="hidden"
-                        border={currentImageIndex === index ? '3px solid' : '1px solid'}
-                        borderColor={currentImageIndex === index ? 'brand.500' : borderColor}
-                        onClick={() => setCurrentImageIndex(index)}
-                        transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                        bg="white"
-                        boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
-                        _hover={{
-                          boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
-                          transform: 'scale(1.08)'
-                        }}
+                        spacing={0}
+                        align="stretch"
                       >
-                        <Image
-                          src={image.thumbnailUrl || image.originalUrl}
-                          alt={`Thumbnail ${index + 1}`}
-                          w="full"
-                          h="80px"
-                          objectFit="cover"
-                          transition="all 0.3s ease"
+                        <Box
+                          position="relative"
+                          cursor="pointer"
+                          borderRadius="xl"
+                          overflow="hidden"
+                          border={currentImageIndex === index ? '3px solid' : '1px solid'}
+                          borderColor={currentImageIndex === index ? 'brand.500' : borderColor}
+                          onClick={() => setCurrentImageIndex(index)}
+                          transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                          bg="white"
+                          boxShadow="0 2px 8px rgba(0, 0, 0, 0.1)"
                           _hover={{
-                            filter: 'brightness(1.1) contrast(1.1)'
+                            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.2)',
+                            transform: 'scale(1.02)'
                           }}
-                        />
+                        >
+                          <Image
+                            src={image.thumbnailUrl || image.originalUrl}
+                            alt={`Thumbnail ${index + 1}`}
+                            w="full"
+                            h="80px"
+                            objectFit="cover"
+                            transition="all 0.3s ease"
+                            _hover={{
+                              filter: 'brightness(1.1) contrast(1.1)'
+                            }}
+                          />
+                          {/* Selection Indicator */}
+                          {currentImageIndex === index && (
+                            <Box
+                              position="absolute"
+                              top={0}
+                              left={0}
+                              right={0}
+                              bottom={0}
+                              bg="brand.500"
+                              opacity="0.2"
+                              pointerEvents="none"
+                            />
+                          )}
+                        </Box>
+                        {/* Delete Button Below Image */}
                         {!isViewOnly && (
-                          <IconButton
-                            icon={<FaTrash />}
-                            size="sm"
-                            position="absolute"
-                            top={2}
-                            right={2}
+                          <Button
+                            size="xs"
                             colorScheme="red"
                             variant="solid"
+                            leftIcon={<FaTrash />}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteImage(image);
                             }}
-                            opacity={0}
-                            transition="opacity 0.3s"
-                            zIndex={10}
-                            bg="red.500"
-                            color="white"
-                            borderRadius="full"
+                            w="full"
+                            borderRadius="md"
+                            mt={1}
+                            fontSize="xs"
+                            h="24px"
                             _hover={{
-                              opacity: 1,
                               bg: "red.600",
-                              transform: "scale(1.1)"
+                              transform: "scale(1.02)"
                             }}
-                            boxShadow="0 4px 12px rgba(239, 68, 68, 0.4)"
-                          />
+                          >
+                            Delete
+                          </Button>
                         )}
-                        {/* Selection Indicator */}
-                        {currentImageIndex === index && (
-                          <Box
-                            position="absolute"
-                            top={0}
-                            left={0}
-                            right={0}
-                            bottom={0}
-                            bg="brand.500"
-                            opacity="0.2"
-                            pointerEvents="none"
-                          />
-                        )}
-                      </Box>
+                      </VStack>
                     ))}
                   </SimpleGrid>
                 </Box>
@@ -1150,6 +1314,230 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
           </Box>
         </Box>
       </ModalContent>
+
+      {/* Fullscreen Image Viewer Modal */}
+      <Modal
+        isOpen={isImageViewerOpen}
+        onClose={closeImageViewer}
+        size="full"
+        isCentered
+      >
+        <ModalOverlay bg="blackAlpha.900" backdropFilter="blur(4px)" />
+        <ModalContent
+          bg="black"
+          maxW="100vw"
+          maxH="100vh"
+          m={0}
+          p={0}
+          borderRadius={0}
+          onWheel={handleWheel}
+        >
+          <Box
+            position="relative"
+            w="100vw"
+            h="100vh"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            overflow="hidden"
+            ref={imageViewerRef}
+          >
+            {/* Close Button */}
+            <IconButton
+              icon={<FaTimes />}
+              position="absolute"
+              top={4}
+              right={4}
+              zIndex={10}
+              size="lg"
+              colorScheme="red"
+              variant="solid"
+              onClick={closeImageViewer}
+              aria-label="Close image viewer"
+              borderRadius="full"
+              bg="rgba(0,0,0,0.7)"
+              color="white"
+              _hover={{ bg: "rgba(0,0,0,0.9)" }}
+            />
+
+            {/* Zoom Controls */}
+            <VStack
+              position="absolute"
+              right={4}
+              top="50%"
+              transform="translateY(-50%)"
+              zIndex={10}
+              spacing={2}
+            >
+              <IconButton
+                icon={<FaSearchPlus />}
+                size="lg"
+                colorScheme="blue"
+                variant="solid"
+                onClick={handleZoomIn}
+                aria-label="Zoom in"
+                borderRadius="full"
+                bg="rgba(0,0,0,0.7)"
+                color="white"
+                _hover={{ bg: "rgba(0,0,0,0.9)" }}
+                isDisabled={imageZoom >= 5}
+              />
+              <IconButton
+                icon={<FaSearchMinus />}
+                size="lg"
+                colorScheme="blue"
+                variant="solid"
+                onClick={handleZoomOut}
+                aria-label="Zoom out"
+                borderRadius="full"
+                bg="rgba(0,0,0,0.7)"
+                color="white"
+                _hover={{ bg: "rgba(0,0,0,0.9)" }}
+                isDisabled={imageZoom <= 0.5}
+              />
+              {imageZoom !== 1 && (
+                <Button
+                  size="sm"
+                  colorScheme="gray"
+                  variant="solid"
+                  onClick={handleResetZoom}
+                  borderRadius="full"
+                  bg="rgba(0,0,0,0.7)"
+                  color="white"
+                  _hover={{ bg: "rgba(0,0,0,0.9)" }}
+                  fontSize="xs"
+                >
+                  Reset
+                </Button>
+              )}
+            </VStack>
+
+            {/* Zoom Level Indicator */}
+            <Box
+              position="absolute"
+              bottom={4}
+              left="50%"
+              transform="translateX(-50%)"
+              zIndex={10}
+              bg="rgba(0,0,0,0.7)"
+              color="white"
+              px={4}
+              py={2}
+              borderRadius="full"
+              fontSize="sm"
+              fontWeight="medium"
+            >
+              {Math.round(imageZoom * 100)}%
+            </Box>
+
+            {/* Image Navigation (if multiple images) */}
+            {propertyImages.length > 1 && (
+              <>
+                <IconButton
+                  icon={<FaChevronLeft />}
+                  position="absolute"
+                  left={4}
+                  top="50%"
+                  transform="translateY(-50%)"
+                  zIndex={10}
+                  size="lg"
+                  colorScheme="blue"
+                  variant="solid"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    prevImage();
+                    setImageZoom(1);
+                    setImagePosition({ x: 0, y: 0 });
+                  }}
+                  aria-label="Previous image"
+                  borderRadius="full"
+                  bg="rgba(0,0,0,0.7)"
+                  color="white"
+                  _hover={{ bg: "rgba(0,0,0,0.9)" }}
+                />
+                <IconButton
+                  icon={<FaChevronRight />}
+                  position="absolute"
+                  right={20}
+                  top="50%"
+                  transform="translateY(-50%)"
+                  zIndex={10}
+                  size="lg"
+                  colorScheme="blue"
+                  variant="solid"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    nextImage();
+                    setImageZoom(1);
+                    setImagePosition({ x: 0, y: 0 });
+                  }}
+                  aria-label="Next image"
+                  borderRadius="full"
+                  bg="rgba(0,0,0,0.7)"
+                  color="white"
+                  _hover={{ bg: "rgba(0,0,0,0.9)" }}
+                />
+                <Box
+                  position="absolute"
+                  top={4}
+                  left="50%"
+                  transform="translateX(-50%)"
+                  zIndex={10}
+                  bg="rgba(0,0,0,0.7)"
+                  color="white"
+                  px={4}
+                  py={2}
+                  borderRadius="full"
+                  fontSize="sm"
+                  fontWeight="medium"
+                >
+                  {currentImageIndex + 1} / {propertyImages.length}
+                </Box>
+              </>
+            )}
+
+            {/* Zoomable Image */}
+            <Box
+              position="relative"
+              w="100%"
+              h="100%"
+              display="flex"
+              alignItems="center"
+              justifyContent="center"
+              overflow="hidden"
+              cursor={imageZoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleMouseDown}
+              style={{ touchAction: 'none' }}
+            >
+              <Box
+                position="relative"
+                transform={`translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${imageZoom})`}
+                transformOrigin="center center"
+                transition={isDragging ? 'none' : 'transform 0.1s ease-out'}
+                style={{
+                  willChange: 'transform'
+                }}
+              >
+                <Image
+                  src={currentImage?.displayUrl || currentImage?.originalUrl}
+                  alt={`${property.name} - Image ${currentImageIndex + 1}`}
+                  maxW="90vw"
+                  maxH="90vh"
+                  w="auto"
+                  h="auto"
+                  objectFit="contain"
+                  userSelect="none"
+                  draggable={false}
+                  pointerEvents="none"
+                />
+              </Box>
+            </Box>
+          </Box>
+        </ModalContent>
+      </Modal>
 
       {/* Delete Confirmation Modal */}
       <DeleteConfirmationModal

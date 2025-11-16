@@ -341,22 +341,22 @@ const MeetingStatusManagement = () => {
         onClick={() => handleView(status)}
         aria-label="View status"
       />
-      <IconButton
+      {/* <IconButton
         icon={<EditIcon />}
         size="sm"
         variant="ghost"
         colorScheme="brand"
         onClick={() => handleEdit(status)}
         aria-label="Edit status"
-      />
-      <IconButton
+      /> */}
+      {/* <IconButton
         icon={<DeleteIcon />}
         size="sm"
         variant="ghost"
         colorScheme="red"
         onClick={() => handleDelete(status)}
         aria-label="Delete status"
-      />
+      /> */}
     </HStack>
   );
 
@@ -368,7 +368,7 @@ const MeetingStatusManagement = () => {
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           Meeting Status Management
         </Heading>
-        <CommonAddButton onClick={handleAddNew} />
+        {/* <CommonAddButton onClick={handleAddNew} /> */}
       </Flex>
 
       <HStack spacing={4} mb={6}>
@@ -391,7 +391,7 @@ const MeetingStatusManagement = () => {
             (currentPage - 1) * pageSize,
             currentPage * pageSize
           )}
-          // rowActions={renderRowActions}
+          rowActions={renderRowActions}
           emptyStateMessage={!loading ? "No statuses found." : undefined}
         />
         <CommonPagination

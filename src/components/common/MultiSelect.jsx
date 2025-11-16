@@ -77,10 +77,21 @@ const MultiSelect = ({
     setSearchTerm('');
   };
 
-  const handleRemove = (optionToRemove) => {
+  const handleRemove = (optionToRemove, e) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.nativeEvent?.stopImmediatePropagation?.();
+    }
     const newSelectedOptions = selectedOptions.filter(option => option.value !== optionToRemove.value);
+    const newValues = newSelectedOptions.map(opt => opt.value);
     setSelectedOptions(newSelectedOptions);
-    onChange(newSelectedOptions.map(opt => opt.value));
+    // Ensure popover stays closed when removing
+    if (isOpen) {
+      setIsOpen(false);
+      setSearchTerm('');
+    }
+    onChange(newValues);
   };
 
   const handleInputChange = (e) => {
@@ -134,6 +145,76 @@ const MultiSelect = ({
         </Box>
       )}
       
+      {/* Selected badges outside PopoverTrigger to avoid event conflicts */}
+      {selectedOptions.length > 0 && (
+        <Box mb={2}>
+          <Text fontSize="xs" color="purple.800" fontWeight="medium" mb={2}>
+            Selected ({selectedOptions.length}):
+          </Text>
+          <Wrap spacing={2}>
+            {selectedOptions.map((option) => (
+              <WrapItem key={option.value}>
+                <Badge
+                  colorScheme="purple"
+                  variant="solid"
+                  fontSize="xs"
+                  px={2}
+                  py={1}
+                  borderRadius="full"
+                  bg="purple.600"
+                  color="white"
+                  fontWeight="500"
+                  display="flex"
+                  alignItems="center"
+                  gap={1}
+                  _hover={{ bg: 'purple.700' }}
+                >
+                  <Avatar size="xs" bg="purple.500" color="white">
+                    <FaUser size={8} />
+                  </Avatar>
+                  <Text maxW="100px" fontSize="xs" color="white" noOfLines={1}>
+                    {option.label}
+                  </Text>
+                  <Box
+                    as="button"
+                    type="button"
+                    role="button"
+                    aria-label={`Remove ${option.label}`}
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleRemove(option, e);
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleRemove(option, e);
+                      }
+                    }}
+                    cursor="pointer"
+                    p={0.5}
+                    ml={1}
+                    color="white"
+                    bg="transparent"
+                    _hover={{ bg: 'red.500', color: 'white' }}
+                    _active={{ bg: 'red.600' }}
+                    borderRadius="sm"
+                    transition="all 0.2s ease"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                  >
+                    <CloseIcon boxSize={3} />
+                  </Box>
+                </Badge>
+              </WrapItem>
+            ))}
+          </Wrap>
+        </Box>
+      )}
+
       <Popover
         isOpen={isOpen}
         onClose={() => {
@@ -201,87 +282,27 @@ const MultiSelect = ({
                 transition: 'opacity 0.2s ease',
               }}
             >
-              <VStack spacing={2} align="stretch" w="full">
-                {selectedOptions.length > 0 && (
-                  <Box>
-                    <Text fontSize="xs" color="purple.800" fontWeight="medium" mb={2}>
-                      Selected ({selectedOptions.length}):
-                    </Text>
-                    <Wrap spacing={2}>
-                      {selectedOptions.map((option) => (
-                        <WrapItem key={option.value}>
-                          <Badge
-                            colorScheme="purple"
-                            variant="solid"
-                            fontSize="xs"
-                            px={2}
-                            py={1}
-                            borderRadius="full"
-                            bg="purple.600"
-                            color="white"
-                            fontWeight="500"
-                            display="flex"
-                            alignItems="center"
-                            gap={1}
-                            _hover={{ bg: 'purple.700' }}
-                          >
-                            <Avatar size="xs" bg="purple.500" color="white">
-                              <FaUser size={8} />
-                            </Avatar>
-                            <Text maxW="100px" fontSize="xs" color="white" noOfLines={1}>
-                              {option.label}
-                            </Text>
-                            <Box
-                              as="span"
-                              role="button"
-                              tabIndex={0}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRemove(option);
-                              }}
-                              onKeyDown={e => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.stopPropagation();
-                                  handleRemove(option);
-                                }
-                              }}
-                              cursor="pointer"
-                              p={0.5}
-                              color="white"
-                              _hover={{ bg: 'red.500' }}
-                              borderRadius="sm"
-                            >
-                              <CloseIcon boxSize={3} />
-                            </Box>
-                          </Badge>
-                        </WrapItem>
-                      ))}
-                    </Wrap>
-                  </Box>
-                )}
+              <HStack spacing={2} justify="space-between">
+                <Text
+                  color={selectedOptions.length > 0 ? 'gray.900' : 'gray.500'}
+                  textAlign="left"
+                  noOfLines={1}
+                  fontWeight={selectedOptions.length > 0 ? '600' : '400'}
+                  fontSize={currentSize.fontSize}
+                  transition="all 0.2s ease"
+                  flex={1}
+                >
+                  {selectedOptions.length > 0 ? `${selectedOptions.length} selected` : placeholder}
+                </Text>
                 
-                <HStack spacing={2} justify="space-between">
-                  <Text
-                    color={selectedOptions.length > 0 ? 'gray.900' : 'gray.500'}
-                    textAlign="left"
-                    noOfLines={1}
-                    fontWeight={selectedOptions.length > 0 ? '600' : '400'}
-                    fontSize={currentSize.fontSize}
-                    transition="all 0.2s ease"
-                    flex={1}
-                  >
-                    {selectedOptions.length > 0 ? `${selectedOptions.length} selected` : placeholder}
-                  </Text>
-                  
-                  <Icon 
-                    as={ChevronDownIcon} 
-                    transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
-                    transform={isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}
-                    color={isOpen ? 'purple.400' : 'gray.400'}
-                    boxSize={4}
-                  />
-                </HStack>
-              </VStack>
+                <Icon 
+                  as={ChevronDownIcon} 
+                  transition="all 0.3s cubic-bezier(0.4, 0, 0.2, 1)"
+                  transform={isOpen ? 'rotate(180deg)' : 'rotate(0deg)'}
+                  color={isOpen ? 'purple.400' : 'gray.400'}
+                  boxSize={4}
+                />
+              </HStack>
             </Button>
           </Box>
         </PopoverTrigger>

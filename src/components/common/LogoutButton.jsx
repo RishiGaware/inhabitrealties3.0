@@ -36,10 +36,8 @@ const LogoutButton = ({ variant = 'ghost', size = 'md', ...props }) => {
 
   const handleLogout = () => {
     // Use AuthContext logout function to properly clear all auth data
+    // This will clear localStorage, sessionStorage, and cookies
     logout();
-    
-    // Clear any additional session storage
-    sessionStorage.clear();
     
     // Show success message
     toast({

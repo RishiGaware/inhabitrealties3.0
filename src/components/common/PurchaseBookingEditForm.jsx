@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box, Button, VStack, HStack, Text, Heading, SimpleGrid, Badge,
   Grid, GridItem, useToast, useDisclosure, Modal, ModalOverlay,
@@ -12,7 +12,7 @@ import { FiSave, FiX, FiEdit, FiUpload, FiEye, FiDownload } from 'react-icons/fi
 import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
 import DocumentUpload from './DocumentUpload';
 
-const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => {
+const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isReadOnly = false }) => {
   // Expected installment data structure with documents:
   // installment: {
   //   installmentNumber: 1,
@@ -39,6 +39,9 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
   const [hasChanges, setHasChanges] = useState(false);
   const [selectedInstallment, setSelectedInstallment] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef(null);
   
   // Installment edit modal
   const { isOpen: isInstallmentModalOpen, onOpen: onInstallmentModalOpen, onClose: onInstallmentModalClose } = useDisclosure();
@@ -71,6 +74,47 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
       month: 'short',
       day: 'numeric'
     });
+  };
+
+  const getDocumentDisplayName = (document) => {
+    // Check document type first (most reliable)
+    const docType = document.documentType?.toUpperCase() || '';
+    const originalName = document.originalName?.toLowerCase() || '';
+    
+    // Map specific document types to clear names
+    if (docType === 'AADHAR_CARD' || docType === 'AADHAR_FRONT' || docType === 'AADHAR_BACK' || 
+        (docType.includes('ID_PROOF') && originalName.includes('aadhar'))) {
+      return 'Aadhar Card';
+    }
+    if (docType === 'PAN_CARD' || (docType.includes('ID_PROOF') && originalName.includes('pan'))) {
+      return 'PAN Card';
+    }
+    if (docType === 'TRANSACTION_DOCUMENT' || docType.includes('TRANSACTION') || docType.includes('CHEQUE') || 
+        originalName.includes('transaction') || originalName.includes('cheque')) {
+      return 'Transaction / Cheque Document';
+    }
+    if (docType.includes('BANK_STATEMENT') || originalName.includes('bank') || originalName.includes('statement')) {
+      return 'Bank Statement';
+    }
+    if (docType.includes('INSTALLMENT_PROOF') || originalName.includes('installment') || originalName.includes('proof')) {
+      return 'Installment Proof';
+    }
+    if (docType.includes('PAYMENT_RECEIPT') || originalName.includes('payment') || originalName.includes('receipt')) {
+      return 'Payment Receipt';
+    }
+    // Generic ID Proof - try to identify from filename
+    if (docType.includes('ID_PROOF')) {
+      if (originalName.includes('aadhar')) {
+        return 'Aadhar Card';
+      }
+      if (originalName.includes('pan')) {
+        return 'PAN Card';
+      }
+      return 'ID Proof Document';
+    }
+    
+    // Fallback to original name or document type
+    return document.originalName || document.documentType?.replace(/_/g, ' ') || 'Document';
   };
 
   const getStatusColor = (status) => {
@@ -119,7 +163,160 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
 
   const handleEditInstallment = (installment) => {
     setSelectedInstallment(installment);
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
     onInstallmentModalOpen();
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+        toast({
+          title: "Invalid File Type",
+          description: "Only PDF files are allowed",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        e.target.value = '';
+        setSelectedFile(null);
+        return;
+      }
+      if (file.size > 10 * 1024 * 1024) {
+        toast({
+          title: "File Too Large",
+          description: "File size must be less than 10MB",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        e.target.value = '';
+        setSelectedFile(null);
+        return;
+      }
+      setSelectedFile(file);
+      toast({
+        title: "File Selected",
+        description: `${file.name} selected for upload`,
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleUploadDocument = async () => {
+    if (!selectedFile || !selectedInstallment || !booking) {
+      toast({
+        title: "Error",
+        description: "Please select a file to upload",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    try {
+      setIsUploading(true);
+      
+      // Create a new File object with installment number in the name
+      const installmentNumber = selectedInstallment.installmentNumber;
+      const fileExtension = selectedFile.name.split('.').pop();
+      const baseFileName = selectedFile.name.replace(/\.[^/.]+$/, '');
+      const newFileName = `Installment_${installmentNumber}_${baseFileName}.${fileExtension}`;
+      
+      // Create a new File object with the updated name
+      const renamedFile = new File([selectedFile], newFileName, {
+        type: selectedFile.type,
+        lastModified: selectedFile.lastModified
+      });
+      
+      // Check if there's an existing proof document for this installment
+      const existingDoc = booking?.documents?.find(doc => {
+        if (doc.documentType !== 'INSTALLMENT_PROOF') return false;
+        const fileName = doc.originalName?.toLowerCase() || '';
+        return fileName.includes(`installment_${installmentNumber}`) || 
+               fileName.includes(`installment${installmentNumber}`) ||
+               fileName.match(new RegExp(`installment[_-]?${installmentNumber}`, 'i'));
+      });
+
+      let response;
+      let updatedBooking;
+
+      if (existingDoc && existingDoc._id) {
+        // Update existing document
+        const formData = new FormData();
+        formData.append('document', renamedFile);
+        formData.append('documentType', 'INSTALLMENT_PROOF');
+
+        response = await purchaseBookingService.updateDocumentInPurchaseBooking(
+          booking.bookingId || booking._id,
+          existingDoc._id,
+          formData
+        );
+
+        // Backend returns { message, data: updatedBooking }
+        updatedBooking = response?.data || response;
+      } else {
+        // Add new document
+        const formData = new FormData();
+        formData.append('documents', renamedFile);
+        formData.append('documentType', 'INSTALLMENT_PROOF');
+
+        response = await purchaseBookingService.addDocumentsToPurchaseBooking(
+          booking.bookingId || booking._id,
+          formData
+        );
+
+        // Backend returns { message, count, data: updatedBooking }
+        updatedBooking = response?.data || response;
+      }
+
+      const newDocuments = updatedBooking?.documents || [];
+
+      if (newDocuments.length > 0 || response) {
+        // Update booking state with all documents from the response
+        setBooking(prev => ({
+          ...prev,
+          documents: newDocuments.length > 0 ? newDocuments : prev.documents
+        }));
+
+        setHasChanges(true);
+        setSelectedFile(null);
+        
+        // Reset file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+
+        toast({
+          title: "Success",
+          description: existingDoc 
+            ? "Installment proof document updated successfully" 
+            : "Installment proof document uploaded successfully",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        throw new Error(response?.message || 'Upload failed');
+      }
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      toast({
+        title: "Upload Failed",
+        description: error.response?.data?.message || error.message || "Failed to upload document",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const handleViewPdf = (url, title) => {
@@ -202,13 +399,13 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
 
   return (
     <>
-      <Modal isOpen={isOpen} onClose={handleCancel} size={{ base: "full", sm: "4xl", md: "5xl", lg: "6xl" }} isCentered>
+      <Modal isOpen={isOpen} onClose={isReadOnly ? onClose : handleCancel} size={{ base: "full", sm: "4xl", md: "5xl", lg: "6xl" }} isCentered>
         <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
         <ModalContent mx={{ base: 2, sm: 0 }} maxH={{ base: "100vh", sm: "90vh" }} overflow="visible">
           <ModalHeader position="relative" p={{ base: 3, sm: 4, md: 6 }} bg="gray.50" borderBottom="1px" borderColor="gray.200">
             <VStack align="start" spacing={{ base: 1, sm: 2 }} w="full">
 <Heading as="h1" fontSize={{ base: 'lg', sm: 'xl', md: '2xl' }} fontWeight="bold" textAlign={{ base: 'center', md: 'left' }}>
-        Edit Purchase Booking
+                {isReadOnly ? 'View Purchase Booking' : 'Edit Purchase Booking'}
         </Heading>
               <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.600">Booking ID: {booking.bookingId || booking._id?.slice(-8)}</Text>
             </VStack>
@@ -218,7 +415,7 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
               right={{ base: 2, sm: 3, md: 4 }} 
               variant="ghost" 
               size={{ base: "sm", sm: "md", md: "lg" }} 
-              onClick={handleCancel} 
+              onClick={isReadOnly ? onClose : handleCancel} 
               _hover={{ bg: 'red.50', color: 'red.600' }} 
               color="gray.600"
             >
@@ -271,6 +468,48 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                       </Grid>
                     </Box>
 
+                    {/* Property Booking Form Details */}
+                    {(booking.developer || booking.channelPartnerName || booking.projectName || booking.location || booking.tcfNumber) && (
+                      <Box p={4} bg="white" borderRadius="lg" border="1px" borderColor="blue.100" shadow="sm">
+                        <HStack mb={3} align="center">
+                          <Box p={2} bg="blue.100" borderRadius="full"><Text fontSize="lg" color="blue.600">📋</Text></Box>
+                          <Text fontSize="md" fontWeight="semibold" color="blue.700">Property Booking Form</Text>
+                        </HStack>
+                        <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4}>
+                          {booking.developer && (
+                            <GridItem>
+                              <Text fontSize="sm" color="blue.600" fontWeight="medium" mb={1}>Developer</Text>
+                              <Text fontSize="md" color="gray.800">{booking.developer}</Text>
+                            </GridItem>
+                          )}
+                          {booking.channelPartnerName && (
+                            <GridItem>
+                              <Text fontSize="sm" color="blue.600" fontWeight="medium" mb={1}>Channel Partner Name</Text>
+                              <Text fontSize="md" color="gray.800">{booking.channelPartnerName}</Text>
+                            </GridItem>
+                          )}
+                          {booking.projectName && (
+                            <GridItem>
+                              <Text fontSize="sm" color="blue.600" fontWeight="medium" mb={1}>Project Name</Text>
+                              <Text fontSize="md" color="gray.800">{booking.projectName}</Text>
+                            </GridItem>
+                          )}
+                          {booking.location && (
+                            <GridItem>
+                              <Text fontSize="sm" color="blue.600" fontWeight="medium" mb={1}>Location</Text>
+                              <Text fontSize="md" color="gray.800">{booking.location}</Text>
+                            </GridItem>
+                          )}
+                          {booking.tcfNumber && (
+                            <GridItem>
+                              <Text fontSize="sm" color="blue.600" fontWeight="medium" mb={1}>TCF Number</Text>
+                              <Text fontSize="md" color="gray.800">{booking.tcfNumber}</Text>
+                            </GridItem>
+                          )}
+                        </Grid>
+                      </Box>
+                    )}
+
                     {/* Property Details - Comprehensive */}
                     <Box p={4} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
                       <HStack mb={3} align="center">
@@ -286,7 +525,11 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                           </Box>
                           <Box>
                             <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>Property Type</Text>
-                            <Text fontSize="md" color="gray.700">{booking.propertyId?.propertyTypeId || 'N/A'}</Text>
+                            <Text fontSize="md" color="gray.700">
+                              {booking.propertyId?.propertyTypeId?.typeName || 
+                               booking.propertyId?.propertyTypeId?.name || 
+                               (typeof booking.propertyId?.propertyTypeId === 'string' ? booking.propertyId.propertyTypeId : 'N/A')}
+                            </Text>
                           </Box>
                           <Box>
                             <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>Status</Text>
@@ -408,6 +651,128 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                       </VStack>
                     </Box>
 
+                    {/* Buyer Details Section */}
+                    {(booking.buyerFullName || booking.buyerAddress || booking.buyerCityPin || booking.buyerMobileNo || booking.buyerEmailId || booking.buyerAadharNo || booking.buyerPanNo) && (
+                      <Box p={4} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
+                        <HStack mb={3} align="center">
+                          <Box p={2} bg="green.100" borderRadius="full"><Text fontSize="lg" color="green.600">🧾</Text></Box>
+                          <Text fontSize="md" fontWeight="semibold" color="green.700">Buyer Details</Text>
+                        </HStack>
+                        <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4}>
+                          {booking.buyerFullName && (
+                            <GridItem>
+                              <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>Full Name</Text>
+                              <Text fontSize="md" color="gray.800">{booking.buyerFullName}</Text>
+                            </GridItem>
+                          )}
+                          {booking.buyerAddress && (
+                            <GridItem>
+                              <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>Address</Text>
+                              <Text fontSize="md" color="gray.800">{booking.buyerAddress}</Text>
+                            </GridItem>
+                          )}
+                          {booking.buyerCityPin && (
+                            <GridItem>
+                              <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>City / PIN</Text>
+                              <Text fontSize="md" color="gray.800">{booking.buyerCityPin}</Text>
+                            </GridItem>
+                          )}
+                          {booking.buyerMobileNo && (
+                            <GridItem>
+                              <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>Mobile No.</Text>
+                              <Text fontSize="md" color="gray.800">{booking.buyerMobileNo}</Text>
+                            </GridItem>
+                          )}
+                          {booking.buyerEmailId && (
+                            <GridItem>
+                              <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>Email ID</Text>
+                              <Text fontSize="md" color="gray.800">{booking.buyerEmailId}</Text>
+                            </GridItem>
+                          )}
+                          {booking.buyerAadharNo && (
+                            <GridItem>
+                              <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>Aadhar No.</Text>
+                              <Text fontSize="md" color="gray.800">{booking.buyerAadharNo}</Text>
+                            </GridItem>
+                          )}
+                          {booking.buyerPanNo && (
+                            <GridItem>
+                              <Text fontSize="sm" color="green.600" fontWeight="medium" mb={1}>PAN No.</Text>
+                              <Text fontSize="md" color="gray.800">{booking.buyerPanNo}</Text>
+                            </GridItem>
+                          )}
+                        </Grid>
+                      </Box>
+                    )}
+
+                    {/* Additional Property Details */}
+                    {(booking.flatNo || booking.floorNo || booking.balconies || booking.towerWing || booking.propertyType || booking.carpetArea || booking.facing || booking.parkingNo || booking.specialFeatures) && (
+                      <Box p={4} bg="white" borderRadius="lg" border="1px" borderColor="orange.100" shadow="sm">
+                        <HStack mb={3} align="center">
+                          <Box p={2} bg="orange.100" borderRadius="full"><Text fontSize="lg" color="orange.600">🏢</Text></Box>
+                          <Text fontSize="md" fontWeight="semibold" color="orange.700">Additional Property Details</Text>
+                        </HStack>
+                        <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4}>
+                          {booking.flatNo && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Flat / Plot No.</Text>
+                              <Text fontSize="md" color="gray.800">{booking.flatNo}</Text>
+                            </GridItem>
+                          )}
+                          {booking.towerWing && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Tower / Wing</Text>
+                              <Text fontSize="md" color="gray.800">{booking.towerWing}</Text>
+                            </GridItem>
+                          )}
+                          {booking.floorNo && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Floor</Text>
+                              <Text fontSize="md" color="gray.800">{booking.floorNo}</Text>
+                            </GridItem>
+                          )}
+                          {(booking.propertyType || booking.propertyTypeOther) && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Type</Text>
+                              <Text fontSize="md" color="gray.800">
+                                {booking.propertyType === "Other" ? booking.propertyTypeOther : booking.propertyType || 'N/A'}
+                              </Text>
+                            </GridItem>
+                          )}
+                          {booking.carpetArea && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Carpet Area</Text>
+                              <Text fontSize="md" color="gray.800">{booking.carpetArea}</Text>
+                            </GridItem>
+                          )}
+                          {booking.facing && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Facing</Text>
+                              <Text fontSize="md" color="gray.800">{booking.facing}</Text>
+                            </GridItem>
+                          )}
+                          {booking.parkingNo && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Parking No.</Text>
+                              <Text fontSize="md" color="gray.800">{booking.parkingNo}</Text>
+                            </GridItem>
+                          )}
+                          {booking.balconies && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Balconies</Text>
+                              <Text fontSize="md" color="gray.800">{booking.balconies}</Text>
+                            </GridItem>
+                          )}
+                          {booking.specialFeatures && (
+                            <GridItem colSpan={{ base: 1, sm: 2 }}>
+                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Special Features / Amenities</Text>
+                              <Text fontSize="md" color="gray.800">{booking.specialFeatures}</Text>
+                            </GridItem>
+                          )}
+                        </Grid>
+                      </Box>
+                    )}
+
                     {/* Salesperson Details - Comprehensive */}
                     <Box p={4} bg="white" borderRadius="lg" border="1px" borderColor="teal.100" shadow="sm">
                       <HStack mb={3} align="center">
@@ -443,17 +808,57 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                       <VStack spacing={4} align="stretch">
                         <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
                           <GridItem>
-                            <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Total Property Value</Text>
+                            <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Total Cost</Text>
                             <Text fontSize="lg" fontWeight="bold" color="orange.700">{formatCurrency(booking.totalPropertyValue)}</Text>
                           </GridItem>
+                          {booking.bookingAmount && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Booking Amount</Text>
+                              <Text fontSize="lg" fontWeight="bold" color="orange.700">{formatCurrency(booking.bookingAmount)}</Text>
+                            </GridItem>
+                          )}
                           <GridItem>
                             <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Down Payment</Text>
                             <Text fontSize="lg" fontWeight="bold" color="orange.700">{formatCurrency(booking.downPayment)}</Text>
                           </GridItem>
+                          {booking.paymentMode && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Payment Mode</Text>
+                              <Badge colorScheme="orange" variant="subtle" fontSize="md" px={3} py={1}>
+                                {booking.paymentMode}
+                              </Badge>
+                            </GridItem>
+                          )}
+                          {booking.financeMode && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Finance Mode</Text>
+                              <Text fontSize="md" color="gray.800">{booking.financeMode}</Text>
+                            </GridItem>
+                          )}
+                          {booking.totalEmi && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Total EMI</Text>
+                              <Text fontSize="lg" fontWeight="bold" color="orange.700">{formatCurrency(booking.totalEmi)}</Text>
+                            </GridItem>
+                          )}
+                          {booking.transactionChequeNo && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Transaction / Cheque No.</Text>
+                              <Text fontSize="md" color="gray.800">{booking.transactionChequeNo}</Text>
+                            </GridItem>
+                          )}
+                          {booking.bookingDate && (
+                            <GridItem>
+                              <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Booking Date</Text>
+                              <Text fontSize="md" color="gray.800">{formatDate(booking.bookingDate)}</Text>
+                            </GridItem>
+                          )}
+                          {booking.loanAmount && (
                           <GridItem>
                             <Text fontSize="sm" color="orange.600" fontWeight="semibold" mb={1}>Loan Amount</Text>
                             <Text fontSize="lg" fontWeight="bold" color="orange.700">{formatCurrency(booking.loanAmount)}</Text>
                           </GridItem>
+                          )}
                         </SimpleGrid>
 
                         <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} spacing={4}>
@@ -521,60 +926,84 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                           </HStack>
                         </HStack>
 
-                        <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={4}>
+                        <SimpleGrid columns={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing={{ base: 2, sm: 3, md: 4 }}>
                           {editedInstallments.map((installment, index) => (
-                            <Box key={installment._id || index} p={4} bg={installment.status === 'PAID' ? 'green.50' : 'white'} borderRadius="lg" border="1px" borderColor={installment.status === 'PAID' ? 'green.200' : installment.status === 'PENDING' ? 'yellow.200' : installment.status === 'OVERDUE' ? 'red.200' : 'gray.200'} _hover={{ transform: 'translateY(-2px)', boxShadow: 'md', transition: 'all 0.2s' }}>
-                              <VStack spacing={3} align="stretch">
+                            <Box key={installment._id || index} p={{ base: 2, sm: 3 }} bg={installment.status === 'PAID' ? 'green.50' : 'white'} borderRadius="md" border="1px" borderColor={installment.status === 'PAID' ? 'green.200' : installment.status === 'PENDING' ? 'yellow.200' : installment.status === 'OVERDUE' ? 'red.200' : 'gray.200'} _hover={{ transform: 'translateY(-2px)', boxShadow: 'md', transition: 'all 0.2s' }}>
+                              <VStack spacing={{ base: 1.5, sm: 2 }} align="stretch">
                                 <HStack justify="space-between" w="full">
                                   <HStack spacing={2}>
-                                    <Text fontSize="sm" color="gray.600" fontWeight="medium">Installment {installment.installmentNumber}</Text>
-                                    {/* Document indicator */}
-                                    {booking?.documents && booking.documents.length > 0 && booking.documents.some(doc => doc.documentUrl) && (
-                                      <Tooltip label={`${booking.documents.filter(doc => doc.documentUrl).length} document(s) available`} placement="top">
-                                        <Badge colorScheme="blue" variant="subtle" size="xs" borderRadius="full" cursor="pointer">
-                                          📄 {booking.documents.filter(doc => doc.documentUrl).length}
+                                    <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600" fontWeight="medium">Installment {installment.installmentNumber}</Text>
+                                    {/* Document indicator - Only show INSTALLMENT_PROOF documents for this specific installment */}
+                                    {(() => {
+                                      const installmentNumber = installment.installmentNumber;
+                                      const installmentDocs = booking?.documents?.filter(doc => {
+                                        if (doc.documentType !== 'INSTALLMENT_PROOF') return false;
+                                        // Check if filename contains the installment number
+                                        const fileName = doc.originalName?.toLowerCase() || '';
+                                        return fileName.includes(`installment_${installmentNumber}`) || 
+                                               fileName.includes(`installment${installmentNumber}`) ||
+                                               fileName.match(new RegExp(`installment[_-]?${installmentNumber}`, 'i'));
+                                      }) || [];
+                                      return installmentDocs.length > 0 ? (
+                                        <Tooltip label={`${installmentDocs.length} proof document(s) for Installment ${installmentNumber}`} placement="top">
+                                          <Badge colorScheme="blue" variant="subtle" fontSize={{ base: "2xs", sm: "xs" }} borderRadius="full" cursor="pointer">
+                                            📄 {installmentDocs.length}
                                         </Badge>
                                       </Tooltip>
-                                    )}
+                                      ) : null;
+                                    })()}
                                   </HStack>
-                                  <Badge colorScheme={installment.status === 'PAID' ? 'green' : installment.status === 'PENDING' ? 'yellow' : installment.status === 'OVERDUE' ? 'red' : 'gray'} variant="solid" size="sm" borderRadius="full">{installment.status}</Badge>
+                                  <Badge colorScheme={installment.status === 'PAID' ? 'green' : installment.status === 'PENDING' ? 'yellow' : installment.status === 'OVERDUE' ? 'red' : 'gray'} variant="solid" fontSize={{ base: "2xs", sm: "xs" }} borderRadius="full">{installment.status}</Badge>
                                 </HStack>
                                 
-                                <Text fontSize="md" fontWeight="bold" color="blue.600">{formatCurrency(installment.amount)}</Text>
+                                <Text fontSize={{ base: "sm", sm: "md" }} fontWeight="bold" color="blue.600">{formatCurrency(installment.amount)}</Text>
                                 
-                                <Text fontSize="xs" color="gray.600" textAlign="center">
+                                <Text fontSize={{ base: "2xs", sm: "xs" }} color="gray.600" textAlign="center">
                                   <strong>Due:</strong> {formatDate(installment.dueDate)}
                                 </Text>
 
                                 <HStack spacing={2} justify="center">
+                                  {!isReadOnly && (
                                   <IconButton 
-                                    size="sm" 
+                                      size={{ base: "xs", sm: "sm" }}
                                     colorScheme="blue" 
                                     variant="outline" 
                                     icon={<FiEdit />} 
                                     onClick={() => handleEditInstallment(installment)} 
                                     aria-label="Edit installment" 
                                   />
-                                  {/* Show view button only if booking has documents */}
-                                  {booking?.documents && booking.documents.length > 0 && booking.documents.some(doc => doc.documentUrl) && (
+                                  )}
+                                  {/* Show view button only if installment has INSTALLMENT_PROOF documents for this specific installment */}
+                                  {(() => {
+                                    const installmentNumber = installment.installmentNumber;
+                                    const installmentDocs = booking?.documents?.filter(doc => {
+                                      if (doc.documentType !== 'INSTALLMENT_PROOF') return false;
+                                      // Check if filename contains the installment number
+                                      const fileName = doc.originalName?.toLowerCase() || '';
+                                      return fileName.includes(`installment_${installmentNumber}`) || 
+                                             fileName.includes(`installment${installmentNumber}`) ||
+                                             fileName.match(new RegExp(`installment[_-]?${installmentNumber}`, 'i'));
+                                    }) || [];
+                                    return installmentDocs.length > 0 ? (
                                     <IconButton 
-                                      size="sm" 
+                                        size={{ base: "xs", sm: "sm" }}
                                       colorScheme="purple" 
                                       variant="outline" 
                                       icon={<FiEye />} 
                                       onClick={() => {
-                                        // Find the first PDF document or first document
-                                        const pdfDoc = booking.documents.find(doc => 
+                                          const pdfDoc = installmentDocs.find(doc => 
                                           doc.mimeType?.includes('pdf') || 
-                                          doc.originalName?.toLowerCase().includes('.pdf')
-                                        ) || booking.documents[0];
+                                            doc.originalName?.toLowerCase().includes('.pdf') ||
+                                            doc.documentUrl?.includes('.pdf')
+                                          ) || installmentDocs[0];
                                         if (pdfDoc?.documentUrl) {
-                                          handleViewPdf(pdfDoc.documentUrl, `Installment ${installment.installmentNumber} - ${pdfDoc.originalName || 'Document'}`);
+                                            handleViewPdf(pdfDoc.documentUrl, `Installment ${installmentNumber} - ${pdfDoc.originalName || 'Document'}`);
                                         }
                                       }} 
-                                      aria-label="View documents" 
+                                        aria-label={`View Installment ${installmentNumber} documents`}
                                     />
-                                  )}
+                                    ) : null;
+                                  })()}
                                 </HStack>
                               </VStack>
                             </Box>
@@ -609,6 +1038,7 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                             <Text fontSize={{ base: "sm", md: "md" }} color="orange.700" fontWeight="medium">
                               Uploaded Documents ({booking.documents.length} files)
                             </Text>
+                            {!isReadOnly && (
                             <Button
                               size={{ base: "sm", md: "md" }}
                               colorScheme="blue"
@@ -618,6 +1048,7 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                             >
                               Upload More
                             </Button>
+                            )}
                           </HStack>
                           
                           <Box 
@@ -669,7 +1100,10 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                                     
                                     {/* Document Name */}
                                     <VStack spacing={{ base: 1, sm: 1 }} align="start" w="full">
-                                      <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="semibold" color="gray.800" noOfLines={2}>
+                                      <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="bold" color="blue.700" noOfLines={2}>
+                                        {getDocumentDisplayName(document)}
+                                      </Text>
+                                      <Text fontSize={{ base: "2xs", sm: "xs" }} color="gray.500" fontStyle="italic" noOfLines={1}>
                                         {document.originalName}
                                       </Text>
                                       
@@ -684,11 +1118,6 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                                           <strong>Uploaded:</strong> {formatDate(document.uploadedAt)}
                                         </Text>
                                       )}
-                                      
-                                      {/* MIME Type */}
-                                      <Text fontSize={{ base: "xs", sm: "xs" }} color="gray.600">
-                                        <strong>Type:</strong> {document.mimeType?.toUpperCase() || 'N/A'}
-                                      </Text>
                                     </VStack>
                                     
                                     {/* Action Buttons */}
@@ -765,6 +1194,7 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
           </ModalBody>
 
           {/* Form Footer - Standard pattern like other forms */}
+          {!isReadOnly && (
           <Box
             mt={{ base: 6, md: 8 }}
             p={{ base: 4, md: 6 }}
@@ -795,6 +1225,28 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
               </Button>
             </Flex>
           </Box>
+          )}
+          {isReadOnly && (
+            <Box
+              mt={{ base: 6, md: 8 }}
+              p={{ base: 4, md: 6 }}
+              bg="white"
+              borderTop="1px solid"
+              borderColor="gray.200"
+              borderRadius="lg"
+              shadow="sm"
+            >
+              <Flex justify="flex-end" align="center" gap={3}>
+                <Button 
+                  variant="ghost" 
+                  onClick={onClose}
+                  size="md"
+                >
+                  Close
+                </Button>
+              </Flex>
+            </Box>
+          )}
         </ModalContent>
       </Modal>
 
@@ -807,34 +1259,34 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
           maxH={{ base: "100vh", sm: "90vh" }}
           borderRadius={{ base: 0, sm: "md" }}
         >
-          <ModalHeader position="relative" p={{ base: 3, sm: 4 }} bg="gray.50" borderBottom="1px" borderColor="gray.200">
-            <VStack align="start" spacing={{ base: 1, sm: 2 }} w="full">
-              <Heading size={{ base: "sm", sm: "md", md: "lg" }} color="gray.800">
+          <ModalHeader position="relative" p={{ base: 2, sm: 3 }} bg="gray.50" borderBottom="1px" borderColor="gray.200">
+            <VStack align="start" spacing={1} w="full">
+              <Heading size={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">
                 Edit Installment {selectedInstallment?.installmentNumber}
               </Heading>
-              <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.600">
+              <Text fontSize={{ base: "2xs", sm: "xs" }} color="gray.600">
                 Amount: {selectedInstallment ? formatCurrency(selectedInstallment.amount) : 'N/A'}
               </Text>
             </VStack>
-            <Button
+            <IconButton
               position="absolute"
-              top={{ base: 2, sm: 3, md: 4 }}
-              right={{ base: 2, sm: 3, md: 4 }}
+              top={{ base: 1, sm: 2 }}
+              right={{ base: 1, sm: 2 }}
               variant="ghost"
-              size={{ base: "sm", sm: "md" }}
+              size={{ base: "xs", sm: "sm" }}
+              icon={<FiX />}
               onClick={onInstallmentModalClose}
               _hover={{ bg: 'red.50', color: 'red.600' }}
               color="gray.600"
-            >
-              ✕
-            </Button>
+              aria-label="Close"
+            />
           </ModalHeader>
           
           <ModalBody p={0} bg="gray.25">
             <Box
-              p={{ base: 3, sm: 4, md: 6 }}
-              maxH={{ base: "calc(100vh - 140px)", sm: "calc(90vh - 140px)", md: "60vh" }}
-              minH={{ base: "calc(100vh - 140px)", sm: "calc(90vh - 140px)", md: "60vh" }}
+              p={{ base: 2, sm: 2.5 }}
+              maxH={{ base: "calc(100vh - 100px)", sm: "calc(90vh - 100px)", md: "60vh" }}
+              minH={{ base: "calc(100vh - 100px)", sm: "calc(90vh - 100px)", md: "60vh" }}
               overflowY="auto"
               overflowX="hidden"
               data-modal-body
@@ -861,29 +1313,29 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
               }}
             >
             {selectedInstallment && (
-              <VStack spacing={{ base: 4, sm: 5, md: 6 }} align="stretch">
+              <VStack spacing={{ base: 2, sm: 3 }} align="stretch">
 
                 {/* Installment Details */}
-                <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="blue.100" shadow="sm">
-                  <HStack mb={{ base: 2, sm: 3 }} align="center">
-                    <Box p={{ base: 1, sm: 2 }} bg="blue.100" borderRadius="full">
-                      <Text fontSize={{ base: "md", sm: "lg" }} color="blue.600">📅</Text>
+                <Box p={{ base: 2, sm: 2.5 }} bg="white" borderRadius="md" border="1px" borderColor="blue.100" shadow="sm">
+                  <HStack mb={2} align="center">
+                    <Box p={1} bg="blue.100" borderRadius="full">
+                      <Text fontSize={{ base: "sm", sm: "md" }} color="blue.600">📅</Text>
                     </Box>
-                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} fontWeight="semibold" color="blue.700">
+                    <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="semibold" color="blue.700">
                       Installment {selectedInstallment.installmentNumber} Details
                     </Text>
                   </HStack>
                   
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, sm: 4, md: 5 }}>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 2, sm: 3 }}>
                     <Box>
-                      <Text fontSize={{ base: "sm", sm: "sm", md: "md" }} color="blue.600" fontWeight="medium" mb={2}>Amount</Text>
-                      <Text fontSize={{ base: "lg", sm: "xl", md: "2xl" }} fontWeight="bold" color="blue.700">
+                      <Text fontSize={{ base: "2xs", sm: "xs" }} color="blue.600" fontWeight="medium" mb={1}>Amount</Text>
+                      <Text fontSize={{ base: "sm", sm: "md" }} fontWeight="bold" color="blue.700">
                         {formatCurrency(selectedInstallment.amount)}
                       </Text>
                     </Box>
                     <Box>
-                      <Text fontSize={{ base: "sm", sm: "sm", md: "md" }} color="blue.600" fontWeight="medium" mb={2}>Due Date</Text>
-                      <Text fontSize={{ base: "md", sm: "lg", md: "xl" }} color="gray.700">
+                      <Text fontSize={{ base: "2xs", sm: "xs" }} color="blue.600" fontWeight="medium" mb={1}>Due Date</Text>
+                      <Text fontSize={{ base: "xs", sm: "sm" }} color="gray.700">
                         {formatDate(selectedInstallment.dueDate)}
                       </Text>
                     </Box>
@@ -891,24 +1343,24 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                 </Box>
 
                 {/* Edit Form */}
-                <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
-                  <HStack mb={{ base: 2, sm: 3 }} align="center">
-                    <Box p={{ base: 1, sm: 2 }} bg="green.100" borderRadius="full">
-                      <Text fontSize={{ base: "md", sm: "lg" }} color="green.600">✏️</Text>
+                <Box p={{ base: 2, sm: 2.5 }} bg="white" borderRadius="md" border="1px" borderColor="green.100" shadow="sm">
+                  <HStack mb={2} align="center">
+                    <Box p={1} bg="green.100" borderRadius="full">
+                      <Text fontSize={{ base: "sm", sm: "md" }} color="green.600">✏️</Text>
                     </Box>
-                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} fontWeight="semibold" color="green.700">
+                    <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="semibold" color="green.700">
                       Edit Details
                     </Text>
                   </HStack>
                   
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 4, sm: 5, md: 6 }}>
+                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 2, sm: 3 }}>
                     <FormControl>
-                      <FormLabel fontSize={{ base: "sm", sm: "sm", md: "md" }} fontWeight="medium">Status</FormLabel>
+                      <FormLabel fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium">Status</FormLabel>
                       <Select 
                         value={selectedInstallment.status} 
                         onChange={(e) => handleInstallmentStatusChange(selectedInstallment.installmentNumber, e.target.value)}
-                        size={{ base: "md", sm: "md", md: "lg" }}
-                        fontSize={{ base: "sm", sm: "sm", md: "md" }}
+                        size={{ base: "sm", sm: "sm" }}
+                        fontSize={{ base: "xs", sm: "sm" }}
                       >
                         <option value="PENDING">Pending</option>
                         <option value="PAID">Paid</option>
@@ -918,14 +1370,14 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                     </FormControl>
 
                     <FormControl>
-                      <FormLabel fontSize={{ base: "sm", sm: "sm", md: "md" }} fontWeight="medium">Late Fees</FormLabel>
+                      <FormLabel fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium">Late Fees</FormLabel>
                       <NumberInput 
                         value={selectedInstallment.lateFees || 0} 
                         onChange={(value) => handleLateFeesChange(selectedInstallment.installmentNumber, value)} 
                         min={0}
-                        size={{ base: "md", sm: "md", md: "lg" }}
+                        size={{ base: "sm", sm: "sm" }}
                       >
-                        <NumberInputField placeholder="Enter late fees" fontSize={{ base: "sm", sm: "sm", md: "md" }} />
+                        <NumberInputField placeholder="Enter late fees" fontSize={{ base: "xs", sm: "sm" }} />
                         <NumberInputStepper>
                           <NumberIncrementStepper />
                           <NumberDecrementStepper />
@@ -934,116 +1386,78 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
                     </FormControl>
                   </SimpleGrid>
 
-                  <FormControl mt={{ base: 4, sm: 5, md: 6 }}>
-                    <FormLabel fontSize={{ base: "sm", sm: "sm", md: "md" }} fontWeight="medium">Notes</FormLabel>
+                  <FormControl mt={3}>
+                    <FormLabel fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium">Notes</FormLabel>
                     <Textarea 
                       value={selectedInstallment.notes || ''} 
                       onChange={(e) => handleNotesChange(selectedInstallment.installmentNumber, e.target.value)} 
                       placeholder="Add notes about this installment" 
-                      rows={{ base: 3, sm: 3, md: 4 }}
-                      size={{ base: "md", sm: "md", md: "lg" }}
-                      fontSize={{ base: "sm", sm: "sm", md: "md" }}
+                      rows={2}
+                      size={{ base: "sm", sm: "sm" }}
+                      fontSize={{ base: "xs", sm: "sm" }}
                     />
                   </FormControl>
                 </Box>
 
                 {/* Document Upload Section */}
-                <Box p={{ base: 4, sm: 5, md: 6 }} bg="white" borderRadius="lg" border="1px" borderColor="orange.200" shadow="sm">
-                  <HStack mb={{ base: 4, sm: 5, md: 6 }} align="center" justify="space-between" flexWrap="wrap">
-                    <HStack align="center">
-                      <Box p={{ base: 2, sm: 3 }} bg="orange.100" borderRadius="full">
-                        <Text fontSize={{ base: "lg", sm: "xl" }} color="orange.600">📎</Text>
+                <Box p={{ base: 2, sm: 2.5 }} bg="white" borderRadius="md" border="1px" borderColor="orange.200" shadow="sm">
+                  <HStack mb={2} align="center">
+                    <Box p={1} bg="orange.100" borderRadius="full">
+                      <Text fontSize={{ base: "sm", sm: "md" }} color="orange.600">📎</Text>
                       </Box>
-                      <Text fontSize={{ base: "md", sm: "lg", md: "xl" }} fontWeight="semibold" color="orange.700">
-                        Proof Documents
+                    <Text fontSize={{ base: "xs", sm: "sm" }} fontWeight="semibold" color="orange.700">
+                      Upload Proof Documents
                       </Text>
-                    </HStack>
-                    <Badge colorScheme="orange" variant="subtle" fontSize={{ base: "sm", sm: "md" }} borderRadius="full" px={3} py={1}>
-                      Upload Proof
-                    </Badge>
                   </HStack>
                   
-                  <VStack spacing={{ base: 4, sm: 5, md: 6 }} align="stretch">
-                    <Text fontSize={{ base: "sm", sm: "md", md: "lg" }} color="gray.600" textAlign="center" fontWeight="medium">
-                      Upload payment proof documents for Installment {selectedInstallment?.installmentNumber}
-                    </Text>
-                    
-                    
+                  <VStack spacing={2} align="stretch">
                     {/* File Upload */}
                     <FormControl>
-                      <FormLabel fontSize={{ base: "sm", sm: "md", md: "lg" }} fontWeight="medium">Select Files</FormLabel>
+                      <FormLabel fontSize={{ base: "2xs", sm: "xs" }} fontWeight="medium">Select PDF File</FormLabel>
                       <Input
+                        ref={fileInputRef}
                         type="file"
-                        multiple
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
-                        onChange={(e) => {
-                          const files = Array.from(e.target.files);
-                          if (files.length > 0) {
-                            toast({
-                              title: "Files Selected",
-                              description: `${files.length} file(s) selected for upload`,
-                              status: "success",
-                              duration: 3000,
-                              isClosable: true,
-                            });
-                          }
-                        }}
-                        p={{ base: 4, sm: 5, md: 6 }}
-                        border="2px dashed"
+                        accept=".pdf"
+                        onChange={handleFileSelect}
+                        isDisabled={isUploading}
+                        size={{ base: "sm", sm: "sm" }}
+                        border="1px dashed"
                         borderColor="orange.300"
-                        borderRadius="lg"
+                        borderRadius="md"
                         bg="orange.50"
                         _hover={{ borderColor: "orange.400", bg: "orange.100" }}
                         _focus={{ borderColor: "orange.500", boxShadow: "0 0 0 1px var(--chakra-colors-orange-500)" }}
                         cursor="pointer"
-                        fontSize={{ base: "sm", sm: "md", md: "lg" }}
-                        h={{ base: "60px", sm: "70px", md: "80px" }}
+                        fontSize={{ base: "xs", sm: "sm" }}
+                        h="auto"
+                        py={1}
                       />
-                      <FormHelperText fontSize={{ base: "sm", sm: "sm", md: "md" }} color="gray.500" mt={2}>
-                        Supported formats: PDF, DOC, DOCX, JPG, PNG (Max 5 files, 10MB each)
+                      <FormHelperText fontSize={{ base: "2xs", sm: "xs" }} color="gray.500" mt={1}>
+                        PDF files only (Max 10MB)
                       </FormHelperText>
-                    </FormControl>
-
-                    {/* Document Type Selection */}
-                    <FormControl>
-                      <FormLabel fontSize={{ base: "sm", sm: "md", md: "lg" }} fontWeight="medium">Document Type</FormLabel>
-                      <Select 
-                        placeholder="Select document type"
-                        size={{ base: "md", sm: "md", md: "lg" }}
-                        defaultValue="INSTALLMENT_PROOF"
-                        fontSize={{ base: "sm", sm: "md", md: "lg" }}
-                      >
-                        <option value="INSTALLMENT_PROOF">Installment Proof</option>
-                        <option value="PAYMENT_RECEIPT">Payment Receipt</option>
-                        <option value="BANK_STATEMENT">Bank Statement</option>
-                        <option value="CHEQUE_COPY">Cheque Copy</option>
-                        <option value="TRANSACTION_PROOF">Transaction Proof</option>
-                        <option value="OTHER">Other</option>
-                      </Select>
+                      {selectedFile && (
+                        <Text fontSize={{ base: "2xs", sm: "xs" }} color="green.600" mt={1} fontWeight="medium">
+                          Selected: {selectedFile.name}
+                        </Text>
+                      )}
                     </FormControl>
 
                     {/* Upload Button */}
                     <Button
-                      size={{ base: "md", sm: "lg", md: "xl" }}
+                      size={{ base: "sm", sm: "sm" }}
                       colorScheme="green"
                       variant="solid"
                       leftIcon={<FiUpload />}
-                      onClick={() => {
-                        toast({
-                          title: "Upload Ready",
-                          description: "Document upload functionality is ready for API integration",
-                          status: "success",
-                          duration: 3000,
-                          isClosable: true,
-                        });
-                      }}
+                      onClick={handleUploadDocument}
+                      isLoading={isUploading}
+                      loadingText="Uploading..."
+                      isDisabled={!selectedFile || isUploading}
                       w="full"
-                      h={{ base: "50px", sm: "55px", md: "60px" }}
-                      fontSize={{ base: "md", sm: "lg", md: "xl" }}
+                      fontSize={{ base: "xs", sm: "sm" }}
                       _hover={{ transform: 'translateY(-1px)', boxShadow: 'md' }}
                       transition="all 0.2s"
                     >
-                      Upload Proof Documents
+                      Upload Proof Document
                     </Button>
                   </VStack>
                 </Box>
@@ -1052,12 +1466,13 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate }) => 
             </Box>
           </ModalBody>
 
-          <ModalFooter p={{ base: 2, sm: 3, md: 4 }} bg="gray.50" borderTop="1px" borderColor="gray.200">
-            <HStack spacing={{ base: 2, sm: 3 }} w="full" justify="flex-end">
+          <ModalFooter p={{ base: 2, sm: 2.5 }} bg="gray.50" borderTop="1px" borderColor="gray.200">
+            <HStack spacing={2} w="full" justify="flex-end">
               <Button 
                 variant="ghost" 
                 onClick={onInstallmentModalClose}
-                size={{ base: "sm", sm: "md" }}
+                size={{ base: "xs", sm: "sm" }}
+                fontSize={{ base: "xs", sm: "sm" }}
               >
                 Close
               </Button>

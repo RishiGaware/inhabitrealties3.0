@@ -35,14 +35,16 @@ import {
   ModalBody,
   ModalFooter,
 } from '@chakra-ui/react';
-import { FiSave, FiX, FiHome, FiUser, FiCalendar, FiCheckCircle, FiInfo, FiRefreshCw } from 'react-icons/fi';
+import { FiSave, FiX, FiHome, FiUser, FiCalendar, FiCheckCircle, FiInfo, FiRefreshCw, FiEye } from 'react-icons/fi';
 import SearchableSelect from '../../components/common/SearchableSelect';
 import Loader from '../../components/common/Loader';
 import DocumentUpload from '../../components/common/DocumentUpload';
+import PropertyPreview from '../property/propertyMaster/PropertyPreview';
 import { rentalBookingService } from '../../services/paymentManagement/rentalBookingService';
 import { fetchProperties } from '../../services/propertyService';
 import { fetchUsers } from '../../services/usermanagement/userService';
 import { fetchRoles } from '../../services/rolemanagement/roleService';
+import { fetchPropertyTypes } from '../../services/propertytypes/propertyTypeService';
 
 const CreateNewRental = () => {
   const navigate = useNavigate();
@@ -62,15 +64,23 @@ const CreateNewRental = () => {
     advanceRent: "",
     rentDueDate: "",
     notes: "",
+    flatNo: "",
+    floorNo: "",
+    balconies: "",
+    otherDetails: "",
   });
 
   // Data for dropdowns
   const [properties, setProperties] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [salespersons, setSalespersons] = useState([]);
+  const [propertyTypes, setPropertyTypes] = useState([]);
 
   // Selected property details
   const [selectedProperty, setSelectedProperty] = useState(null);
+  
+  // Property preview modal
+  const { isOpen: isPreviewOpen, onOpen: onPreviewOpen, onClose: onPreviewClose } = useDisclosure();
 
   // Document upload state
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -92,10 +102,14 @@ const CreateNewRental = () => {
       // Step 1: Fetch roles first to get role IDs
       const rolesData = await fetchRoles();
 
-      // Step 2: Fetch properties
+      // Step 2: Fetch property types
+      const propertyTypesData = await fetchPropertyTypes();
+      setPropertyTypes(propertyTypesData.data || []);
+
+      // Step 3: Fetch properties
       const propertiesData = await fetchProperties();
 
-      // Step 3: Fetch all users and filter by role
+      // Step 4: Fetch all users and filter by role
       const allUsersData = await fetchUsers();
 
       // Filter users by role on the frontend
@@ -168,6 +182,10 @@ const CreateNewRental = () => {
         ...prev,
         propertyId,
         monthlyRent: property.price,
+        flatNo: "",
+        floorNo: "",
+        balconies: "",
+        otherDetails: "",
       }));
     } else {
       setSelectedProperty(null);
@@ -175,8 +193,25 @@ const CreateNewRental = () => {
         ...prev,
         propertyId: "",
         monthlyRent: "",
+        flatNo: "",
+        floorNo: "",
+        balconies: "",
+        otherDetails: "",
       }));
     }
+  };
+
+  // Check if property is building/apartment type
+  const isBuildingType = () => {
+    if (!selectedProperty) return false;
+    const propertyType = selectedProperty.propertyTypeId;
+    if (!propertyType) return false;
+    
+    const typeName = typeof propertyType === 'object' ? propertyType.typeName : 
+                     propertyTypes.find(pt => pt._id === propertyType)?.typeName || '';
+    
+    const buildingTypes = ['APARTMENT', 'BUILDING', 'FLAT', 'CONDOMINIUM', 'TOWER'];
+    return buildingTypes.some(type => typeName?.toUpperCase().includes(type));
   };
 
   const handleCustomerChange = (customerId) => {
@@ -333,6 +368,10 @@ const CreateNewRental = () => {
       advanceRent: "",
       rentDueDate: "",
       notes: "",
+      flatNo: "",
+      floorNo: "",
+      balconies: "",
+      otherDetails: "",
     });
     setSelectedProperty(null);
     setSelectedFiles([]); // Reset selected files
@@ -424,9 +463,21 @@ const CreateNewRental = () => {
               {selectedProperty && (
                 <Box mt={4} p={{ base: 3, md: 4 }} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200">
                   <VStack spacing={3} align="stretch">
-                    <HStack>
-                      <FiInfo color="blue.600" />
-                      <Text fontWeight="semibold" color="blue.800" fontSize={{ base: 'sm', md: 'md' }}>Selected Property Details</Text>
+                    <HStack justify="space-between" w="full">
+                      <HStack>
+                        <FiInfo color="blue.600" />
+                        <Text fontWeight="semibold" color="blue.800" fontSize={{ base: 'sm', md: 'md' }}>Selected Property Details</Text>
+                      </HStack>
+                      <Button
+                        leftIcon={<FiEye />}
+                        size="sm"
+                        colorScheme="blue"
+                        variant="outline"
+                        onClick={onPreviewOpen}
+                        _hover={{ bg: "blue.100" }}
+                      >
+                        View Full Details
+                      </Button>
                     </HStack>
                     
                     <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={{ base: 3, md: 4 }}>
@@ -437,16 +488,18 @@ const CreateNewRental = () => {
                             <Text fontWeight="medium">Name</Text>
                           </HStack>
                           <Text fontSize="sm" color="gray.700">{selectedProperty.name}</Text>
-                </VStack>
+                        </VStack>
                       </GridItem>
 
                       <GridItem>
                         <VStack spacing={2} align="stretch">
-                <HStack>
+                          <HStack>
                             <FiCalendar color="blue.600" size={16} />
                             <Text fontWeight="medium">Type</Text>
-                </HStack>
-                          <Text fontSize="sm" color="gray.700">{selectedProperty.type}</Text>
+                          </HStack>
+                          <Text fontSize="sm" color="gray.700">
+                            {selectedProperty.propertyTypeId?.typeName || selectedProperty.type || 'N/A'}
+                          </Text>
                         </VStack>
                       </GridItem>
 
@@ -456,7 +509,11 @@ const CreateNewRental = () => {
                             <FiHome color="blue.600" size={16} />
                             <Text fontWeight="medium">Address</Text>
                           </HStack>
-                          <Text fontSize="sm" color="gray.700">{selectedProperty.address}</Text>
+                          <Text fontSize="sm" color="gray.700">
+                            {selectedProperty.propertyAddress ? 
+                              `${selectedProperty.propertyAddress.street || ''} ${selectedProperty.propertyAddress.area || ''}, ${selectedProperty.propertyAddress.city || ''}, ${selectedProperty.propertyAddress.state || ''}`.trim() || 'Address not available'
+                              : selectedProperty.address || 'Address not available'}
+                          </Text>
                         </VStack>
                       </GridItem>
 
@@ -471,8 +528,150 @@ const CreateNewRental = () => {
                           </Text>
                         </VStack>
                       </GridItem>
+
+                      {selectedProperty.features && (
+                        <>
+                          <GridItem>
+                            <VStack spacing={2} align="stretch">
+                              <HStack>
+                                <FiHome color="blue.600" size={16} />
+                                <Text fontWeight="medium">Bedrooms</Text>
+                              </HStack>
+                              <Text fontSize="sm" color="gray.700">
+                                {selectedProperty.features.bedRooms || 0}
+                              </Text>
+                            </VStack>
+                          </GridItem>
+
+                          <GridItem>
+                            <VStack spacing={2} align="stretch">
+                              <HStack>
+                                <FiHome color="blue.600" size={16} />
+                                <Text fontWeight="medium">Bathrooms</Text>
+                              </HStack>
+                              <Text fontSize="sm" color="gray.700">
+                                {selectedProperty.features.bathRooms || 0}
+                              </Text>
+                            </VStack>
+                          </GridItem>
+
+                          <GridItem>
+                            <VStack spacing={2} align="stretch">
+                              <HStack>
+                                <FiHome color="blue.600" size={16} />
+                                <Text fontWeight="medium">Area</Text>
+                              </HStack>
+                              <Text fontSize="sm" color="gray.700">
+                                {selectedProperty.features.areaInSquarFoot || 0} sq ft
+                              </Text>
+                            </VStack>
+                          </GridItem>
+
+                          {selectedProperty.features.bhk && (
+                            <GridItem>
+                              <VStack spacing={2} align="stretch">
+                                <HStack>
+                                  <FiHome color="blue.600" size={16} />
+                                  <Text fontWeight="medium">BHK</Text>
+                                </HStack>
+                                <Text fontSize="sm" color="gray.700">
+                                  {selectedProperty.features.bhk} BHK
+                                </Text>
+                              </VStack>
+                            </GridItem>
+                          )}
+                        </>
+                      )}
+
+                      {selectedProperty.description && (
+                        <GridItem colSpan={{ base: 1, sm: 2 }}>
+                          <VStack spacing={2} align="stretch">
+                            <Text fontWeight="medium">Description</Text>
+                            <Text fontSize="sm" color="gray.700" noOfLines={3}>
+                              {selectedProperty.description}
+                            </Text>
+                          </VStack>
+                        </GridItem>
+                      )}
                     </Grid>
-                </VStack>
+                  </VStack>
+                </Box>
+              )}
+
+              {/* Building/Apartment Specific Fields */}
+              {selectedProperty && isBuildingType() && (
+                <Box mt={4} p={{ base: 3, md: 4 }} bg="purple.50" borderRadius="md" border="1px" borderColor="purple.200">
+                  <VStack spacing={4} align="stretch">
+                    <HStack>
+                      <FiInfo color="purple.600" />
+                      <Text fontWeight="semibold" color="purple.800" fontSize={{ base: 'sm', md: 'md' }}>
+                        Building/Apartment Details
+                      </Text>
+                    </HStack>
+                    
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={{ base: 3, md: 4 }}>
+                      <FormControl>
+                        <FormLabel fontWeight="semibold">Flat/Apartment Number</FormLabel>
+                        <Input
+                          name="flatNo"
+                          placeholder="e.g., A-101, 2B, etc."
+                          value={formData.flatNo}
+                          onChange={(e) => handleInputChange("flatNo", e.target.value)}
+                          isDisabled={isSubmitting}
+                          size="md"
+                        />
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold">Floor Number</FormLabel>
+                        <NumberInput
+                          name="floorNo"
+                          value={formData.floorNo}
+                          onChange={(value) => handleInputChange("floorNo", value)}
+                          min={0}
+                          isDisabled={isSubmitting}
+                          size="md"
+                        >
+                          <NumberInputField placeholder="Enter floor number" />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      </FormControl>
+
+                      <FormControl>
+                        <FormLabel fontWeight="semibold">Number of Balconies</FormLabel>
+                        <NumberInput
+                          name="balconies"
+                          value={formData.balconies}
+                          onChange={(value) => handleInputChange("balconies", value)}
+                          min={0}
+                          isDisabled={isSubmitting}
+                          size="md"
+                        >
+                          <NumberInputField placeholder="Enter number of balconies" />
+                          <NumberInputStepper>
+                            <NumberIncrementStepper />
+                            <NumberDecrementStepper />
+                          </NumberInputStepper>
+                        </NumberInput>
+                      </FormControl>
+                    </SimpleGrid>
+
+                    <FormControl>
+                      <FormLabel fontWeight="semibold">Other Details</FormLabel>
+                      <Input
+                        name="otherDetails"
+                        placeholder="Any additional details about the flat/apartment"
+                        value={formData.otherDetails}
+                        onChange={(e) => handleInputChange("otherDetails", e.target.value)}
+                        isDisabled={isSubmitting}
+                        size="md"
+                      />
+                      <FormHelperText>Optional: Add any other relevant details about this specific unit</FormHelperText>
+                    </FormControl>
+                  </VStack>
                 </Box>
               )}
               </CardBody>
@@ -816,6 +1015,16 @@ const CreateNewRental = () => {
           </Box>
           </VStack>
       </form>
+
+      {/* Property Preview Modal */}
+      {selectedProperty && (
+        <PropertyPreview
+          isOpen={isPreviewOpen}
+          onClose={onPreviewClose}
+          property={selectedProperty}
+          isViewOnly={true}
+        />
+      )}
 
       {/* Success Modal */}
       <Modal isOpen={isOpen} onClose={handleModalClose} size={{ base: "full", sm: "4xl" }} isCentered>

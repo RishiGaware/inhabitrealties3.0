@@ -13,7 +13,10 @@ import {
   Button,
   useColorModeValue,
   Spinner,
-  Center
+  Center,
+  Image,
+  Flex,
+  IconButton
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -30,8 +33,13 @@ import {
   FaSearch,
   FaBookmark,
   FaMapMarkerAlt,
-  FaClock
+  FaClock,
+  FaBed,
+  FaBath,
+  FaRuler,
+  FaImage
 } from 'react-icons/fa';
+import { MdLocationOn } from 'react-icons/md';
 import { 
   fetchDashboardOverview, 
   fetchRecentActivities, 
@@ -39,8 +47,10 @@ import {
   fetchLeadConversionRates 
 } from '../../../services/dashboard/dashboardService';
 import { meetingAPI } from '../../../services/api';
+import { fetchProperties } from '../../../services/propertyService';
 import { showErrorToast } from '../../../utils/toastUtils';
 import Loader from '../../../components/common/Loader';
+import { ROUTES } from '../../../utils/constants';
 
 const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -64,6 +74,8 @@ const UserDashboard = () => {
   const [recentActivities, setRecentActivities] = useState([]);
   const [todaysMeetings, setTodaysMeetings] = useState([]);
   const [tomorrowsMeetings, setTomorrowsMeetings] = useState([]);
+  const [latestProperties, setLatestProperties] = useState([]);
+  const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -92,7 +104,7 @@ const UserDashboard = () => {
         let authData;
         try {
           authData = JSON.parse(token);
-        } catch (e) {
+        } catch {
           throw new Error('Invalid authentication data. Please log in again.');
         }
         
@@ -105,7 +117,7 @@ const UserDashboard = () => {
         const userId = authData.user?.id || authData.userId;
         
         // Fetch all dashboard data in parallel
-        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse, todaysMeetingsResponse, tomorrowsMeetingsResponse] = await Promise.all([
+        const [overviewResponse, activitiesResponse, , , todaysMeetingsResponse, tomorrowsMeetingsResponse] = await Promise.all([
           fetchDashboardOverview(),
           fetchRecentActivities(),
           fetchFinancialSummary(),
@@ -113,6 +125,24 @@ const UserDashboard = () => {
           userId ? meetingAPI.getMyTodaysMeetings(userId) : Promise.resolve({ data: { data: [] } }),
           userId ? meetingAPI.getMyTomorrowsMeetings(userId) : Promise.resolve({ data: { data: [] } })
         ]);
+
+        // Fetch latest properties
+        setPropertiesLoading(true);
+        try {
+          const propertiesResponse = await fetchProperties();
+          if (propertiesResponse?.data) {
+            // Get latest 6 properties (sorted by creation date or just take first 6)
+            const latest = Array.isArray(propertiesResponse.data) 
+              ? propertiesResponse.data.slice(0, 6)
+              : [];
+            setLatestProperties(latest);
+          }
+        } catch (error) {
+          console.error('Failed to fetch latest properties:', error);
+          setLatestProperties([]);
+        } finally {
+          setPropertiesLoading(false);
+        }
 
         // Process meeting data
         if (todaysMeetingsResponse.data?.data) {
@@ -124,7 +154,6 @@ const UserDashboard = () => {
 
         // Update stats with user-specific data
         if (overviewResponse.statusCode === 200) {
-          const overviewData = overviewResponse.data;
           const favoriteProperties = Math.floor(Math.random() * 10) + 1;
           const viewedProperties = Math.floor(Math.random() * 50) + 10;
           const inquiries = Math.floor(Math.random() * 5) + 1;
@@ -194,7 +223,7 @@ const UserDashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const StatCard = ({ title, value, icon: Icon, color, trend, trendValue, onClick, subtitle }) => (
+  const StatCard = ({ title, value, icon: IconComponent, color, trend, trendValue, onClick, subtitle }) => (
     <motion.div
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
@@ -230,7 +259,7 @@ const UserDashboard = () => {
               bg={`${color}.100`}
               color={`${color}.600`}
             >
-              <Icon size={24} />
+              <IconComponent size={24} />
             </Box>
           </HStack>
           {trend && (
@@ -277,6 +306,158 @@ const UserDashboard = () => {
           {activity.type}
         </Badge>
       </HStack>
+    </motion.div>
+  );
+
+  // Helper functions for property display
+  const formatPrice = (price) => {
+    if (!price) return 'Price on request';
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
+  const getPropertyImage = (property) => {
+    // Priority 1: Check for images array
+    if (property.images && Array.isArray(property.images) && property.images.length > 0) {
+      const firstImage = property.images[0];
+      if (firstImage && typeof firstImage === 'string' && firstImage.trim() !== '') {
+        return firstImage;
+      }
+    }
+    // Priority 2: Check for single image property
+    if (property.image && typeof property.image === 'string' && property.image.trim() !== '') {
+      return property.image;
+    }
+    // Return null for fallback
+    return null;
+  };
+
+  const PropertyCard = ({ property }) => (
+    <motion.div
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+    >
+      <Card
+        bg={cardBg}
+        borderRadius="xl"
+        boxShadow="md"
+        border="1px"
+        borderColor={borderColor}
+        cursor="pointer"
+        onClick={() => navigate(`${ROUTES.PROPERTIES}?propertyId=${property._id}`)}
+        _hover={{ boxShadow: 'xl', borderColor: 'purple.400' }}
+        transition="all 0.2s"
+        overflow="hidden"
+        h="full"
+      >
+        {/* Property Image */}
+        <Box
+          h="200px"
+          overflow="hidden"
+          position="relative"
+          bg="gray.100"
+        >
+          {getPropertyImage(property) ? (
+            <Image
+              src={getPropertyImage(property)}
+              alt={property.name || 'Property Image'}
+              w="full"
+              h="full"
+              objectFit="cover"
+              loading="lazy"
+              onError={(e) => {
+                e.target.style.display = 'none';
+              }}
+            />
+          ) : (
+            <Flex
+              direction="column"
+              align="center"
+              justify="center"
+              h="full"
+              bg="gray.100"
+              color="gray.400"
+            >
+              <FaImage size={32} />
+              <Text fontSize="xs" mt={2} textAlign="center">
+                No Image
+              </Text>
+            </Flex>
+          )}
+          {/* Status Badge */}
+          {property.status && (
+            <Badge
+              position="absolute"
+              top={2}
+              right={2}
+              colorScheme={property.status === 'available' ? 'green' : 'orange'}
+              variant="solid"
+              fontSize="xs"
+            >
+              {property.status}
+            </Badge>
+          )}
+        </Box>
+
+        <CardBody p={4}>
+          {/* Property Name */}
+          <Text
+            fontSize="md"
+            fontWeight="bold"
+            color={textColor}
+            mb={2}
+            noOfLines={1}
+          >
+            {property.name || 'Unnamed Property'}
+          </Text>
+
+          {/* Price */}
+          <Text
+            color="purple.600"
+            fontWeight="bold"
+            fontSize="lg"
+            mb={2}
+          >
+            {formatPrice(property.price)}
+          </Text>
+
+          {/* Location */}
+          {property.propertyAddress && (
+            <Flex align="center" gap={1} color={mutedTextColor} fontSize="sm" mb={3}>
+              <MdLocationOn size={14} />
+              <Text noOfLines={1}>
+                {property.propertyAddress.area || ''}
+                {property.propertyAddress.city ? `, ${property.propertyAddress.city}` : ''}
+              </Text>
+            </Flex>
+          )}
+
+          {/* Property Features */}
+          <Flex justify="space-between" color={mutedTextColor} fontSize="xs" gap={2}>
+            {property.bedrooms && (
+              <Flex align="center" gap={1}>
+                <FaBed size={12} />
+                <Text>{property.bedrooms}</Text>
+              </Flex>
+            )}
+            {property.bathrooms && (
+              <Flex align="center" gap={1}>
+                <FaBath size={12} />
+                <Text>{property.bathrooms}</Text>
+              </Flex>
+            )}
+            {property.area && (
+              <Flex align="center" gap={1}>
+                <FaRuler size={12} />
+                <Text>{property.area} sqft</Text>
+              </Flex>
+            )}
+          </Flex>
+        </CardBody>
+      </Card>
     </motion.div>
   );
 
@@ -386,14 +567,12 @@ const UserDashboard = () => {
           </Box>
 
           {/* Key Metrics */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6} mb={8}>
+          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6} mb={8}>
             <StatCard
               title="Favorite Properties"
               value={stats.favoriteProperties}
               icon={FaHeart}
               color="red"
-              trend="up"
-              trendValue="12"
               subtitle="Properties you liked"
               onClick={() => navigate('/properties/favorite-properties')}
             />
@@ -402,18 +581,14 @@ const UserDashboard = () => {
               value={stats.viewedProperties}
               icon={FaEye}
               color="blue"
-              trend="up"
-              trendValue="8"
               subtitle="Properties viewed"
-              onClick={() => navigate('/properties/favorite-properties')}
+              onClick={() => navigate('/properties')}
             />
             <StatCard
               title="Inquiries Made"
               value={stats.inquiries}
               icon={FaHandshake}
               color="green"
-              trend="up"
-              trendValue="25"
               subtitle="Property inquiries"
             />
             <StatCard
@@ -421,132 +596,73 @@ const UserDashboard = () => {
               value={stats.meetings}
               icon={FaCalendarAlt}
               color="purple"
-              trend="up"
-              trendValue="15"
               subtitle="Site visits booked"
               onClick={() => navigate('/my-meetings')}
             />
-            <StatCard
-              title="Saved Searches"
-              value={stats.savedSearches}
-              icon={FaSearch}
-              color="orange"
-              trend="up"
-              trendValue="5"
-              subtitle="Search criteria saved"
-            />
-            <StatCard
-              title="Notifications"
-              value={stats.notifications}
-              icon={FaBookmark}
-              color="teal"
-              subtitle="Unread notifications"
-            />
           </Grid>
 
-          {/* Property Journey */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6} mb={8}>
-            <StatCard
-              title="Shortlisted Properties"
-              value={stats.shortlistedProperties}
-              icon={FaHeart}
-              color="pink"
-              trend="up"
-              trendValue="18"
-              subtitle="Properties in shortlist"
-              onClick={() => navigate('/properties')}
-            />
-            <StatCard
-              title="Visited Properties"
-              value={stats.visitedProperties}
-              icon={FaMapMarkerAlt}
-              color="green"
-              trend="up"
-              trendValue="22"
-              subtitle="Properties physically visited"
-              onClick={() => navigate('/properties')}
-            />
-            <StatCard
-              title="Wishlist Items"
-              value={stats.wishlistItems}
-              icon={FaBookmark}
-              color="purple"
-              trend="up"
-              trendValue="10"
-              subtitle="Items in your wishlist"
-              onClick={() => navigate('/properties')}
-            />
-          </Grid>
+              {/* Property Suggestions */}
+              <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor} mb={8}>
+            <CardBody p={6}>
+              <HStack justify="space-between" align="center" mb={6}>
+                <VStack align="flex-start" spacing={1}>
+                  <Text fontSize="xl" fontWeight="bold" color={textColor}>
+                    Latest Properties
+                  </Text>
+                  <Text fontSize="sm" color={mutedTextColor}>
+                    Discover our newest property listings
+                  </Text>
+                </VStack>
+                <Button
+                  colorScheme="purple"
+                  variant="outline"
+                  rightIcon={<FaArrowUp style={{ transform: 'rotate(45deg)' }} />}
+                  onClick={() => navigate(ROUTES.PROPERTIES)}
+                  _hover={{ bg: 'purple.50', borderColor: 'purple.400' }}
+                >
+                  See More
+                </Button>
+              </HStack>
 
-          {/* Profile & Preferences */}
-          {/* <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }} gap={6} mb={8}>
-            <StatCard
-              title="Profile Completion"
-              value={`${stats.profileCompletion}%`}
-              icon={FaUsers}
-              color="blue"
-              trend="up"
-              trendValue="5"
-              subtitle="Profile completeness"
-            />
-            <StatCard
-              title="Budget Range"
-              value={`₹${stats.budgetRange}L`}
-              icon={FaDollarSign}
-              color="green"
-              trend="up"
-              trendValue="8"
-              subtitle="Your budget range"
-            />
-            <StatCard
-              title="Preferred Locations"
-              value={stats.preferredLocations}
-              icon={FaMapMarkerAlt}
-              color="orange"
-              trend="up"
-              trendValue="3"
-              subtitle="Locations of interest"
-            />
-            <StatCard
-              title="Property Types"
-              value={stats.propertyTypes}
-              icon={FaBuilding}
-              color="purple"
-              trend="up"
-              trendValue="2"
-              subtitle="Types you're interested in"
-            />
-          </Grid> */}
+              {propertiesLoading ? (
+                <Center py={8}>
+                  <Spinner size="lg" color="purple.500" />
+                </Center>
+              ) : latestProperties.length > 0 ? (
+                <Grid
+                  templateColumns={{
+                    base: '1fr',
+                    sm: 'repeat(2, 1fr)',
+                    md: 'repeat(3, 1fr)',
+                    lg: 'repeat(3, 1fr)'
+                  }}
+                  gap={6}
+                >
+                  {latestProperties.map((property) => (
+                    <PropertyCard key={property._id} property={property} />
+                  ))}
+                </Grid>
+              ) : (
+                <Box textAlign="center" py={8}>
+                  <Box mb={4}>
+                    <FaBuilding size={48} color={mutedTextColor} style={{ margin: '0 auto' }} />
+                  </Box>
+                  <Text color={mutedTextColor} fontSize="md">
+                    No properties available at the moment
+                  </Text>
+                  <Button
+                    mt={4}
+                    colorScheme="purple"
+                    variant="outline"
+                    onClick={() => navigate(ROUTES.PROPERTIES)}
+                  >
+                    Browse All Properties
+                  </Button>
+                </Box>
+              )}
+            </CardBody>
+          </Card>
 
-          {/* Recommendations */}
-          <Grid templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(3, 1fr)" }} gap={6} mb={8}>
-            <StatCard
-              title="Recommended Properties"
-              value={stats.recommendedProperties}
-              icon={FaChartLine}
-              color="teal"
-              trend="up"
-              trendValue="15"
-              subtitle="AI recommended for you"
-              onClick={() => navigate('/properties')}
-            />
-            <StatCard
-              title="Last Activity"
-              value={stats.lastActivity}
-              icon={FaClock}
-              color="gray"
-              subtitle="Last time you were active"
-            />
-            <StatCard
-              title="Search Alerts"
-              value={stats.savedSearches}
-              icon={FaSearch}
-              color="cyan"
-              trend="up"
-              trendValue="7"
-              subtitle="Active search alerts"
-            />
-          </Grid>
 
           {/* Property Interests */}
           <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6} mb={8}>
@@ -604,6 +720,7 @@ const UserDashboard = () => {
             </Card>
           </Grid>
 
+      
           {/* My Today's Meetings */}
           <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
             <CardBody p={6}>
