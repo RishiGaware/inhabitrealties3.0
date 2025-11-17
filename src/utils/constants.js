@@ -80,6 +80,7 @@ export const ROUTES = {
   LEAD_VIEW: '/lead/view',
   LEAD_QUALIFICATION: '/lead/qualification',
   LEAD_REFERENCE_SOURCE: '/lead/reference-source',
+  INQUIRIES: '/lead/inquiries',
 
   // Customer Management Routes
   CUSTOMER_PROFILES: '/customers/profiles',
@@ -194,7 +195,8 @@ export const ROUTE_GROUPS = {
     ROUTES.LEAD_ADD,
     ROUTES.LEAD_VIEW,
     ROUTES.LEAD_QUALIFICATION,
-    ROUTES.LEAD_REFERENCE_SOURCE
+    ROUTES.LEAD_REFERENCE_SOURCE,
+    ROUTES.INQUIRIES
   ],
   CUSTOMER: [
     ROUTES.CUSTOMER_PROFILES,

@@ -34,6 +34,7 @@ import SalespersonManagement from './pages/admin/SalespersonManagement';
 import Leads from './pages/lead/Leads';
 import LeadStatus from './pages/lead/LeadStatus';
 import LeadFollowUp from './pages/lead/LeadFollowUp';
+import Inquiries from './pages/lead/Inquiries';
 import CustomerProfiles from './pages/customers/CustomerProfiles';
 import CustomerDocuments from './pages/customers/Documents';
 import CustomerDocumentTypeManagement from './pages/customers/DocumentTypeManagement';
@@ -197,6 +198,7 @@ const App = () => {
             <Route path={ROUTES.LEAD_VIEW} element={<ProtectedRoute><DashboardLayout><LeadStatus /></DashboardLayout></ProtectedRoute>} />
             <Route path={ROUTES.LEAD_QUALIFICATION} element={<ProtectedRoute><DashboardLayout><LeadFollowUp /></DashboardLayout></ProtectedRoute>} />
             <Route path={ROUTES.LEAD_REFERENCE_SOURCE} element={<ProtectedRoute><DashboardLayout><ReferenceSource /></DashboardLayout></ProtectedRoute>} />
+            <Route path={ROUTES.INQUIRIES} element={<ProtectedRoute><DashboardLayout><Inquiries /></DashboardLayout></ProtectedRoute>} />
             
             {/* Customer Management Routes */}
             <Route path={ROUTES.CUSTOMER_PROFILES} element={<ProtectedRoute><DashboardLayout><CustomerProfiles /></DashboardLayout></ProtectedRoute>} />

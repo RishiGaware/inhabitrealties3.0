@@ -44,7 +44,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       {
         title: "Lead Management",
         icon: <BiUserPlus />,
-        subMenu: ["Leads", "Lead Status", "Lead Follow Up", "Reference Source"],
+        subMenu: ["Inquiries", "Leads", "Lead Status", "Lead Follow Up", "Reference Source"],
         key: "leads"
       },
       
@@ -204,6 +204,7 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
       'favorite': ROUTES.DISPLAY_FAVORITES
     },
     'leads': {
+      'inquiries': ROUTES.INQUIRIES,
       'leads': ROUTES.LEAD_ADD,
       'lead-status': ROUTES.LEAD_VIEW,
       'lead-follow-up': ROUTES.LEAD_QUALIFICATION,

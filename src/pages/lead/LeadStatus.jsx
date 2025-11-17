@@ -308,7 +308,7 @@ const LeadStatus = () => {
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           Lead Status Management
         </Heading>
-        <CommonAddButton onClick={handleAddNew} />
+        {/* <CommonAddButton onClick={handleAddNew} /> */}
       </Flex>
       {/* Search and Filter Section */}
       <SearchAndFilter

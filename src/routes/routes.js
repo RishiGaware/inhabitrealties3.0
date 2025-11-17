@@ -19,6 +19,7 @@ import AddLead from '../pages/lead/AddLead';
 import ViewLeads from '../pages/lead/ViewLeads';
 import LeadQualification from '../pages/lead/LeadQualification';
 import Leads from '../pages/lead/Leads';
+import Inquiries from '../pages/lead/Inquiries';
 import CustomerProfiles from '../pages/customers/CustomerProfiles';
 import CustomerDocuments from '../pages/customers/Documents';
 import CustomerDocumentTypeManagement from '../pages/customers/DocumentTypeManagement';
@@ -111,6 +112,7 @@ export const ROUTES = [
   { name: 'leadView', path: '/lead/view', component: ViewLeads, permissions: 'public' },
   { name: 'leadQualification', path: '/lead/qualification', component: LeadQualification, permissions: 'public' },
   { name: 'referenceSource', path: '/lead/reference-source', component: ReferenceSource, permissions: 'public' },
+  { name: 'inquiries', path: '/lead/inquiries', component: Inquiries, permissions: 'public' },
 
   // Customers
   { name: 'customerProfiles', path: '/customers/profiles', component: CustomerProfiles, permissions: 'public' },
