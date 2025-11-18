@@ -1,10 +1,42 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { FaBell, FaBars } from "react-icons/fa";
 import { CgProfile } from "react-icons/cg";
 import { Link as RouterLink } from "react-router-dom";
 import LogoutButton from "../common/LogoutButton";
+import { notificationService } from "../../services/notifications/notificationService";
 
 const Navbar = ({ onNotificationClick, onMobileOpen, sidebarOpen, setSidebarOpen }) => {
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // Fetch unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await notificationService.getUnreadCount();
+      if (response.success && response.data) {
+        setUnreadCount(response.data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error('Error fetching unread count:', error);
+    }
+  };
+
+  // Fetch on mount and poll every 30 seconds
+  useEffect(() => {
+    fetchUnreadCount();
+    const interval = setInterval(fetchUnreadCount, 30 * 1000); // 30 seconds
+    
+    // Listen for notification updates
+    const handleNotificationUpdate = () => {
+      fetchUnreadCount();
+    };
+    window.addEventListener('notificationsUpdated', handleNotificationUpdate);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notificationsUpdated', handleNotificationUpdate);
+    };
+  }, []);
+
   return (
     <div className="flex items-center justify-between w-full px-4 bg-white border-b border-gray-200 h-14">
       <div className="flex items-center gap-4">
@@ -33,7 +65,11 @@ const Navbar = ({ onNotificationClick, onMobileOpen, sidebarOpen, setSidebarOpen
           aria-label="Notifications"
         >
           <FaBell className="w-4 h-4" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+          {unreadCount > 0 && (
+            <span className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-semibold">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </button>
         
         <RouterLink to="/profile" className="p-2 rounded-md hover:bg-gray-100 transition-colors">

@@ -65,12 +65,12 @@ const MyAssignedRentals = () => {
         { value: '', label: 'All Statuses' }
       ];
     }
-  }, [bookings]);
+  }, [bookings]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch data from assigned rentals API
   useEffect(() => {
     fetchAssignedRentals();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAssignedRentals = async () => {
     try {
@@ -109,19 +109,37 @@ const MyAssignedRentals = () => {
   useEffect(() => {
     let filtered = bookings;
 
-    if (searchTerm) {
-      filtered = filtered.filter(booking =>
-        (booking.bookingId?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.customerId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.propertyId?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.propertyId?.propertyAddress?.city?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.assignedSalespersonId?.firstName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.assignedSalespersonId?.lastName?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking.assignedSalespersonId?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-        (booking._id?.toLowerCase().includes(searchTerm.toLowerCase()) || false)
-      );
+    // Type check and convert searchTerm to string
+    const searchString = typeof searchTerm === 'string' ? searchTerm : String(searchTerm || '');
+
+    if (searchString) {
+      const searchLower = searchString.toLowerCase();
+      filtered = filtered.filter(booking => {
+        // Safely convert all values to strings before searching
+        const bookingId = String(booking.bookingId || '');
+        const customerFirstName = String(booking.customerId?.firstName || '');
+        const customerLastName = String(booking.customerId?.lastName || '');
+        const customerEmail = String(booking.customerId?.email || '');
+        const propertyName = String(booking.propertyId?.name || '');
+        const propertyCity = String(booking.propertyId?.propertyAddress?.city || '');
+        const salespersonFirstName = String(booking.assignedSalespersonId?.firstName || '');
+        const salespersonLastName = String(booking.assignedSalespersonId?.lastName || '');
+        const salespersonEmail = String(booking.assignedSalespersonId?.email || '');
+        const bookingIdString = String(booking._id || '');
+
+        return (
+          bookingId.toLowerCase().includes(searchLower) ||
+          customerFirstName.toLowerCase().includes(searchLower) ||
+          customerLastName.toLowerCase().includes(searchLower) ||
+          customerEmail.toLowerCase().includes(searchLower) ||
+          propertyName.toLowerCase().includes(searchLower) ||
+          propertyCity.toLowerCase().includes(searchLower) ||
+          salespersonFirstName.toLowerCase().includes(searchLower) ||
+          salespersonLastName.toLowerCase().includes(searchLower) ||
+          salespersonEmail.toLowerCase().includes(searchLower) ||
+          bookingIdString.toLowerCase().includes(searchLower)
+        );
+      });
     }
 
     if (statusFilter && statusFilter !== 'all') {
@@ -257,8 +275,10 @@ const MyAssignedRentals = () => {
   );
 
   // Handle search
-  const handleSearch = (value) => {
-    setSearchTerm(value);
+  const handleSearch = (e) => {
+    // Handle both event object and direct value
+    const value = typeof e === 'object' && e.target ? e.target.value : e;
+    setSearchTerm(value || '');
   };
 
   // Handle filters

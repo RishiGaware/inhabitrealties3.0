@@ -43,8 +43,18 @@ export const purchaseBookingService = {
 
   // Update purchase booking details (property, payment terms, financing details, etc.)
   updatePurchaseBooking: async (id, bookingData) => {
-    const response = await api.put(PURCHASE_BOOKING_ENDPOINTS.UPDATE(id), bookingData);
-    return response.data;
+    // Check if it's FormData (for file uploads) or regular object
+    if (bookingData instanceof FormData) {
+      const response = await api.put(PURCHASE_BOOKING_ENDPOINTS.UPDATE(id), bookingData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } else {
+      const response = await api.put(PURCHASE_BOOKING_ENDPOINTS.UPDATE(id), bookingData);
+      return response.data;
+    }
   },
 
   // Soft delete a purchase booking (sets published to false)

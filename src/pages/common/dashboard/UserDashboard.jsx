@@ -18,6 +18,7 @@ import {
   Flex,
   IconButton
 } from '@chakra-ui/react';
+// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   FaChartLine, 
@@ -51,6 +52,10 @@ import { fetchProperties } from '../../../services/propertyService';
 import { showErrorToast } from '../../../utils/toastUtils';
 import Loader from '../../../components/common/Loader';
 import { ROUTES } from '../../../utils/constants';
+import { getFavoritePropertiesByUserId } from '../../../services/favoriteproperty/favoritePropertyService';
+import { getMyMeetings } from '../../../services/meetings/meetingScheduleService';
+import { inquiriesService } from '../../../services/inquiries/inquiriesService';
+import { getUserViewCount } from '../../../services/propertyView/propertyViewService';
 
 const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -114,16 +119,32 @@ const UserDashboard = () => {
         
         
         // Get user ID from auth data
-        const userId = authData.user?.id || authData.userId;
+        const userId = authData.data?._id || authData.user?.id || authData.userId;
+        const userEmail = authData.data?.email || authData.user?.email;
         
         // Fetch all dashboard data in parallel
-        const [overviewResponse, activitiesResponse, , , todaysMeetingsResponse, tomorrowsMeetingsResponse] = await Promise.all([
-          fetchDashboardOverview(),
+        const [
+          , 
+          activitiesResponse, 
+          , 
+          , 
+          todaysMeetingsResponse, 
+          tomorrowsMeetingsResponse,
+          favoritePropertiesResponse,
+          myMeetingsResponse,
+          inquiriesResponse,
+          viewedPropertiesResponse
+        ] = await Promise.all([
+          fetchDashboardOverview(), // Keep for potential future use
           fetchRecentActivities(),
-          fetchFinancialSummary(),
-          fetchLeadConversionRates(),
-          userId ? meetingAPI.getMyTodaysMeetings(userId) : Promise.resolve({ data: { data: [] } }),
-          userId ? meetingAPI.getMyTomorrowsMeetings(userId) : Promise.resolve({ data: { data: [] } })
+          fetchFinancialSummary(), // Keep for potential future use
+          fetchLeadConversionRates(), // Keep for potential future use
+          userId ? meetingAPI.getMyTodaysMeetings(userId).catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } }),
+          userId ? meetingAPI.getMyTomorrowsMeetings(userId).catch(() => ({ data: { data: [] } })) : Promise.resolve({ data: { data: [] } }),
+          userId ? getFavoritePropertiesByUserId(userId).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+          userId ? getMyMeetings(userId).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+          userEmail ? inquiriesService.getAllInquiries({ search: userEmail }).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
+          userId ? getUserViewCount(userId).catch(() => ({ count: 0 })) : Promise.resolve({ count: 0 })
         ]);
 
         // Fetch latest properties
@@ -152,31 +173,68 @@ const UserDashboard = () => {
           setTomorrowsMeetings(tomorrowsMeetingsResponse.data.data);
         }
 
-        // Update stats with user-specific data
-        if (overviewResponse.statusCode === 200) {
-          const favoriteProperties = Math.floor(Math.random() * 10) + 1;
-          const viewedProperties = Math.floor(Math.random() * 50) + 10;
-          const inquiries = Math.floor(Math.random() * 5) + 1;
-          const meetings = Math.floor(Math.random() * 3);
-          
-          setStats({
-            favoriteProperties: favoriteProperties,
-            viewedProperties: viewedProperties,
-            inquiries: inquiries,
-            meetings: meetings,
-            savedSearches: Math.floor(Math.random() * 8) + 2,
-            notifications: Math.floor(Math.random() * 15) + 5,
-            shortlistedProperties: Math.floor(favoriteProperties * 0.7),
-            visitedProperties: Math.floor(meetings * 2),
-            budgetRange: Math.floor(Math.random() * 50) + 50, // 50-100 L
-            preferredLocations: Math.floor(Math.random() * 5) + 2,
-            propertyTypes: Math.floor(Math.random() * 3) + 1,
-            lastActivity: new Date().toLocaleDateString(),
-            profileCompletion: Math.floor(Math.random() * 30) + 70, // 70-100%
-            wishlistItems: Math.floor(favoriteProperties * 1.5),
-            recommendedProperties: Math.floor(Math.random() * 15) + 5
-          });
+        // Calculate real stats from API responses
+        // Handle different response structures for favorite properties
+        let favoritePropertiesCount = 0;
+        if (favoritePropertiesResponse?.data) {
+          if (Array.isArray(favoritePropertiesResponse.data)) {
+            favoritePropertiesCount = favoritePropertiesResponse.data.length;
+          } else if (favoritePropertiesResponse.data.data && Array.isArray(favoritePropertiesResponse.data.data)) {
+            favoritePropertiesCount = favoritePropertiesResponse.data.data.length;
+          }
         }
+        
+        // Handle different response structures for meetings
+        let meetingsCount = 0;
+        if (myMeetingsResponse?.data) {
+          if (Array.isArray(myMeetingsResponse.data)) {
+            meetingsCount = myMeetingsResponse.data.length;
+          } else if (myMeetingsResponse.data.data && Array.isArray(myMeetingsResponse.data.data)) {
+            meetingsCount = myMeetingsResponse.data.data.length;
+          }
+        }
+        
+        // Handle different response structures for inquiries
+        // Filter inquiries by user email to get only user's inquiries
+        let inquiriesCount = 0;
+        if (inquiriesResponse?.data) {
+          let inquiriesList = [];
+          if (Array.isArray(inquiriesResponse.data)) {
+            inquiriesList = inquiriesResponse.data;
+          } else if (inquiriesResponse.data.data && Array.isArray(inquiriesResponse.data.data)) {
+            inquiriesList = inquiriesResponse.data.data;
+          }
+          // Filter by user email if available
+          if (userEmail && inquiriesList.length > 0) {
+            inquiriesCount = inquiriesList.filter(inquiry => 
+              inquiry.email && inquiry.email.toLowerCase() === userEmail.toLowerCase()
+            ).length;
+          } else {
+            inquiriesCount = inquiriesList.length;
+          }
+        }
+        
+        // Get viewed properties count from API response
+        const viewedPropertiesCount = viewedPropertiesResponse?.count || 0;
+        
+        // Update stats with real data
+        setStats({
+          favoriteProperties: favoritePropertiesCount,
+          viewedProperties: viewedPropertiesCount,
+          inquiries: inquiriesCount,
+          meetings: meetingsCount,
+          savedSearches: 0, // TODO: Implement saved searches tracking
+          notifications: 0, // TODO: Implement notifications tracking
+          shortlistedProperties: favoritePropertiesCount, // Using favorite properties as shortlisted
+          visitedProperties: meetingsCount, // Using meetings as visited properties
+          budgetRange: 0, // TODO: Get from user profile
+          preferredLocations: 0, // TODO: Get from user profile
+          propertyTypes: 0, // TODO: Get from user profile
+          lastActivity: new Date().toLocaleDateString(),
+          profileCompletion: 0, // TODO: Calculate from user profile
+          wishlistItems: favoritePropertiesCount, // Using favorite properties as wishlist
+          recommendedProperties: 0 // TODO: Implement recommendations
+        });
 
         // Update recent activities with user-relevant data
         if (activitiesResponse.statusCode === 200) {
@@ -223,6 +281,7 @@ const UserDashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // eslint-disable-next-line no-unused-vars
   const StatCard = ({ title, value, icon: IconComponent, color, trend, trendValue, onClick, subtitle }) => (
     <motion.div
       whileHover={{ scale: 1.02 }}
@@ -641,7 +700,7 @@ const UserDashboard = () => {
                   {latestProperties.map((property) => (
                     <PropertyCard key={property._id} property={property} />
                   ))}
-                </Grid>
+          </Grid>
               ) : (
                 <Box textAlign="center" py={8}>
                   <Box mb={4}>
@@ -720,7 +779,7 @@ const UserDashboard = () => {
             </Card>
           </Grid>
 
-      
+
           {/* My Today's Meetings */}
           <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor}>
             <CardBody p={6}>

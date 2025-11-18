@@ -18,6 +18,22 @@
   --brand-gradient: linear-gradient(to right, #A300A3, #D902DB, #6C026B);
 }
 
+/* Notification popup animation */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
 /* Global scrollbar styling */
 html {
   overflow-x: hidden;

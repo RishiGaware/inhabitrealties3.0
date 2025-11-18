@@ -49,7 +49,7 @@ import { fetchAllMeetingScheduleStatuses } from '../../services/meetings/meeting
 import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
 
 import { fetchProperties } from '../../services/propertyService';
-import { fetchUsers } from '../../services/usermanagement/userService';
+import { fetchUsers, fetchUsersByRole } from '../../services/usermanagement/userService';
 
 const AdminMeetings = () => {
   const [activeView, setActiveView] = useState('scheduled'); // 'scheduled' or 'my'
@@ -63,6 +63,8 @@ const AdminMeetings = () => {
   const [meetings, setMeetings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [users, setUsers] = useState([]);
+  const [salespersons, setSalespersons] = useState([]);
+  const [executives, setExecutives] = useState([]);
   const [properties, setProperties] = useState([]);
   const [counts, setCounts] = useState({
     totalMeetings: 0,
@@ -81,7 +83,9 @@ const AdminMeetings = () => {
     status: '',
     customerIds: [],
     propertyId: '',
-    notes: ''
+    notes: '',
+    salesPersonId: '',
+    executiveId: ''
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -165,16 +169,28 @@ const AdminMeetings = () => {
     setLoading(true);
     try {
       // Fetch meetings, users, properties, and statuses in parallel
-      const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse] = await Promise.all([
+      const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse, salesResponse, executiveResponse] = await Promise.all([
         fetchAllMeetingSchedules(),
         fetchUsers(),
         fetchProperties(),
-        fetchAllMeetingScheduleStatuses()
+        fetchAllMeetingScheduleStatuses(),
+        fetchUsersByRole('SALES'),
+        fetchUsersByRole('EXECUTIVE')
       ]);
 
       // Set users and properties
       if (usersResponse && usersResponse.data) {
         setUsers(usersResponse.data);
+      }
+
+      // Set salespersons
+      if (salesResponse && salesResponse.data) {
+        setSalespersons(salesResponse.data);
+      }
+
+      // Set executives
+      if (executiveResponse && executiveResponse.data) {
+        setExecutives(executiveResponse.data);
       } 
     
       if (propertiesResponse && propertiesResponse.data) {
@@ -425,9 +441,10 @@ const AdminMeetings = () => {
       // Clear meetings if no data to transform
       setMeetings([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawMeetings, rawMyMeetings, users, properties, activeView]);
 
-  // Filter meetings based on search and status
+  // Filter and sort meetings - Completed first, then by date (earliest first)
   const filteredMeetings = useMemo(() => {
     
     const filtered = meetings.filter(meeting => {
@@ -438,7 +455,20 @@ const AdminMeetings = () => {
       return matchesSearch && matchesStatus;
     });
     
-    return filtered;
+    // Sort: Completed meetings first, then by meetingDate (earliest first)
+    return filtered.sort((a, b) => {
+      const aIsCompleted = a.status?.toLowerCase() === 'completed';
+      const bIsCompleted = b.status?.toLowerCase() === 'completed';
+      
+      // If one is completed and the other isn't, completed comes first
+      if (aIsCompleted && !bIsCompleted) return -1;
+      if (!aIsCompleted && bIsCompleted) return 1;
+      
+      // Both have same completion status, sort by date (earliest first)
+      const aDate = a.meetingDate ? new Date(a.meetingDate) : new Date(0);
+      const bDate = b.meetingDate ? new Date(b.meetingDate) : new Date(0);
+      return aDate - bDate;
+    });
   }, [meetings, searchTerm, statusFilter]);
 
   // Color mode values
@@ -467,7 +497,9 @@ const AdminMeetings = () => {
       status: meeting.statusId || '',
       customerIds: meeting.customerIds && meeting.customerIds.length > 0 ? meeting.customerIds[0] : '',
       propertyId: meeting.propertyId || '',
-      notes: meeting.notes || ''
+      notes: meeting.notes || '',
+      salesPersonId: meeting.salesPersonId || '',
+      executiveId: meeting.executiveId || ''
     });
     setFormErrors({});
     setIsAddModalOpen(true);
@@ -1695,6 +1727,42 @@ const AdminMeetings = () => {
                     }))}
                     value={formData.propertyId}
                     onChange={(value) => handleInputChange('propertyId', value)}
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                    w="full"
+                  />
+                  <SearchableSelect
+                    label="Sales Person"
+                    placeholder="Select sales person"
+                    options={salespersons.map(sales => ({
+                      value: sales._id,
+                      label: `${sales.firstName} ${sales.lastName} - ${sales.email}`
+                    }))}
+                    value={formData.salesPersonId}
+                    onChange={(value) => handleInputChange('salesPersonId', value)}
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                    w="full"
+                  />
+                  <SearchableSelect
+                    label="Executive"
+                    placeholder="Select executive"
+                    options={executives.map(exec => ({
+                      value: exec._id,
+                      label: `${exec.firstName} ${exec.lastName} - ${exec.email}`
+                    }))}
+                    value={formData.executiveId}
+                    onChange={(value) => handleInputChange('executiveId', value)}
                     bg="white"
                     border="1px solid"
                     borderColor="gray.200"

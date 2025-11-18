@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Box, Button, VStack, HStack, Text, Heading, SimpleGrid, Badge,
   Grid, GridItem, useToast, useDisclosure, Modal, ModalOverlay,
@@ -11,6 +12,7 @@ import {
 import { FiSave, FiX, FiEdit, FiUpload, FiEye, FiDownload } from 'react-icons/fi';
 import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
 import DocumentUpload from './DocumentUpload';
+import { useAuth } from '../../context/AuthContext';
 
 const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isReadOnly = false }) => {
   // Expected installment data structure with documents:
@@ -28,11 +30,16 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isRea
   //     }
   //   ]
   // }
+  const navigate = useNavigate();
+  const { getUserRoleName } = useAuth();
   const toast = useToast({
     position: 'top-right',
     duration: 3000,
     isClosable: true,
   });
+  
+  // Check if user is admin
+  const isAdmin = getUserRoleName()?.toUpperCase() === 'ADMIN';
   const [booking, setBooking] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [editedInstallments, setEditedInstallments] = useState([]);
@@ -409,18 +416,37 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isRea
         </Heading>
               <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.600">Booking ID: {booking.bookingId || booking._id?.slice(-8)}</Text>
             </VStack>
-            <Button 
-              position="absolute" 
-              top={{ base: 2, sm: 3, md: 4 }} 
-              right={{ base: 2, sm: 3, md: 4 }} 
-              variant="ghost" 
-              size={{ base: "sm", sm: "md", md: "lg" }} 
-              onClick={isReadOnly ? onClose : handleCancel} 
-              _hover={{ bg: 'red.50', color: 'red.600' }} 
-              color="gray.600"
-            >
-              ✕
-            </Button>
+            <HStack spacing={2} position="absolute" top={{ base: 2, sm: 3, md: 4 }} right={{ base: 2, sm: 3, md: 4 }}>
+              {isAdmin && !isReadOnly && (
+                <Button
+                  leftIcon={<FiEdit />}
+                  colorScheme="blue"
+                  size={{ base: "xs", sm: "sm", md: "md" }}
+                  onClick={() => {
+                    onClose();
+                    // Navigate to create form with booking data for editing
+                    navigate('/purchase-bookings/create', {
+                      state: {
+                        editMode: true,
+                        bookingData: booking
+                      }
+                    });
+                  }}
+                  _hover={{ bg: 'blue.600' }}
+                >
+                  Edit Form
+                </Button>
+              )}
+              <Button 
+                variant="ghost" 
+                size={{ base: "sm", sm: "md", md: "lg" }} 
+                onClick={isReadOnly ? onClose : handleCancel} 
+                _hover={{ bg: 'red.50', color: 'red.600' }} 
+                color="gray.600"
+              >
+                ✕
+              </Button>
+            </HStack>
           </ModalHeader>
 
           <ModalBody p={{ base: 2, sm: 3, md: 4, lg: 6 }} overflowY="auto" bg="gray.25">

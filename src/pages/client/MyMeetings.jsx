@@ -333,7 +333,7 @@ const MyMeetings = () => {
     }
   }, [rawMyMeetings, users, properties, statuses]);
 
-  // Filter meetings based on search and status
+  // Filter and sort meetings - Completed first, then by date (earliest first)
   const filteredMeetings = useMemo(() => {
     const filtered = meetings.filter(meeting => {
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -342,7 +342,21 @@ const MyMeetings = () => {
       const matchesStatus = !statusFilter || meeting.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-    return filtered;
+    
+    // Sort: Completed meetings first, then by meetingDate (earliest first)
+    return filtered.sort((a, b) => {
+      const aIsCompleted = a.status?.toLowerCase() === 'completed';
+      const bIsCompleted = b.status?.toLowerCase() === 'completed';
+      
+      // If one is completed and the other isn't, completed comes first
+      if (aIsCompleted && !bIsCompleted) return -1;
+      if (!aIsCompleted && bIsCompleted) return 1;
+      
+      // Both have same completion status, sort by date (earliest first)
+      const aDate = a.meetingDate ? new Date(a.meetingDate) : new Date(0);
+      const bDate = b.meetingDate ? new Date(b.meetingDate) : new Date(0);
+      return aDate - bDate;
+    });
   }, [meetings, searchTerm, statusFilter]);
 
   // Pagination

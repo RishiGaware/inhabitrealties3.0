@@ -24,7 +24,7 @@ import {
   Heading,
   IconButton
 } from '@chakra-ui/react';
-import { FaCalendar, FaSearch, FaPlus, FaUsers, FaUser, FaEye, FaMapMarkerAlt, FaClock, FaUserTie, FaBuilding, FaHome, FaEnvelope, FaStickyNote, FaMap } from 'react-icons/fa';
+import { FaCalendar, FaSearch, FaPlus, FaUsers, FaUser, FaEye, FaMapMarkerAlt, FaClock, FaUserTie, FaBuilding, FaHome, FaEnvelope, FaStickyNote, FaMap, FaCheckCircle } from 'react-icons/fa';
 import { EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import CommonTable from '../../components/common/Table/CommonTable';
 import CommonPagination from '../../components/common/pagination/CommonPagination';
@@ -44,6 +44,8 @@ import {
   formatMeetingDataForAPI,
   getMyMeetings,
   getMeetingScheduleById,
+  markMeetingDoneBySales,
+  markMeetingDoneByExecutive,
 } from '../../services/meetings/meetingScheduleService';
 import { fetchAllMeetingScheduleStatuses } from '../../services/meetings/meetingScheduleStatusService';
 import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
@@ -176,8 +178,9 @@ const SalesMeetings = () => {
       }
 
       // Fetch meetings, users, properties, and statuses in parallel
+      // Use getMyMeetings to get meetings where user is customer, sales person, or executive
       const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse] = await Promise.all([
-        getMeetingScheduleById(currentUserId),
+        getMyMeetings(currentUserId),
         fetchUsers(),
         fetchProperties(),
         fetchAllMeetingScheduleStatuses()
@@ -407,6 +410,12 @@ const SalesMeetings = () => {
           statusId = meeting.status._id || meeting.status;
         }
 
+        // Get sales person and executive IDs
+        const salesPersonId = meeting.salesPersonId?._id || meeting.salesPersonId || '';
+        const executiveId = meeting.executiveId?._id || meeting.executiveId || '';
+        const isCompletedBySales = meeting.isCompletedBySales || false;
+        const isCompletedByExecutive = meeting.isCompletedByExecutive || false;
+        
         return {
           id: meeting._id,
           title: meeting.title,
@@ -428,7 +437,11 @@ const SalesMeetings = () => {
           duration: meeting.duration,
           // Preserve original IDs for form editing
           customerIds: actualCustomerIds,
-          propertyId: actualPropertyId
+          propertyId: actualPropertyId,
+          salesPersonId: salesPersonId,
+          executiveId: executiveId,
+          isCompletedBySales: isCompletedBySales,
+          isCompletedByExecutive: isCompletedByExecutive
         };
       });
       
@@ -437,12 +450,27 @@ const SalesMeetings = () => {
       // Clear meetings if no data to transform
       setMeetings([]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawMeetings, rawMyMeetings, users, properties, activeView]);
 
-  // Filter meetings based on search and status
+  // Filter and sort meetings - Completed first, then by date (earliest first)
   const filteredMeetings = useMemo(() => {
+    // Get current user ID to filter meetings where user is sales person
+    const auth = JSON.parse(localStorage.getItem("auth"));
+    const currentUserId = auth?.data?._id;
     
     const filtered = meetings.filter(meeting => {
+      // For sales meetings view, only show meetings where user is assigned as sales person or executive
+      if (activeView === 'scheduled' && currentUserId) {
+        const isSalesPerson = meeting.salesPersonId?._id === currentUserId || 
+                             meeting.salesPersonId === currentUserId ||
+                             (typeof meeting.salesPersonId === 'object' && meeting.salesPersonId?._id === currentUserId);
+        const isExecutive = meeting.executiveId?._id === currentUserId || 
+                           meeting.executiveId === currentUserId ||
+                           (typeof meeting.executiveId === 'object' && meeting.executiveId?._id === currentUserId);
+        if (!isSalesPerson && !isExecutive) return false;
+      }
+      
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            meeting.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.propertyName && meeting.propertyName.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -450,8 +478,21 @@ const SalesMeetings = () => {
       return matchesSearch && matchesStatus;
     });
     
-    return filtered;
-  }, [meetings, searchTerm, statusFilter]);
+    // Sort: Completed meetings first, then by meetingDate (earliest first)
+    return filtered.sort((a, b) => {
+      const aIsCompleted = a.status?.toLowerCase() === 'completed';
+      const bIsCompleted = b.status?.toLowerCase() === 'completed';
+      
+      // If one is completed and the other isn't, completed comes first
+      if (aIsCompleted && !bIsCompleted) return -1;
+      if (!aIsCompleted && bIsCompleted) return 1;
+      
+      // Both have same completion status, sort by date (earliest first)
+      const aDate = a.meetingDate ? new Date(a.meetingDate) : new Date(0);
+      const bDate = b.meetingDate ? new Date(b.meetingDate) : new Date(0);
+      return aDate - bDate;
+    });
+  }, [meetings, searchTerm, statusFilter, activeView]);
 
   // Color mode values
   const textColor = useColorModeValue('gray.800', 'white');
@@ -504,6 +545,7 @@ const SalesMeetings = () => {
     setSelectedMeeting(meeting);
     setIsDeleteModalOpen(true);
   };
+
 
   const handleConfirmDelete = async () => {
     if (!selectedMeeting) return;

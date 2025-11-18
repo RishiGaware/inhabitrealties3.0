@@ -114,6 +114,17 @@ export const MEETING_SCHEDULE_ENDPOINTS = {
   DELETE: (id) => `/meetingschedule/delete/${id}`,
   GET_MY_MEETINGS: (id) => `/meetingschedule/my-meetings/${id}`,
   GET_NOT_PUBLISHED: '/meetingschedule/notpublished',
+  MARK_DONE_SALES: (id) => `/meetingschedule/mark-done-sales/${id}`,
+  MARK_DONE_EXECUTIVE: (id) => `/meetingschedule/mark-done-executive/${id}`,
+};
+
+export const NOTIFICATION_ENDPOINTS = {
+  GET_MY_NOTIFICATIONS: '/notifications/my-notifications',
+  GET_UNREAD_COUNT: '/notifications/unread-count',
+  MARK_AS_READ: (id) => `/notifications/read/${id}`,
+  MARK_AS_UNREAD: (id) => `/notifications/unread/${id}`,
+  MARK_ALL_AS_READ: '/notifications/read-all',
+  DELETE: (id) => `/notifications/delete/${id}`,
 };
 
 export const MEETING_SCHEDULE_STATUS_ENDPOINTS = {

@@ -78,6 +78,28 @@ export const getNotPublishedMeetingSchedules = async () => {
   }
 };
 
+// Mark meeting as done by sales person
+export const markMeetingDoneBySales = async (id) => {
+  try {
+    const response = await api.put(MEETING_SCHEDULE_ENDPOINTS.MARK_DONE_SALES(id));
+    return response.data;
+  } catch (error) {
+    console.error('meetingScheduleService: Mark done by sales error:', error);
+    throw error;
+  }
+};
+
+// Mark meeting as done by executive
+export const markMeetingDoneByExecutive = async (id) => {
+  try {
+    const response = await api.put(MEETING_SCHEDULE_ENDPOINTS.MARK_DONE_EXECUTIVE(id));
+    return response.data;
+  } catch (error) {
+    console.error('meetingScheduleService: Mark done by executive error:', error);
+    throw error;
+  }
+};
+
 // Helper function to format meeting data for API
 export const formatMeetingDataForAPI = (formData) => {
   // Handle both single customer ID (edit mode) and multiple customer IDs (add mode)
@@ -106,13 +128,17 @@ export const formatMeetingDataForAPI = (formData) => {
     status: formData.status,
     ...customerData, // Spread the appropriate customer field
     propertyId: formData.propertyId || null,
-    notes: formData.notes || ""
+    notes: formData.notes || "",
+    salesPersonId: formData.salesPersonId || null,
+    executiveId: formData.executiveId || null
   };
 };
 
 // Helper function to format meeting data for frontend
 export const formatMeetingDataForFrontend = (meeting) => {
   return {
+    salesPersonId: meeting.salesPersonId?._id || meeting.salesPersonId || '',
+    executiveId: meeting.executiveId?._id || meeting.executiveId || '',
     id: meeting._id,
     title: meeting.title,
     description: meeting.description,

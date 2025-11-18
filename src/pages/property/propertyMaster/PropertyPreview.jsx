@@ -23,6 +23,8 @@ import {
 import { submitContactUs } from '../../../services/homeservices/homeService';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
 import DeleteConfirmationModal from '../../../components/common/DeleteConfirmationModal';
+import { trackPropertyView } from '../../../services/propertyView/propertyViewService';
+import { useAuth } from '../../../context/AuthContext';
 
 const floatingButtonStyle = {
   bg: 'rgba(30,30,30,0.75)',
@@ -61,6 +63,7 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
   const brochureInputRef = useRef();
   const imageViewerRef = useRef(null);
   const lastTouchDistance = useRef(0);
+  const { getUserId, isAuthenticated } = useAuth();
 
   // Color mode values
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -97,8 +100,16 @@ const PropertyPreview = ({ isOpen, onClose, property, isViewOnly = false }) => {
       } else {
         setBrochureUrl(null);
       }
+      
+      // Track property view if user is authenticated
+      if (isAuthenticated && isViewOnly) {
+        trackPropertyView(property._id).catch(err => {
+          // Silently fail - don't break the UI if tracking fails
+          console.error('Failed to track property view:', err);
+        });
+      }
     }
-  }, [isOpen, property?._id, property?.brochureUrl, fetchPropertyImagesData]);
+  }, [isOpen, property?._id, property?.brochureUrl, fetchPropertyImagesData, isAuthenticated, isViewOnly]);
 
   const handleImageUpload = async (event) => {
     const file = event.target.files[0];
