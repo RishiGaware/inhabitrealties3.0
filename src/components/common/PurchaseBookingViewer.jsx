@@ -15,8 +15,10 @@ import {
   Badge,
   Grid,
   GridItem,
+  useDisclosure,
 } from '@chakra-ui/react';
 import { FiEdit, FiEye, FiDownload } from 'react-icons/fi';
+import PropertyPreview from '../../pages/property/propertyMaster/PropertyPreview';
 
 const PurchaseBookingViewer = ({ 
   isOpen, 
@@ -24,6 +26,8 @@ const PurchaseBookingViewer = ({
   bookingData,
   hideCustomerDetails = false,
 }) => {
+  const { isOpen: isPropertyPreviewOpen, onOpen: onPropertyPreviewOpen, onClose: onPropertyPreviewClose } = useDisclosure();
+  
   if (!isOpen || !bookingData) return null;
 
   const formatCurrency = (amount) => {
@@ -114,7 +118,8 @@ const PurchaseBookingViewer = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", sm: "4xl", md: "5xl", lg: "6xl" }} isCentered>
+    <>
+      <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", sm: "4xl", md: "5xl", lg: "6xl" }} isCentered>
       <ModalOverlay bg="blackAlpha.600" backdropFilter="blur(10px)" />
       <ModalContent 
         mx={{ base: 0, sm: 2, md: 4 }} 
@@ -157,6 +162,18 @@ const PurchaseBookingViewer = ({
           p={{ base: 2, sm: 3, md: 6 }} 
           overflowY="auto" 
           bg="gray.25"
+          onWheel={(e) => {
+            // If PropertyPreview is open, prevent parent modal from scrolling
+            if (isPropertyPreviewOpen) {
+              e.stopPropagation();
+            }
+          }}
+          onTouchMove={(e) => {
+            // If PropertyPreview is open, prevent parent modal from scrolling
+            if (isPropertyPreviewOpen) {
+              e.stopPropagation();
+            }
+          }}
           maxH={{ base: "calc(100vh - 120px)", sm: "calc(95vh - 120px)", md: "calc(90vh - 120px)" }}
         >
           <VStack spacing={{ base: 3, md: 6 }} align="stretch">
@@ -257,11 +274,26 @@ const PurchaseBookingViewer = ({
             {/* Property & Customer Details */}
             <SimpleGrid columns={{ base: 1, md: hideCustomerDetails ? 1 : 2 }} spacing={{ base: 2, sm: 3, md: 4 }}>
               <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
-                <HStack mb={3} align="center">
-                  <Box p={2} bg="green.100" borderRadius="full">
-                    <Text fontSize={{ base: "md", sm: "lg" }} color="green.600">🏠</Text>
-                  </Box>
-                  <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="green.700">Property Details</Text>
+                <HStack mb={3} align="center" justify="space-between">
+                  <HStack>
+                    <Box p={2} bg="green.100" borderRadius="full">
+                      <Text fontSize={{ base: "md", sm: "lg" }} color="green.600">🏠</Text>
+                    </Box>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="green.700">Property Details</Text>
+                  </HStack>
+                  {bookingData.propertyId && (
+                    <Button
+                      leftIcon={<FiEye />}
+                      size={{ base: "xs", sm: "sm" }}
+                      colorScheme="green"
+                      variant="outline"
+                      onClick={onPropertyPreviewOpen}
+                      _hover={{ bg: "green.100" }}
+                      fontSize={{ base: "xs", sm: "sm" }}
+                    >
+                      View Property
+                    </Button>
+                  )}
                 </HStack>
                 <VStack spacing={{ base: 2, md: 2 }} align="start">
                   <Box w="full">
@@ -363,72 +395,74 @@ const PurchaseBookingViewer = ({
               </Box>
             )}
 
-            {/* Additional Property Details */}
-            {(bookingData.flatNo || bookingData.floorNo || bookingData.balconies || bookingData.towerWing || bookingData.propertyType || bookingData.carpetArea || bookingData.facing || bookingData.parkingNo || bookingData.specialFeatures) && (
+            {/* Property Details - Merged Building/Apartment and Additional Details */}
+            {/* Always show this section if bookingData exists */}
+            {bookingData && (
               <Box p={{ base: 2, sm: 3, md: 4 }} bg="white" borderRadius="lg" border="1px" borderColor="orange.100" shadow="sm">
-                <HStack mb={3} align="center">
-                  <Box p={2} bg="orange.100" borderRadius="full">
-                    <Text fontSize={{ base: "md", sm: "lg" }} color="orange.600">🏢</Text>
-                  </Box>
-                  <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="orange.700">Additional Property Details</Text>
+                <HStack mb={3} align="center" justify="space-between">
+                  <HStack>
+                    <Box p={2} bg="orange.100" borderRadius="full">
+                      <Text fontSize={{ base: "md", sm: "lg" }} color="orange.600">🏢</Text>
+                    </Box>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md", lg: "lg" }} fontWeight="semibold" color="orange.700">Property Details</Text>
+                  </HStack>
+                  {bookingData.propertyId && (
+                    <Button
+                      leftIcon={<FiEye />}
+                      size={{ base: "xs", sm: "sm" }}
+                      colorScheme="blue"
+                      variant="outline"
+                      onClick={onPropertyPreviewOpen}
+                      _hover={{ bg: "blue.50" }}
+                      fontSize={{ base: "xs", sm: "sm" }}
+                    >
+                      View Property
+                    </Button>
+                  )}
                 </HStack>
                 <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={{ base: 2, sm: 3, md: 4 }}>
-                  {bookingData.flatNo && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Flat / Plot No.</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.flatNo}</Text>
-                    </GridItem>
-                  )}
-                  {bookingData.towerWing && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Tower / Wing</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.towerWing}</Text>
-                    </GridItem>
-                  )}
-                  {bookingData.floorNo && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Floor</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.floorNo}</Text>
-                    </GridItem>
-                  )}
-                  {(bookingData.propertyType || bookingData.propertyTypeOther) && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Type</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">
-                        {bookingData.propertyType === "Other" ? bookingData.propertyTypeOther : bookingData.propertyType || 'N/A'}
-                      </Text>
-                    </GridItem>
-                  )}
-                  {bookingData.carpetArea && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Carpet Area</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.carpetArea}</Text>
-                    </GridItem>
-                  )}
-                  {bookingData.facing && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Facing</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.facing}</Text>
-                    </GridItem>
-                  )}
-                  {bookingData.parkingNo && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Parking No.</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.parkingNo}</Text>
-                    </GridItem>
-                  )}
-                  {bookingData.balconies && (
-                    <GridItem>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Balconies</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.balconies}</Text>
-                    </GridItem>
-                  )}
-                  {bookingData.specialFeatures && (
-                    <GridItem colSpan={{ base: 1, sm: 2 }}>
-                      <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Special Features / Amenities</Text>
-                      <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.specialFeatures}</Text>
-                    </GridItem>
-                  )}
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Flat / Plot No.</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.flatNo || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Tower / Wing</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.towerWing || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Floor</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.floorNo || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Number of Balconies</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.balconies || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Type</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">
+                      {bookingData.propertyType === "Other" ? (bookingData.propertyTypeOther || 'N/A') : (bookingData.propertyType || 'N/A')}
+                    </Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Carpet Area (sq.ft / sq.yd)</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.carpetArea || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Facing</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.facing || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Parking No.</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.parkingNo || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem colSpan={{ base: 1, sm: 2 }}>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Special Flat / Corner / Garden View / Amenities</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.specialFeatures || 'N/A'}</Text>
+                  </GridItem>
+                  <GridItem colSpan={{ base: 1, sm: 2 }}>
+                    <Text fontSize={{ base: "2xs", sm: "xs", md: "sm" }} color="orange.600" fontWeight="medium" mb={1}>Other Details</Text>
+                    <Text fontSize={{ base: "xs", sm: "sm", md: "md" }} color="gray.800">{bookingData.otherDetails || 'N/A'}</Text>
+                  </GridItem>
                 </Grid>
               </Box>
             )}
@@ -880,6 +914,17 @@ const PurchaseBookingViewer = ({
         </ModalFooter>
       </ModalContent>
     </Modal>
+
+    {/* Property Preview Modal */}
+    {bookingData.propertyId && (
+      <PropertyPreview
+        isOpen={isPropertyPreviewOpen}
+        onClose={onPropertyPreviewClose}
+        property={bookingData.propertyId}
+        isViewOnly={true}
+      />
+    )}
+  </>
   );
 };
 

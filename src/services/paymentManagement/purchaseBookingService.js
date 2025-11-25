@@ -141,5 +141,11 @@ export const purchaseBookingService = {
   getDocumentFromPurchaseBooking: async (id, documentId) => {
     const response = await api.get(PURCHASE_BOOKING_ENDPOINTS.GET_DOCUMENT(id, documentId));
     return response.data;
-  }
+  },
+
+  // Get flat statuses for a property (for building chart)
+  getFlatStatusesByProperty: async (propertyId) => {
+    const response = await api.get(PURCHASE_BOOKING_ENDPOINTS.GET_FLAT_STATUSES(propertyId));
+    return response.data;
+  },
 }; 

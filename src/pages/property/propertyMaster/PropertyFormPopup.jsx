@@ -7,8 +7,9 @@ import {
 import {
   Box, Heading, Flex, Grid, Button, Input, Checkbox,
   CheckboxGroup, Stack, Tag, TagLabel, TagCloseButton,
-  FormControl, FormLabel, FormErrorMessage, VStack, Text, Textarea,
-  HStack, IconButton
+  FormControl, FormLabel, FormErrorMessage, FormHelperText, VStack, Text, Textarea,
+  HStack, IconButton, NumberInput, NumberInputField, NumberInputStepper,
+  NumberIncrementStepper, NumberDecrementStepper
 } from '@chakra-ui/react';
 import CommonCard from '../../../components/common/Card/CommonCard';
 import SearchableSelect from '../../../components/common/SearchableSelect';
@@ -105,7 +106,12 @@ const PropertyFormPopup = ({
       amenities: []
     },
     listedDate: '',
-    published: true
+    published: true,
+    buildingStructure: {
+      totalFloors: null,
+      flatsPerFloor: null,
+      totalFlats: null
+    }
   });
 
   const [errors, setErrors] = useState({});
@@ -154,7 +160,12 @@ const PropertyFormPopup = ({
           amenities: initialData.features?.amenities || []
         },
         listedDate: initialData.listedDate ? dayjs(initialData.listedDate).format('YYYY-MM-DD') : dayjs().format('YYYY-MM-DD'),
-        published: initialData.published !== undefined ? initialData.published : true
+        published: initialData.published !== undefined ? initialData.published : true,
+        buildingStructure: {
+          totalFloors: initialData.buildingStructure?.totalFloors || null,
+          flatsPerFloor: initialData.buildingStructure?.flatsPerFloor || null,
+          totalFlats: initialData.buildingStructure?.totalFlats || null
+        }
       };
       
       setFormData(formattedData);
@@ -320,6 +331,41 @@ const PropertyFormPopup = ({
     }));
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }));
   }, [errors]);
+
+  const handleBuildingStructureChange = useCallback((field, value) => {
+    const numValue = value ? parseInt(value) : null;
+    setFormData(prev => {
+      const newStructure = {
+        ...prev.buildingStructure,
+        [field]: numValue
+      };
+      // Auto-calculate totalFlats if both totalFloors and flatsPerFloor are set
+      if (field === 'totalFloors' || field === 'flatsPerFloor') {
+        const totalFloors = field === 'totalFloors' ? numValue : prev.buildingStructure.totalFloors;
+        const flatsPerFloor = field === 'flatsPerFloor' ? numValue : prev.buildingStructure.flatsPerFloor;
+        if (totalFloors && flatsPerFloor) {
+          newStructure.totalFlats = totalFloors * flatsPerFloor;
+        } else {
+          newStructure.totalFlats = null;
+        }
+      }
+      const updatedFormData = {
+        ...prev,
+        buildingStructure: newStructure
+      };
+      return updatedFormData;
+    });
+  }, []);
+
+  // Check if property type is building/apartment
+  const isBuildingType = () => {
+    if (!formData.propertyTypeId) return false;
+    const selectedType = propertyTypes.find(pt => pt._id === formData.propertyTypeId);
+    if (!selectedType) return false;
+    const typeName = selectedType.typeName?.toUpperCase() || '';
+    const buildingTypes = ['APARTMENT', 'BUILDING', 'FLAT', 'CONDOMINIUM', 'TOWER'];
+    return buildingTypes.some(type => typeName.includes(type));
+  };
 
   const handleAddCustomAmenity = () => {
     const amenity = customAmenityInput.trim();
@@ -699,6 +745,63 @@ const PropertyFormPopup = ({
             </Box>
           )}
         </Box>
+
+        {/* Building Structure - Only show for building/apartment types */}
+        {isBuildingType() && (
+          <>
+            <Box borderLeft="4px solid #3182CE" pl={3} mb={2} mt={4}>
+              <Text fontWeight="bold" fontSize="lg" color="gray.800">Building Structure</Text>
+              <Text fontSize="xs" color="gray.500" mt={1}>
+                Enter building details for apartment/building type properties
+              </Text>
+            </Box>
+            <Grid templateColumns={{ base: '1fr', md: 'repeat(3, 1fr)' }} gap={4}>
+              <FormControl>
+                <FormLabel>Total Floors</FormLabel>
+                <NumberInput
+                  value={formData.buildingStructure.totalFloors || ''}
+                  onChange={(value) => handleBuildingStructureChange('totalFloors', value)}
+                  min={1}
+                  max={100}
+                >
+                  <NumberInputField placeholder="Enter total floors" />
+                  <NumberInputStepper>
+                    <NumberIncrementStepper />
+                    <NumberDecrementStepper />
+                  </NumberInputStepper>
+                </NumberInput>
+                <FormHelperText fontSize="xs">Number of floors in the building</FormHelperText>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Flats Per Floor</FormLabel>
+                <NumberInput
+                  value={formData.buildingStructure.flatsPerFloor || ''}
+                  onChange={(value) => handleBuildingStructureChange('flatsPerFloor', value)}
+                  min={1}
+                  max={50}
+                >
+                  <NumberInputField placeholder="Enter flats per floor" />
+                  <NumberInputStepper>
+                    <NumberIncrementStepper />
+                    <NumberDecrementStepper />
+                  </NumberInputStepper>
+                </NumberInput>
+                <FormHelperText fontSize="xs">Number of flats on each floor</FormHelperText>
+              </FormControl>
+              <FormControl>
+                <FormLabel>Total Flats</FormLabel>
+                <NumberInput
+                  value={formData.buildingStructure.totalFlats || ''}
+                  // isReadOnly
+                  bg="gray.50"
+                >
+                  <NumberInputField placeholder="Auto-calculated" />
+                </NumberInput>
+                <FormHelperText fontSize="xs">Automatically calculated</FormHelperText>
+              </FormControl>
+            </Grid>
+          </>
+        )}
 
         {/* Property Brochure */}
         <Box borderLeft="4px solid #DC143C" pl={3} mb={2} mt={4}>

@@ -164,7 +164,7 @@ const Notifications = ({ isOpen, onClose }) => {
     // Navigate based on notification type and role
     if (notificationType === 'lead_created' || notificationType === 'lead_assignment') {
       // All roles redirect to leads page
-      navigate('/leads');
+      navigate('/lead/add');
     } else if (notificationType === 'meeting_schedule' || notificationType === 'meeting_reminder') {
       // Navigate based on role
       if (roleName === 'ADMIN') {
@@ -177,7 +177,7 @@ const Notifications = ({ isOpen, onClose }) => {
     } else if (notificationType === 'inquiry_created' || notificationType === 'contact_us') {
       // Navigate to leads page for inquiries/contact
       if (roleName === 'ADMIN' || roleName === 'EXECUTIVE' || roleName === 'SALES') {
-        navigate('/leads');
+        navigate('/lead/add');
       }
     }
     // For other types, just close the panel

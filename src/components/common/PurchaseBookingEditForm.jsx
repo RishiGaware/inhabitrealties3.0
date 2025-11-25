@@ -13,6 +13,7 @@ import { FiSave, FiX, FiEdit, FiUpload, FiEye, FiDownload } from 'react-icons/fi
 import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
 import DocumentUpload from './DocumentUpload';
 import { useAuth } from '../../context/AuthContext';
+import PropertyPreview from '../../pages/property/propertyMaster/PropertyPreview';
 
 const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isReadOnly = false }) => {
   // Expected installment data structure with documents:
@@ -48,6 +49,7 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isRea
   const [activeTab, setActiveTab] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const { isOpen: isPropertyPreviewOpen, onOpen: onPropertyPreviewOpen, onClose: onPropertyPreviewClose } = useDisclosure();
   const fileInputRef = useRef(null);
   
   // Installment edit modal
@@ -538,9 +540,23 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isRea
 
                     {/* Property Details - Comprehensive */}
                     <Box p={4} bg="white" borderRadius="lg" border="1px" borderColor="green.100" shadow="sm">
-                      <HStack mb={3} align="center">
-                        <Box p={2} bg="green.100" borderRadius="full"><Text fontSize="lg" color="green.600">🏠</Text></Box>
-                        <Text fontSize="md" fontWeight="semibold" color="green.700">Property Details</Text>
+                      <HStack mb={3} align="center" justify="space-between">
+                        <HStack>
+                          <Box p={2} bg="green.100" borderRadius="full"><Text fontSize="lg" color="green.600">🏠</Text></Box>
+                          <Text fontSize="md" fontWeight="semibold" color="green.700">Property Details</Text>
+                        </HStack>
+                        {booking.propertyId && (
+                          <Button
+                            leftIcon={<FiEye />}
+                            size="sm"
+                            colorScheme="green"
+                            variant="outline"
+                            onClick={onPropertyPreviewOpen}
+                            _hover={{ bg: "green.100" }}
+                          >
+                            View Property
+                          </Button>
+                        )}
                       </HStack>
                       <VStack spacing={4} align="stretch">
                         {/* Basic Property Info */}
@@ -731,70 +747,89 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isRea
                       </Box>
                     )}
 
-                    {/* Additional Property Details */}
-                    {(booking.flatNo || booking.floorNo || booking.balconies || booking.towerWing || booking.propertyType || booking.carpetArea || booking.facing || booking.parkingNo || booking.specialFeatures) && (
+                    {/* Property Details - Merged Building/Apartment and Additional Details */}
+                    {/* Always show this section if booking exists */}
+                    {booking && (
                       <Box p={4} bg="white" borderRadius="lg" border="1px" borderColor="orange.100" shadow="sm">
-                        <HStack mb={3} align="center">
-                          <Box p={2} bg="orange.100" borderRadius="full"><Text fontSize="lg" color="orange.600">🏢</Text></Box>
-                          <Text fontSize="md" fontWeight="semibold" color="orange.700">Additional Property Details</Text>
+                        <HStack mb={3} align="center" justify="space-between">
+                          <HStack>
+                            <Box p={2} bg="orange.100" borderRadius="full"><Text fontSize="lg" color="orange.600">🏢</Text></Box>
+                            <Text fontSize="md" fontWeight="semibold" color="orange.700">Property Details</Text>
+                          </HStack>
+                          {booking.propertyId && (
+                            <Button
+                              leftIcon={<FiEye />}
+                              size="sm"
+                              colorScheme="blue"
+                              variant="outline"
+                              onClick={onPropertyPreviewOpen}
+                              _hover={{ bg: "blue.50" }}
+                            >
+                              View Property
+                            </Button>
+                          )}
                         </HStack>
                         <Grid templateColumns={{ base: "1fr", sm: "repeat(2, 1fr)" }} gap={4}>
-                          {booking.flatNo && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Flat / Plot No.</Text>
-                              <Text fontSize="md" color="gray.800">{booking.flatNo}</Text>
-                            </GridItem>
-                          )}
-                          {booking.towerWing && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Tower / Wing</Text>
-                              <Text fontSize="md" color="gray.800">{booking.towerWing}</Text>
-                            </GridItem>
-                          )}
-                          {booking.floorNo && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Floor</Text>
-                              <Text fontSize="md" color="gray.800">{booking.floorNo}</Text>
-                            </GridItem>
-                          )}
-                          {(booking.propertyType || booking.propertyTypeOther) && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Type</Text>
-                              <Text fontSize="md" color="gray.800">
-                                {booking.propertyType === "Other" ? booking.propertyTypeOther : booking.propertyType || 'N/A'}
-                              </Text>
-                            </GridItem>
-                          )}
-                          {booking.carpetArea && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Carpet Area</Text>
-                              <Text fontSize="md" color="gray.800">{booking.carpetArea}</Text>
-                            </GridItem>
-                          )}
-                          {booking.facing && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Facing</Text>
-                              <Text fontSize="md" color="gray.800">{booking.facing}</Text>
-                            </GridItem>
-                          )}
-                          {booking.parkingNo && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Parking No.</Text>
-                              <Text fontSize="md" color="gray.800">{booking.parkingNo}</Text>
-                            </GridItem>
-                          )}
-                          {booking.balconies && (
-                            <GridItem>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Balconies</Text>
-                              <Text fontSize="md" color="gray.800">{booking.balconies}</Text>
-                            </GridItem>
-                          )}
-                          {booking.specialFeatures && (
-                            <GridItem colSpan={{ base: 1, sm: 2 }}>
-                              <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Special Features / Amenities</Text>
-                              <Text fontSize="md" color="gray.800">{booking.specialFeatures}</Text>
-                            </GridItem>
-                          )}
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Flat / Plot No.</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.flatNo ? "medium" : "normal"}>
+                              {booking.flatNo || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Tower / Wing</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.towerWing ? "medium" : "normal"}>
+                              {booking.towerWing || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Floor</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.floorNo ? "medium" : "normal"}>
+                              {booking.floorNo || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Number of Balconies</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.balconies ? "medium" : "normal"}>
+                              {booking.balconies || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Type</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={(booking.propertyType || booking.propertyTypeOther) ? "medium" : "normal"}>
+                              {booking.propertyType === "Other" ? (booking.propertyTypeOther || 'N/A') : (booking.propertyType || 'N/A')}
+                            </Text>
+                          </GridItem>
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Carpet Area (sq.ft / sq.yd)</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.carpetArea ? "medium" : "normal"}>
+                              {booking.carpetArea || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Facing</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.facing ? "medium" : "normal"}>
+                              {booking.facing || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Parking No.</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.parkingNo ? "medium" : "normal"}>
+                              {booking.parkingNo || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem colSpan={{ base: 1, sm: 2 }}>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Special Flat / Corner / Garden View / Amenities</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.specialFeatures ? "medium" : "normal"}>
+                              {booking.specialFeatures || 'N/A'}
+                            </Text>
+                          </GridItem>
+                          <GridItem colSpan={{ base: 1, sm: 2 }}>
+                            <Text fontSize="sm" color="orange.600" fontWeight="medium" mb={1}>Other Details</Text>
+                            <Text fontSize="md" color="gray.800" fontWeight={booking.otherDetails ? "medium" : "normal"}>
+                              {booking.otherDetails || 'N/A'}
+                            </Text>
+                          </GridItem>
                         </Grid>
                       </Box>
                     )}
@@ -1575,6 +1610,16 @@ const PurchaseBookingEditForm = ({ isOpen, onClose, bookingData, onUpdate, isRea
           </ModalFooter>
         </ModalContent>
       </Modal>
+
+      {/* Property Preview Modal */}
+      {booking?.propertyId && (
+        <PropertyPreview
+          isOpen={isPropertyPreviewOpen}
+          onClose={onPropertyPreviewClose}
+          property={booking.propertyId}
+          isViewOnly={true}
+        />
+      )}
     </>
   );
 };

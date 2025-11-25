@@ -182,6 +182,7 @@ export const PURCHASE_BOOKING_ENDPOINTS = {
   DELETE_DOCUMENT: (id, documentId) => `/purchase-bookings/${id}/documents/${documentId}`,
   UPDATE_DOCUMENT: (id, documentId) => `/purchase-bookings/${id}/documents/${documentId}`,
   GET_DOCUMENT: (id, documentId) => `/purchase-bookings/${id}/documents/${documentId}`,
+  GET_FLAT_STATUSES: (propertyId) => `/purchase-bookings/property/${propertyId}/flat-statuses`,
 };
 
 // Rental Booking Endpoints

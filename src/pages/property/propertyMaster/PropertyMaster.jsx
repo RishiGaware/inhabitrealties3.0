@@ -168,6 +168,17 @@ const PropertyMaster = ({ isViewOnly = false }) => {
         listedDate: propertyData.listedDate || new Date().toISOString(),
         published: propertyData.published !== undefined ? propertyData.published : true
       };
+      
+      // Handle buildingStructure separately for create
+      if (propertyData.buildingStructure && (propertyData.buildingStructure.totalFloors || propertyData.buildingStructure.flatsPerFloor || propertyData.buildingStructure.totalFlats)) {
+        formattedData.buildingStructure = {
+          totalFloors: propertyData.buildingStructure.totalFloors ? parseInt(propertyData.buildingStructure.totalFloors) : null,
+          flatsPerFloor: propertyData.buildingStructure.flatsPerFloor ? parseInt(propertyData.buildingStructure.flatsPerFloor) : null,
+          totalFlats: propertyData.buildingStructure.totalFlats ? parseInt(propertyData.buildingStructure.totalFlats) : null
+        };
+      } else {
+        formattedData.buildingStructure = null;
+      }
 
       const response = await createProperty(formattedData);
       const propertyId = response.data?._id;
@@ -260,8 +271,22 @@ const PropertyMaster = ({ isViewOnly = false }) => {
         published: updatedData.published !== undefined ? updatedData.published : true,
         brochureUrl: updatedData.brochureUrl || selectedProperty.brochureUrl
       };
+      
+      if (updatedData.buildingStructure !== undefined) {
+        if (updatedData.buildingStructure && (updatedData.buildingStructure.totalFloors || updatedData.buildingStructure.flatsPerFloor || updatedData.buildingStructure.totalFlats)) {
+          formattedData.buildingStructure = {
+            totalFloors: updatedData.buildingStructure.totalFloors ? parseInt(updatedData.buildingStructure.totalFloors) : null,
+            flatsPerFloor: updatedData.buildingStructure.flatsPerFloor ? parseInt(updatedData.buildingStructure.flatsPerFloor) : null,
+            totalFlats: updatedData.buildingStructure.totalFlats ? parseInt(updatedData.buildingStructure.totalFlats) : null
+          };
+        } else {
+          // Explicitly set to null to clear it
+          formattedData.buildingStructure = null;
+        }
+      }
 
       const response = await editProperty(selectedProperty._id, formattedData);
+      
       
       // Upload brochure if provided
       if (brochureFile && selectedProperty._id) {

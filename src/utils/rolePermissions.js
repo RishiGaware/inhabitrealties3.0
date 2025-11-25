@@ -28,7 +28,7 @@ export const ROLE_PERMISSIONS = {
       property: ['property-master', 'property-types', 'favorite-properties'],
       leads: ['leads', 'inquiries', 'lead-status', 'lead-follow-up', 'reference-source'],
       scheduleMeetings: ['admin-meetings', 'meetings-status'],
-      purchaseBookings: ['all-purchase-bookings', 'create-new-purchase'],
+      purchaseBookings: ['all-purchase-bookings', 'create-new-purchase','my-assigned-bookings','my-bookings'],
       rentalBookings: ['all-rental-bookings', 'create-new-rental'],
       payments: ['all-payment-history']
     }
