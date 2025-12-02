@@ -100,9 +100,24 @@ const PropertyMaster = ({ isViewOnly = false }) => {
     setLoading(true);
     setErrorType(null);
     try {
+      console.log('[PropertyMaster] Fetching all properties...');
       const response = await fetchProperties();
-      setProperties(response.data || []);
+      const properties = response.data || [];
+      console.log('[PropertyMaster] Fetched properties:', {
+        count: properties.length,
+        propertiesWithBrochure: properties.filter(p => p.brochureUrl).length
+      });
+      
+      // Log brochure details for properties with brochures
+      properties.forEach(prop => {
+        if (prop.brochureUrl) {
+          console.log(`[PropertyMaster] Property "${prop.name}" (${prop._id}) has brochure:`, prop.brochureUrl);
+        }
+      });
+      
+      setProperties(properties);
     } catch (error) {
+      console.error('[PropertyMaster] Error fetching properties:', error);
       if (error.message === 'Network Error') setErrorType('network');
       else if (error.response?.status === 500) setErrorType('server');
       else setErrorType('server');
@@ -211,7 +226,10 @@ const PropertyMaster = ({ isViewOnly = false }) => {
       }
       
       // Refresh properties list to get updated data
-      fetchProperties();
+      console.log('[Property Edit] Refreshing properties list after update...');
+      setTimeout(() => {
+        fetchAllProperties();
+      }, 500); // Small delay to ensure backend has updated
     } catch (error) {
       let errorMessage = 'Failed to add property';
       if (error?.response?.data?.message) {
@@ -285,39 +303,121 @@ const PropertyMaster = ({ isViewOnly = false }) => {
         }
       }
 
-      const response = await editProperty(selectedProperty._id, formattedData);
+      // Upload brochure first if provided, then update property with new brochureUrl
+      let finalBrochureUrl = formattedData.brochureUrl;
+      console.log('[Property Edit] Starting property update:', {
+        propertyId: selectedProperty._id,
+        hasBrochureFile: !!brochureFile,
+        currentBrochureUrl: formattedData.brochureUrl
+      });
       
-      
-      // Upload brochure if provided
       if (brochureFile && selectedProperty._id) {
         try {
-          await uploadPropertyBrochure(selectedProperty._id, brochureFile);
-          showSuccessToast('Property and brochure updated successfully');
+          console.log('[Property Edit] Uploading brochure file:', {
+            fileName: brochureFile.name,
+            fileType: brochureFile.type,
+            fileSize: brochureFile.size,
+            propertyId: selectedProperty._id
+          });
+          
+          const brochureResponse = await uploadPropertyBrochure(selectedProperty._id, brochureFile);
+          console.log('[Property Edit] Brochure upload response:', brochureResponse);
+          
+          // Extract brochure URL from response - same structure as documents
+          const brochureUrl = brochureResponse?.data?.originalUrl || brochureResponse?.data?.brochureUrl || brochureResponse?.data?.data?.originalUrl || brochureResponse?.data?.data?.brochureUrl;
+          console.log('[Property Edit] Brochure URL from response:', {
+            brochureUrl: brochureUrl,
+            originalUrl: brochureResponse?.data?.originalUrl,
+            secureUrl: brochureResponse?.data?.secureUrl
+          });
+          
+          // Update formattedData with new brochureUrl
+          if (brochureUrl) {
+            formattedData.brochureUrl = brochureUrl;
+            finalBrochureUrl = brochureUrl;
+            console.log('[Property Edit] Updated formattedData with brochureUrl:', brochureUrl);
+          }
         } catch (brochureError) {
-          console.error('Failed to upload brochure:', brochureError);
-          showErrorToast('Property updated but brochure upload failed');
+          console.error('[Property Edit] Failed to upload brochure:', brochureError);
+          showErrorToast('Brochure upload failed, updating property without brochure');
         }
       }
       
+      // Update property with brochureUrl included
+      console.log('[Property Edit] Updating property with formattedData:', {
+        ...formattedData,
+        brochureUrl: formattedData.brochureUrl
+      });
+      const response = await editProperty(selectedProperty._id, formattedData);
+      console.log('[Property Edit] Property updated, response:', response);
+      
+      // Get the updated property from response (includes new brochureUrl if uploaded)
+      const updatedPropertyFromResponse = response?.data || { ...formattedData, ...response?.data };
+      console.log('[Property Edit] Updated property from response:', {
+        id: updatedPropertyFromResponse._id,
+        name: updatedPropertyFromResponse.name,
+        brochureUrl: updatedPropertyFromResponse.brochureUrl,
+        hasBrochureUrl: !!updatedPropertyFromResponse.brochureUrl
+      });
+      
+      // Ensure brochureUrl is included in the updated property
+      if (finalBrochureUrl) {
+        updatedPropertyFromResponse.brochureUrl = finalBrochureUrl;
+        console.log('[Property Edit] Final brochureUrl set:', finalBrochureUrl);
+      }
+      
       // Update the property in local state
-      setProperties(prevProperties => 
-        prevProperties.map(property => 
-          property._id === selectedProperty._id 
-            ? { ...property, ...formattedData, updatedAt: new Date().toISOString() }
-            : property
-        )
-      );
+      console.log('[Property Edit] Updating local state with formattedData:', formattedData);
+      setProperties(prevProperties => {
+        const updated = prevProperties.map(prop => 
+          prop._id === selectedProperty._id 
+            ? { ...prop, ...updatedPropertyFromResponse, updatedAt: new Date().toISOString() }
+            : prop
+        );
+        const updatedProperty = updated.find(p => p._id === selectedProperty._id);
+        console.log('[Property Edit] Updated property in state:', {
+          id: updatedProperty?._id,
+          name: updatedProperty?.name,
+          brochureUrl: updatedProperty?.brochureUrl,
+          hasBrochureUrl: !!updatedProperty?.brochureUrl
+        });
+        return updated;
+      });
+      
+      // Update selectedProperty if preview is open
+      if (isPreviewOpen) {
+        console.log('[Property Edit] Preview is open, updating selectedProperty');
+        setSelectedProperty(prev => {
+          const updated = {
+            ...prev,
+            ...updatedPropertyFromResponse
+          };
+          console.log('[Property Edit] Updated selectedProperty:', {
+            id: updated._id,
+            name: updated.name,
+            brochureUrl: updated.brochureUrl,
+            hasBrochureUrl: !!updated.brochureUrl
+          });
+          return updated;
+        });
+      }
       
       setSelectedProperty(null);
       setIsModalOpen(false);
       
+      // Show success message
       const successMessage = response?.message || 'Property updated successfully';
-      if (!brochureFile) {
+      if (brochureFile) {
+        showSuccessToast('Property and brochure updated successfully');
+      } else {
         showSuccessToast(successMessage);
       }
       
       // Refresh properties list to get updated data
-      fetchProperties();
+      console.log('[Property Edit] Refreshing properties list after update...');
+      setTimeout(() => {
+        fetchAllProperties();
+      }, 500); // Small delay to ensure backend has updated
     } catch (error) {
       let errorMessage = 'Failed to update property';
       if (error?.response?.data?.message) {
@@ -1327,6 +1427,28 @@ const PropertyMaster = ({ isViewOnly = false }) => {
           }}
           property={selectedProperty}
           isViewOnly={isViewOnly}
+          onPropertyUpdate={(updatedProperty) => {
+            console.log('[PropertyMaster] Property updated from preview:', {
+              id: updatedProperty._id,
+              name: updatedProperty.name,
+              brochureUrl: updatedProperty.brochureUrl,
+              hasBrochureUrl: !!updatedProperty.brochureUrl
+            });
+            
+            // Update selectedProperty and properties list when brochure is uploaded
+            setSelectedProperty(updatedProperty);
+            setProperties(prevProperties => {
+              const updated = prevProperties.map(prop => 
+                prop._id === updatedProperty._id 
+                  ? updatedProperty
+                  : prop
+              );
+              console.log('[PropertyMaster] Updated properties list, property with new brochure:', 
+                updated.find(p => p._id === updatedProperty._id)
+              );
+              return updated;
+            });
+          }}
         />
       )}
 
