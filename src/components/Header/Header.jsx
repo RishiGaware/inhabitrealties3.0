@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiMenu, FiX } from 'react-icons/fi';
 import logo from '../../assets/images/logo.png';
-import logoWhite from '../../assets/images/logown.png';
 import { IconButton, Box, Badge, Tooltip, Popover, PopoverTrigger, PopoverContent, PopoverHeader, PopoverBody, PopoverCloseButton, VStack, Text as ChakraText, HStack } from '@chakra-ui/react';
 import { FiBell, FiInfo, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
 import { useDisclosure } from '@chakra-ui/react';
@@ -58,12 +57,17 @@ const Header = () => {
 
   const Logo = () => (
     <Link to="/" className="flex items-center space-x-3 flex-shrink-0">
-      <img className="h-16 sm:h-30 w-auto" src={isScrolled ? logo : logoWhite} alt="Inhabit Realties" />
-      <div className="font-extrabold hidden sm:block">
-        {/* <h1 className="text-2xl sm:text-3xl tracking-tighter">INHABIT REALTIES</h1>
-        <p className="text-sm sm:text-base font-light tracking-widest -mt-1">
+      <img className="h-10 md:h-12 w-auto" src={logo} alt="Inhabit Realties" />
+      <div className="font-extrabold block">
+        <h1 
+          className="text-sm sm:text-xl tracking-tighter text-gray-800"
+          style={{ textShadow: '0 0 1px rgba(0,0,0,0.1), 0 0 10px rgba(215, 17, 220, 0.3)' }}
+        >
+          INHABIT REALTIES
+        </h1>
+        <p className="text-[10px] sm:text-sm font-light tracking-widest -mt-1 text-gray-600">
           WE PRESENT YOUR DREAMS
-        </p> */}
+        </p>
       </div>
     </Link>
   );
@@ -124,12 +128,10 @@ const Header = () => {
 
   return (
     <header
-      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
-        isScrolled ? 'bg-white shadow-md text-gray-800' : 'bg-transparent text-white'
-      }`}
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 bg-white shadow-sm text-gray-800`}
     >
       <div className="w-full px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-24">
+        <div className="flex items-center justify-between h-16 md:h-20">
           <Logo />
           <div className="hidden md:flex items-center gap-4">
             <NavLinks />
