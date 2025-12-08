@@ -18,7 +18,7 @@ import {
   FormLabel,
   Badge,
 } from '@chakra-ui/react';
-import { EditIcon, DeleteIcon, SearchIcon, AddIcon } from '@chakra-ui/icons';
+import { EditIcon, DeleteIcon, SearchIcon, AddIcon, DownloadIcon } from '@chakra-ui/icons';
 import CommonTable from '../../../components/common/Table/CommonTable';
 import CommonPagination from '../../../components/common/pagination/CommonPagination';
 import TableContainer from '../../../components/common/Table/TableContainer';
@@ -31,6 +31,7 @@ import { useUserContext } from '../../../context/UserContext';
 import { fetchRoles } from '../../../services/rolemanagement/roleService';
 import Loader from '../../../components/common/Loader';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
+import { exportToCSV, generateFilename } from '../../../utils/exportUtils';
 
 const UserManagement = () => {
   // All hooks must be called at the top level
@@ -195,6 +196,27 @@ const UserManagement = () => {
         setIsDeleteLoading(false);
       }
     }
+  };
+
+  const handleExportCSV = () => {
+    const columns = [
+      { key: 'firstName', header: 'First Name' },
+      { key: 'lastName', header: 'Last Name' },
+      { key: 'email', header: 'Email' },
+      { key: 'phoneNumber', header: 'Phone Number' },
+      { key: 'role', header: 'Role' }, // Note: This might be the ID, we might need to map it to label if possible, but for now ID is what's in the object usually unless populated
+      { key: 'published', header: 'Active Status' }
+    ];
+
+    // Map data to include readable role and status
+    const exportData = filteredUsers.map(user => ({
+      ...user,
+      role: getRoleLabel(user.role),
+      published: user.published ? 'Active' : 'Inactive'
+    }));
+
+    const filename = generateFilename('users_export', 'csv');
+    exportToCSV(exportData, columns, filename);
   };
 
   const handleFormSubmit = async (e) => {
@@ -467,7 +489,18 @@ const UserManagement = () => {
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           User Management
         </Heading>
-        <CommonAddButton onClick={handleAddNew} />
+        <HStack spacing={2}>
+          <Button
+            leftIcon={<DownloadIcon />}
+            colorScheme="green"
+            variant="outline"
+            onClick={handleExportCSV}
+            size="md"
+          >
+            Export CSV
+          </Button>
+          <CommonAddButton onClick={handleAddNew} />
+        </HStack>
       </Flex>
       {/* Search and Filter Section */}
       <SearchAndFilter

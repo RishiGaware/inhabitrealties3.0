@@ -2,8 +2,8 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 import { Cookie } from 'lucide-react';
 
-// const API_URL = 'http://localhost:3001/api';
-const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
+const API_URL = 'http://localhost:3001/api';
+// const API_URL = 'https://updatedbackend-bqg8.onrender.com/api';
 
 
 const api = axios.create({
@@ -18,7 +18,7 @@ api.interceptors.request.use(
   (config) => {
     // Try to get token from cookies first
     let token = Cookies.get('AuthToken');
-    
+
     // If not found in cookies, try localStorage as fallback
     if (!token) {
       const authData = localStorage.getItem('auth');
@@ -31,11 +31,11 @@ api.interceptors.request.use(
         }
       }
     }
-    
+
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    
+
     return config;
   },
   (error) => {
@@ -51,7 +51,7 @@ api.interceptors.response.use(
       const publicRoutes = ['/', '/login', '/register', '/features', '/about', '/contact', '/property-details', '/properties'];
       const currentPath = window.location.pathname;
       const isPublicRoute = publicRoutes.includes(currentPath);
-      
+
       // Handle 401 Unauthorized errors (including invalid token/signature)
       if (error.response.status === 401) {
         Cookies.remove('AuthToken');
@@ -62,8 +62,8 @@ api.interceptors.response.use(
         }
       }
       // Handle invalid signature error specifically (500 status with specific error message)
-      if (error.response.status === 500 && 
-          error.response.data?.error?.includes('invalid signature')) {
+      if (error.response.status === 500 &&
+        error.response.data?.error?.includes('invalid signature')) {
         Cookies.remove('AuthToken');
         localStorage.removeItem('auth');
         // Only redirect to login if not on a public route
@@ -80,25 +80,25 @@ api.interceptors.response.use(
 export const meetingAPI = {
   // Get all meetings
   getAllMeetings: () => api.get('/meeting-schedule'),
-  
+
   // Get my meetings
   getMyMeetings: (userId) => api.get(`/meeting-schedule/my-meetings/${userId}`),
-  
+
   // Get my today's meetings
   getMyTodaysMeetings: (userId) => api.get(`/meeting-schedule/my-todays-meetings/${userId}`),
-  
+
   // Get my tomorrow's meetings
   getMyTomorrowsMeetings: (userId) => api.get(`/meeting-schedule/my-tomorrows-meetings/${userId}`),
-  
+
   // Get meeting by ID
   getMeetingById: (meetingId) => api.get(`/meeting-schedule/${meetingId}`),
-  
+
   // Create meeting
   createMeeting: (meetingData) => api.post('/meeting-schedule/create', meetingData),
-  
+
   // Update meeting
   updateMeeting: (meetingId, meetingData) => api.put(`/meeting-schedule/edit/${meetingId}`, meetingData),
-  
+
   // Delete meeting
   deleteMeeting: (meetingId) => api.delete(`/meeting-schedule/delete/${meetingId}`)
 };
