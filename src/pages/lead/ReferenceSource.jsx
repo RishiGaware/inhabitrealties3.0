@@ -28,6 +28,8 @@ import DeleteConfirmationModal from '../../components/common/DeleteConfirmationM
 import { useReferenceSourceContext } from '../../context/ReferenceSourceContext';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import { useDemo } from '../../context/DemoContext';
+import { showErrorToast } from '../../utils/toastUtils';
 
 const ReferenceSource = () => {
   const [selectedSource, setSelectedSource] = useState(null);
@@ -51,6 +53,7 @@ const ReferenceSource = () => {
   // Get reference source context
   const refSourceContext = useReferenceSourceContext();
   const { referenceSources, getAllReferenceSources, addReferenceSource, updateReferenceSource, removeReferenceSource } = refSourceContext;
+  const { isDemoMode } = useDemo();
 
   // Memoize filtered sources
   const filteredSources = useMemo(() => {
@@ -162,6 +165,12 @@ const ReferenceSource = () => {
   };
 
   const confirmDelete = async () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot delete reference sources. This is a read-only demo.');
+      onDeleteClose();
+      return;
+    }
+    
     if (sourceToDelete && !isApiCallInProgress) {
       setIsApiCallInProgress(true);
       try {
@@ -178,6 +187,12 @@ const ReferenceSource = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot save changes. This is a read-only demo.');
+      return;
+    }
+    
     if (isApiCallInProgress || isSubmitting) {
       return;
     }
@@ -277,6 +292,8 @@ const ReferenceSource = () => {
         onClick={() => handleEdit(source)}
         colorScheme="brand"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Edit reference source'}
       />
       <IconButton
         key="delete"
@@ -286,6 +303,8 @@ const ReferenceSource = () => {
         onClick={() => handleDelete(source)}
         colorScheme="red"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Delete reference source'}
       />
     </HStack>
   );

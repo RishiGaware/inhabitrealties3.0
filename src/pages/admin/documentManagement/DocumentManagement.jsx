@@ -54,6 +54,8 @@ import { useDocumentTypeContext } from '../../../context/DocumentTypeContext';
 import { useUserContext } from '../../../context/UserContext';
 import Loader from '../../../components/common/Loader';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
+import { useDemo } from '../../../context/DemoContext';
+import { demoDocuments } from '../../../data/demoData';
 
 const DocumentManagement = () => {
   const toast = useToast();
@@ -115,6 +117,7 @@ const DocumentManagement = () => {
   const { documents, getAllDocuments, addDocument, updateDocument, removeDocument, loading } = documentContext;
   const { documentTypes, getAllDocumentTypes } = documentTypeContext;
   const { users, getAllUsers } = userContext;
+  const { isDemoMode } = useDemo();
 
   // Convert document types to options for dropdown
   const documentTypeOptions = useMemo(() => {
@@ -146,7 +149,7 @@ const DocumentManagement = () => {
 
   // Memoize filtered documents
   const filteredDocuments = useMemo(() => {
-    let filtered = documents;
+    let filtered = isDemoMode ? demoDocuments : documents;
     if (searchTerm) {
       filtered = filtered.filter(doc =>
         doc.fileName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,13 +165,15 @@ const DocumentManagement = () => {
     }
     return filtered;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [documents, searchTerm, userFilter, documentTypeFilter, documentTypeOptions, userOptions]);
+  }, [documents, searchTerm, userFilter, documentTypeFilter, documentTypeOptions, userOptions, isDemoMode]);
 
   useEffect(() => {
-    getAllDocuments();
-    getAllDocumentTypes();
-    getAllUsers();
-  }, [getAllDocuments, getAllDocumentTypes, getAllUsers]);
+    if (!isDemoMode) {
+      getAllDocuments();
+      getAllDocumentTypes();
+      getAllUsers();
+    }
+  }, [getAllDocuments, getAllDocumentTypes, getAllUsers, isDemoMode]);
 
   // Reset page when filtered results change
   useEffect(() => {
@@ -237,6 +242,16 @@ const DocumentManagement = () => {
   };
 
   const handleAddNew = () => {
+    if (isDemoMode) {
+      toast({
+        title: "Not allowed",
+        description: "Not allowed in demo version",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     setSelectedDocument(null);
     setFormData({
       userId: '',
@@ -250,6 +265,16 @@ const DocumentManagement = () => {
   };
 
   const handleEdit = (document) => {
+    if (isDemoMode) {
+      toast({
+        title: "Not allowed",
+        description: "Not allowed in demo version",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     setSelectedDocument(document);
     const data = {
       userId: document.userId || '',
@@ -264,6 +289,16 @@ const DocumentManagement = () => {
   };
 
   const handleDelete = (document) => {
+    if (isDemoMode) {
+      toast({
+        title: "Not allowed",
+        description: "Not allowed in demo version",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     setDocumentToDelete(document);
     onDeleteOpen();
   };

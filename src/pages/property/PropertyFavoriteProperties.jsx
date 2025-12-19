@@ -20,6 +20,8 @@ import { showSuccessToast, showErrorToast } from '../../utils/toastUtils';
 import ServerError from '../../components/common/errors/ServerError';
 import NoInternet from '../../components/common/errors/NoInternet';
 import { ROUTES } from '../../utils/constants';
+import { useDemo } from '../../context/DemoContext';
+import { demoProperties } from '../../data/demoData';
 
 const PropertyFavoriteProperties = () => {
   const navigate = useNavigate();
@@ -40,6 +42,7 @@ const PropertyFavoriteProperties = () => {
   const propertyTypeContext = usePropertyTypeContext();
   const { propertyTypes, getAllPropertyTypes, loading: propertyTypesLoading } = propertyTypeContext;
   const { getUserId, isAuthenticated } = useAuth();
+  const { isDemoMode } = useDemo();
 
   // Fetch properties and favorites on component mount
   useEffect(() => {
@@ -85,6 +88,15 @@ const PropertyFavoriteProperties = () => {
     setLoading(true);
     setErrorType(null);
     try {
+      if (isDemoMode) {
+        // In demo mode, show demo properties and set some as favorites
+        setAllProperties(demoProperties);
+        // Set first property as favorite for demo
+        setFavorites([demoProperties[0]?._id].filter(Boolean));
+        setFavoriteRecordIds({ [demoProperties[0]?._id]: 'demo_fav_1' });
+        setLoading(false);
+        return;
+      }
       const response = await fetchProperties();
       setAllProperties(response.data || []);
     } catch (error) {
@@ -120,6 +132,11 @@ const PropertyFavoriteProperties = () => {
   };
 
   const removeFromFavorites = async (propertyId) => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot modify favorites. This is a read-only demo.');
+      return;
+    }
+    
     if (!isAuthenticated) {
       showErrorToast('Please login to manage favorites');
       return;
@@ -161,6 +178,11 @@ const PropertyFavoriteProperties = () => {
   };
 
   const clearAllFavorites = async () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot modify favorites. This is a read-only demo.');
+      return;
+    }
+    
     if (!isAuthenticated) {
       showErrorToast('Please login to manage favorites');
       return;
@@ -633,15 +655,17 @@ const PropertyFavoriteProperties = () => {
             leftIcon={<FaHeart />}
             isLoading={clearAllLoading}
             loadingText="Clearing..."
-            disabled={clearAllLoading}
+            disabled={clearAllLoading || isDemoMode}
+            isDisabled={isDemoMode}
+            title={isDemoMode ? 'Demo mode: Read-only' : 'Clear all favorites'}
             _hover={{
-              bg: clearAllLoading ? "red.50" : "red.50",
+              bg: clearAllLoading || isDemoMode ? "red.50" : "red.50",
               borderColor: "red.400",
-              transform: clearAllLoading ? "none" : "translateY(-1px)",
-              boxShadow: clearAllLoading ? "none" : "md"
+              transform: clearAllLoading || isDemoMode ? "none" : "translateY(-1px)",
+              boxShadow: clearAllLoading || isDemoMode ? "none" : "md"
             }}
             transition="all 0.2s"
-            opacity={clearAllLoading ? 0.7 : 1}
+            opacity={clearAllLoading ? 0.7 : isDemoMode ? 0.5 : 1}
           >
             Clear All
           </Button>
@@ -795,6 +819,8 @@ const PropertyFavoriteProperties = () => {
                       }}
                       transition="all 0.2s"
                       isLoading={favoriteLoading[property._id]}
+                      isDisabled={isDemoMode}
+                      title={isDemoMode ? 'Demo mode: Read-only' : 'Remove from favorites'}
                     />
                   </Box>
 

@@ -1,11 +1,14 @@
 import React from 'react';
 import { useAuth } from '../../../context/AuthContext';
+import { useDemo } from '../../../context/DemoContext';
 import { USER_ROLES } from '../../../utils/constants';
 
 const RoleBasedDashboard = () => {
   const { getUserRole, getUserName } = useAuth();
-  const userRole = getUserRole();
-  const userName = getUserName();
+  const { isDemoMode, getDemoRole } = useDemo();
+  
+  const userRole = isDemoMode ? (getDemoRole() || 'USER') : getUserRole();
+  const userName = isDemoMode ? 'Demo User' : getUserName();
 
   const getDashboardContent = () => {
     switch (userRole) {

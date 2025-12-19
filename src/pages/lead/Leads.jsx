@@ -17,6 +17,10 @@ import SearchableSelect from '../../components/common/SearchableSelect';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import ServerError from '../../components/common/errors/ServerError';
 import NoInternet from '../../components/common/errors/NoInternet';
+import { useDemo } from '../../context/DemoContext';
+import { demoLeads } from '../../data/demoData';
+import { toast } from 'react-hot-toast';
+
 const Leads = () => {
   const [selectedLeadDetails, setSelectedLeadDetails] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -32,6 +36,7 @@ const Leads = () => {
 
 
   const { leads: contextLeads, addLead, updateLead, removeLead, getAllLeads } = useLeadsContext();
+  const { isDemoMode } = useDemo();
 
   const [selectedLead, setSelectedLead] = useState(null);
   const [isEditMode, setIsEditMode] = useState(false);
@@ -134,6 +139,11 @@ const Leads = () => {
     setLoading(true);
     setErrorType(null);
     try {
+      if (isDemoMode) {
+        setFilteredLeads(demoLeads);
+        setLoading(false);
+        return;
+      }
       const data = await fetchLeads();
       setFilteredLeads(data.data); // assuming API returns { data: [...] }
     } catch (error) {
@@ -151,6 +161,10 @@ const Leads = () => {
   };
 
   const handleAddNew = () => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setSelectedLead(null);
     setIsEditMode(false);
     setFormData({
@@ -169,6 +183,10 @@ const Leads = () => {
   };
 
   const handleEdit = (lead) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setSelectedLead(lead);
     setIsEditMode(true);
     setFormData({
@@ -195,6 +213,10 @@ const Leads = () => {
   };
 
   const handleDelete = (lead) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setLeadToDelete(lead);
     setIsDeleteOpen(true);
   };

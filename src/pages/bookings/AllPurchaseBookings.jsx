@@ -24,6 +24,8 @@ import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import PurchaseBookingViewer from '../../components/common/PurchaseBookingViewer';
 import PurchaseBookingEditForm from '../../components/common/PurchaseBookingEditForm';
 import { purchaseBookingService } from '../../services/paymentManagement/purchaseBookingService';
+import { useDemo } from '../../context/DemoContext';
+import { demoPurchaseBookings } from '../../data/demoData';
 
 const AllPurchaseBookings = () => {
   const navigate = useNavigate();
@@ -45,6 +47,7 @@ const AllPurchaseBookings = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
+  const { isDemoMode } = useDemo();
   
   // Ref to track initial mount
   const isInitialMount = useRef(true);
@@ -79,6 +82,13 @@ const AllPurchaseBookings = () => {
   const fetchBookings = useCallback(async (search = '', status = '') => {
     try {
       setIsLoading(true);
+      
+      if (isDemoMode) {
+        setBookings(demoPurchaseBookings);
+        setFilteredBookings(demoPurchaseBookings);
+        setIsLoading(false);
+        return;
+      }
       
       // Build query parameters
       const params = {};
@@ -301,6 +311,16 @@ const AllPurchaseBookings = () => {
 
   // Handle add new booking
   const handleAddNew = () => {
+    if (isDemoMode) {
+      toast({
+        title: "Not allowed",
+        description: "Not allowed in demo version",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     navigate('/purchase-bookings/create');
   };
 
@@ -317,6 +337,16 @@ const AllPurchaseBookings = () => {
 
   // Handle edit booking
   const handleEdit = (id) => {
+    if (isDemoMode) {
+      toast({
+        title: "Not allowed",
+        description: "Not allowed in demo version",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     const booking = bookings.find(b => b._id === id);
     if (booking) {
       setEditingBooking(booking);

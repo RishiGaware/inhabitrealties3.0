@@ -8,17 +8,19 @@ import sbicon from '../../assets/images/sb-icon.webp'
 import { useNavigate, useLocation } from "react-router-dom";
 import { ROUTES } from '../../utils/constants';
 import { useAuth } from '../../context/AuthContext';
+import { useDemo } from '../../context/DemoContext';
 import { hasMenuAccess, hasSubMenuAccess } from '../../utils/rolePermissions';
 
 const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { getUserRoleName } = useAuth();
+  const { isDemoMode, getDemoRole } = useDemo();
   const [selectedMenu, setSelectedMenu] = useState('dashboard');
   const [selectedSubMenu, setSelectedSubMenu] = useState('');
 
-  // Get current user role
-  const userRole = getUserRoleName() || 'USER';
+  // Get current user role - use demo role if in demo mode
+  const userRole = isDemoMode ? (getDemoRole() || 'USER') : (getUserRoleName() || 'USER');
 
   // Function to filter menu items based on user role
   const getFilteredMenus = () => {
@@ -326,7 +328,9 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     if (!menu.subMenu) {
       const route = routeMap[menuKey];
       if (typeof route === 'string') {
-        navigate(route);
+        // Prefix with /demo if in demo mode
+        const finalRoute = isDemoMode ? `/demo${route}` : route;
+        navigate(finalRoute);
         setSelectedMenu(menuKey);
         setSelectedSubMenu('');
       }
@@ -344,7 +348,9 @@ const Sidebar = ({ open, setOpen, subMenus, toggleSubMenu, isMobile }) => {
     if (path) {
       // Store current path before navigating
       sessionStorage.setItem('previousPath', location.pathname);
-      navigate(path);
+      // Prefix with /demo if in demo mode
+      const finalPath = isDemoMode ? `/demo${path}` : path;
+      navigate(finalPath);
       setSelectedMenu(menuKey);
       setSelectedSubMenu(subMenuKey);
       

@@ -43,6 +43,8 @@ import { showErrorToast } from '../../../utils/toastUtils';
 import Loader from '../../../components/common/Loader';
 import { useAuth } from '../../../context/AuthContext';
 import { hasRouteAccess } from '../../../utils/rolePermissions';
+import { useDemo } from '../../../context/DemoContext';
+import { demoStats, demoRecentActivities } from '../../../data/demoData';
 
 const ExecutiveDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -70,6 +72,7 @@ const ExecutiveDashboard = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { getUserRoleName } = useAuth();
+  const { isDemoMode } = useDemo();
 
   // Color mode values
   const bgColor = useColorModeValue('gray.50', 'gray.900');
@@ -90,25 +93,29 @@ const ExecutiveDashboard = () => {
         // Check if user has a valid token
         const token = localStorage.getItem('auth');
         
-        if (!token) {
+        if (!token && !isDemoMode) {
           throw new Error('No authentication token found. Please log in again.');
         }
         
         // Parse the auth data to get the token
-        let authData;
-        try {
-          authData = JSON.parse(token);
-        } catch {
-          throw new Error('Invalid authentication data. Please log in again.');
+        let authData = null;
+        if (token) {
+          try {
+            authData = JSON.parse(token);
+          } catch {
+            if (!isDemoMode) {
+              throw new Error('Invalid authentication data. Please log in again.');
+            }
+          }
         }
         
-        if (!authData.token) {
+        if ((!authData || !authData.token) && !isDemoMode) {
           throw new Error('No token found in auth data. Please log in again.');
         }
         
         
         // Fetch all dashboard data in parallel
-        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = await Promise.all([
+        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = isDemoMode ? [{}, {}, {}, {}] : await Promise.all([
           fetchDashboardOverview(),
           fetchRecentActivities(),
           fetchFinancialSummary(),
@@ -118,7 +125,27 @@ const ExecutiveDashboard = () => {
       
 
         // Update stats with real data
-        if (overviewResponse.statusCode === 200) {
+        if (isDemoMode) {
+           setStats({
+            totalProperties: demoStats.totalProperties,
+            totalLeads: demoStats.totalLeads,
+            totalCustomers: demoStats.totalCustomers,
+            totalRentalBookings: demoStats.totalRentalBookings,
+            totalPurchaseBookings: demoStats.totalPurchaseBookings,
+            roleWiseCustomers: demoStats.roleWiseCustomers,
+            totalRevenue: demoStats.totalRevenue,
+            pendingPayments: demoStats.pendingPayments,
+            soldProperties: demoStats.soldProperties,
+            unsoldProperties: demoStats.unsoldProperties,
+            activeLeads: demoStats.activeLeads,
+            averageRating: demoStats.averageRating,
+            todaySchedules: demoStats.todaySchedules,
+            tomorrowSchedules: demoStats.tomorrowSchedules,
+            monthlyRevenue: demoStats.totalRevenue / 12, // Approximate
+            quarterlyGrowth: 15,
+            teamPerformance: 92
+          });
+        } else if (overviewResponse.statusCode === 200) {
           const overviewData = overviewResponse.data;
           setStats({
             totalProperties: overviewData.totalProperties || 0,
@@ -142,7 +169,19 @@ const ExecutiveDashboard = () => {
         }
 
         // Update recent activities with real data
-        if (activitiesResponse.statusCode === 200) {
+        if (isDemoMode) {
+           const activities = demoRecentActivities.map((activity, index) => ({
+            id: index,
+            type: activity.type,
+            title: activity.message,
+            subtitle: 'Demo Activity',
+            description: activity.message,
+            time: new Date().toLocaleDateString(),
+            icon: activity.type === 'property' ? FaBuilding : FaHandshake,
+            color: activity.type === 'property' ? 'blue' : 'green'
+          }));
+          setRecentActivities(activities);
+        } else if (activitiesResponse.statusCode === 200) {
           const activities = activitiesResponse.data.map((activity, index) => ({
             id: index,
             type: activity.type,

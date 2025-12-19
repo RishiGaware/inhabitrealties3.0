@@ -34,6 +34,8 @@ import RentalBookingEditForm from '../../components/common/RentalBookingEditForm
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import { rentalBookingService } from '../../services/paymentManagement/rentalBookingService';
+import { useDemo } from '../../context/DemoContext';
+import { demoRentalBookings } from '../../data/demoData';
 
 const AllRentalBookings = () => {
   const navigate = useNavigate();
@@ -55,6 +57,7 @@ const AllRentalBookings = () => {
   const [isViewerOpen, setIsViewerOpen] = useState(false);
   const [isEditFormOpen, setIsEditFormOpen] = useState(false);
   const [editingBooking, setEditingBooking] = useState(null);
+  const { isDemoMode } = useDemo();
 
   // Filter options - dynamically generated from API data
   const filterOptions = {
@@ -89,6 +92,13 @@ const AllRentalBookings = () => {
   const fetchBookings = async () => {
     try {
       setIsLoading(true);
+      
+      if (isDemoMode) {
+        setBookings(demoRentalBookings);
+        setFilteredBookings(demoRentalBookings);
+        setIsLoading(false);
+        return;
+      }
       
       // Use the configured API service
       const response = await rentalBookingService.getAllRentalBookings();
@@ -315,6 +325,16 @@ const AllRentalBookings = () => {
 
   // Handle add new booking
   const handleAddNew = () => {
+    if (isDemoMode) {
+      toast({
+        title: "Not allowed",
+        description: "Not allowed in demo version",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     navigate('/rental-bookings/create');
   };
 
@@ -326,6 +346,16 @@ const AllRentalBookings = () => {
 
   // Handle edit booking
   const handleEdit = (booking) => {
+    if (isDemoMode) {
+      toast({
+        title: "Not allowed",
+        description: "Not allowed in demo version",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     setEditingBooking(booking);
     setIsEditFormOpen(true);
   };

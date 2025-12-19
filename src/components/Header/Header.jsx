@@ -1,57 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiMenu, FiX } from 'react-icons/fi';
 import logo from '../../assets/images/logo.png';
-import { IconButton, Box, Badge, Tooltip, Popover, PopoverTrigger, PopoverContent, PopoverHeader, PopoverBody, PopoverCloseButton, VStack, Text as ChakraText, HStack } from '@chakra-ui/react';
-import { FiBell, FiInfo, FiAlertTriangle, FiCheckCircle } from 'react-icons/fi';
-import { useDisclosure } from '@chakra-ui/react';
-import NotificationBar from './NotificationBar';
-
-const notifications = [
-  {
-    id: 1,
-    type: 'info',
-    title: 'New Lead Assigned',
-    description: 'A new lead "John Doe" has been assigned to you.',
-    timestamp: '15 mins ago',
-  },
-  {
-    id: 2,
-    type: 'success',
-    title: 'Property Sold!',
-    description: 'Congratulations! The property "Sunset Villa" has been successfully sold.',
-    timestamp: '1 hour ago',
-  },
-  {
-    id: 3,
-    type: 'warning',
-    title: 'Upcoming Payment Due',
-    description: 'Payment for "Oceanview Condo" is due in 3 days.',
-    timestamp: '3 hours ago',
-  },
-  {
-    id: 4,
-    type: 'info',
-    title: 'System Update',
-    description: 'A new system update will be deployed tonight at 11 PM.',
-    timestamp: '1 day ago',
-  },
-];
 
 const Header = () => {
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const { isOpen, onOpen, onClose } = useDisclosure();
   const location = useLocation();
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const closeMenu = () => setIsMobileMenuOpen(false);
 
@@ -112,6 +67,25 @@ const Header = () => {
           Contact Us
         </span>
       </Link>
+      <Link
+        to="/demo"
+        onClick={closeMenu}
+        className="group transition-colors relative"
+        style={{ color: '#1E293B', fontWeight: 600, paddingBottom: 2 }}
+      >
+        <span
+          style={{
+            borderBottom: location.pathname === '/demo' ? '2.5px solid #D711DC' : '2.5px solid transparent',
+            transition: 'border-color 0.2s',
+            color: location.pathname === '/demo' ? '#D711DC' : undefined,
+            paddingBottom: 2,
+            display: 'inline-block',
+          }}
+          className="group-hover:border-b-2 group-hover:border-[#D711DC] group-hover:text-[#D711DC]"
+        >
+          Demo
+        </span>
+      </Link>
       <button
         onClick={() => {
           closeMenu();
@@ -123,8 +97,6 @@ const Header = () => {
       </button>
     </div>
   );
-
-  const unreadCount = notifications.length;
 
   return (
     <header

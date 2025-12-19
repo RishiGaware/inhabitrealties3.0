@@ -68,6 +68,7 @@ import { fetchUsers } from "../../services/usermanagement/userService";
 import { fetchRoles } from "../../services/rolemanagement/roleService";
 import { fetchPropertyTypes } from "../../services/propertytypes/propertyTypeService";
 import toast from "react-hot-toast";
+import { useDemo } from "../../context/DemoContext";
 import Loader from "../../components/common/Loader";
 import SearchableSelect from "../../components/common/SearchableSelect";
 import DocumentUpload from "../../components/common/DocumentUpload";
@@ -84,6 +85,7 @@ const CreateNewPurchase = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isDemoMode } = useDemo();
   
   // Check if in edit mode
   const editMode = location.state?.editMode || false;
@@ -516,6 +518,11 @@ const CreateNewPurchase = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isDemoMode) {
+      toast.error("Demo mode: Cannot create bookings. This is a read-only demo.");
+      return;
+    }
 
     // Check if we have the required data loaded
     if (properties.length === 0 || customers.length === 0 || salespeople.length === 0) {

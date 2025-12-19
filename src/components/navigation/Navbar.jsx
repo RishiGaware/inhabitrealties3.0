@@ -5,11 +5,18 @@ import { Link as RouterLink } from "react-router-dom";
 import LogoutButton from "../common/LogoutButton";
 import { notificationService } from "../../services/notifications/notificationService";
 
+import { useDemo } from "../../context/DemoContext";
+
 const Navbar = ({ onNotificationClick, onMobileOpen, sidebarOpen, setSidebarOpen }) => {
   const [unreadCount, setUnreadCount] = useState(0);
+  const { isDemoMode } = useDemo();
 
   // Fetch unread count
   const fetchUnreadCount = async () => {
+    if (isDemoMode) {
+      setUnreadCount(5); // Static count for demo
+      return;
+    }
     try {
       const response = await notificationService.getUnreadCount();
       if (response.success && response.data) {

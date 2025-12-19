@@ -56,6 +56,8 @@ import { getFavoritePropertiesByUserId } from '../../../services/favoritepropert
 import { getMyMeetings } from '../../../services/meetings/meetingScheduleService';
 import { inquiriesService } from '../../../services/inquiries/inquiriesService';
 import { getUserViewCount } from '../../../services/propertyView/propertyViewService';
+import { useDemo } from '../../../context/DemoContext';
+import { demoStats, demoRecentActivities, demoProperties } from '../../../data/demoData';
 
 const UserDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -83,6 +85,7 @@ const UserDashboard = () => {
   const [propertiesLoading, setPropertiesLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { isDemoMode } = useDemo();
 
   // Color mode values
   const bgColor = useColorModeValue('gray.50', 'gray.900');
@@ -101,19 +104,23 @@ const UserDashboard = () => {
         // Check if user has a valid token
         const token = localStorage.getItem('auth');
         
-        if (!token) {
+        if (!token && !isDemoMode) {
           throw new Error('No authentication token found. Please log in again.');
         }
         
         // Parse the auth data to get the token
-        let authData;
-        try {
-          authData = JSON.parse(token);
-        } catch {
-          throw new Error('Invalid authentication data. Please log in again.');
+        let authData = null;
+        if (token) {
+          try {
+            authData = JSON.parse(token);
+          } catch {
+            if (!isDemoMode) {
+              throw new Error('Invalid authentication data. Please log in again.');
+            }
+          }
         }
         
-        if (!authData.token) {
+        if ((!authData || !authData.token) && !isDemoMode) {
           throw new Error('No token found in auth data. Please log in again.');
         }
         
@@ -134,7 +141,7 @@ const UserDashboard = () => {
           myMeetingsResponse,
           inquiriesResponse,
           viewedPropertiesResponse
-        ] = await Promise.all([
+        ] = isDemoMode ? [{}, {}, {}, {}, {data:{data:[]}}, {data:{data:[]}}, {data:[]}, {data:[]}, {data:[]}, {count:0}] : await Promise.all([
           fetchDashboardOverview(), // Keep for potential future use
           fetchRecentActivities(),
           fetchFinancialSummary(), // Keep for potential future use
@@ -150,13 +157,17 @@ const UserDashboard = () => {
         // Fetch latest properties
         setPropertiesLoading(true);
         try {
-          const propertiesResponse = await fetchProperties();
-          if (propertiesResponse?.data) {
-            // Get latest 6 properties (sorted by creation date or just take first 6)
-            const latest = Array.isArray(propertiesResponse.data) 
-              ? propertiesResponse.data.slice(0, 6)
-              : [];
-            setLatestProperties(latest);
+          if (isDemoMode) {
+             setLatestProperties(demoProperties);
+          } else {
+            const propertiesResponse = await fetchProperties();
+            if (propertiesResponse?.data) {
+              // Get latest 6 properties (sorted by creation date or just take first 6)
+              const latest = Array.isArray(propertiesResponse.data) 
+                ? propertiesResponse.data.slice(0, 6)
+                : [];
+              setLatestProperties(latest);
+            }
           }
         } catch (error) {
           console.error('Failed to fetch latest properties:', error);
@@ -218,26 +229,58 @@ const UserDashboard = () => {
         const viewedPropertiesCount = viewedPropertiesResponse?.count || 0;
         
         // Update stats with real data
-        setStats({
-          favoriteProperties: favoritePropertiesCount,
-          viewedProperties: viewedPropertiesCount,
-          inquiries: inquiriesCount,
-          meetings: meetingsCount,
-          savedSearches: 0, // TODO: Implement saved searches tracking
-          notifications: 0, // TODO: Implement notifications tracking
-          shortlistedProperties: favoritePropertiesCount, // Using favorite properties as shortlisted
-          visitedProperties: meetingsCount, // Using meetings as visited properties
-          budgetRange: 0, // TODO: Get from user profile
-          preferredLocations: 0, // TODO: Get from user profile
-          propertyTypes: 0, // TODO: Get from user profile
-          lastActivity: new Date().toLocaleDateString(),
-          profileCompletion: 0, // TODO: Calculate from user profile
-          wishlistItems: favoritePropertiesCount, // Using favorite properties as wishlist
-          recommendedProperties: 0 // TODO: Implement recommendations
-        });
+        if (isDemoMode) {
+           setStats({
+            favoriteProperties: 5,
+            viewedProperties: 12,
+            inquiries: 3,
+            meetings: 2,
+            savedSearches: 2,
+            notifications: 5,
+            shortlistedProperties: 5,
+            visitedProperties: 2,
+            budgetRange: 0,
+            preferredLocations: 0,
+            propertyTypes: 0,
+            lastActivity: new Date().toLocaleDateString(),
+            profileCompletion: 85,
+            wishlistItems: 5,
+            recommendedProperties: 4
+          });
+        } else {
+          setStats({
+            favoriteProperties: favoritePropertiesCount,
+            viewedProperties: viewedPropertiesCount,
+            inquiries: inquiriesCount,
+            meetings: meetingsCount,
+            savedSearches: 0, // TODO: Implement saved searches tracking
+            notifications: 0, // TODO: Implement notifications tracking
+            shortlistedProperties: favoritePropertiesCount, // Using favorite properties as shortlisted
+            visitedProperties: meetingsCount, // Using meetings as visited properties
+            budgetRange: 0, // TODO: Get from user profile
+            preferredLocations: 0, // TODO: Get from user profile
+            propertyTypes: 0, // TODO: Get from user profile
+            lastActivity: new Date().toLocaleDateString(),
+            profileCompletion: 0, // TODO: Calculate from user profile
+            wishlistItems: favoritePropertiesCount, // Using favorite properties as wishlist
+            recommendedProperties: 0 // TODO: Implement recommendations
+          });
+        }
 
         // Update recent activities with user-relevant data
-        if (activitiesResponse.statusCode === 200) {
+        if (isDemoMode) {
+           const activities = demoRecentActivities.map((activity, index) => ({
+            id: index,
+            type: activity.type,
+            title: activity.message,
+            subtitle: 'Demo Activity',
+            description: activity.message,
+            time: new Date().toLocaleDateString(),
+            icon: FaBuilding,
+            color: 'blue'
+          }));
+          setRecentActivities(activities);
+        } else if (activitiesResponse.statusCode === 200) {
           const activities = activitiesResponse.data
             .filter(activity => activity.type === 'property') // Focus on properties for users
             .map((activity, index) => ({

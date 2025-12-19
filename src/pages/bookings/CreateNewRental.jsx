@@ -45,11 +45,13 @@ import { fetchProperties } from '../../services/propertyService';
 import { fetchUsers } from '../../services/usermanagement/userService';
 import { fetchRoles } from '../../services/rolemanagement/roleService';
 import { fetchPropertyTypes } from '../../services/propertytypes/propertyTypeService';
+import { useDemo } from '../../context/DemoContext';
 
 const CreateNewRental = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const { isOpen, onOpen, onClose } = useDisclosure();
+  const { isDemoMode } = useDemo();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -297,6 +299,17 @@ const CreateNewRental = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      toast({
+        title: "Demo mode",
+        description: "Cannot create bookings. This is a read-only demo.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
     
     // Check if SearchableSelect components have values
     if (!formData.propertyId || !formData.customerId || !formData.assignedSalespersonId) {

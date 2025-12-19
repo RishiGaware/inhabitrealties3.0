@@ -8,6 +8,8 @@ import FloatingInput from '../components/common/floatingInput/FloatingInput';
 import LogoutButton from '../components/common/LogoutButton';
 import { editUser } from '../services/usermanagement/userService';
 import { useAuth } from '../context/AuthContext';
+import { useDemo } from '../context/DemoContext';
+import { toast as reactHotToast } from 'react-hot-toast';
 
 const Settings = () => {
   const [loading, setLoading] = useState(true);
@@ -17,6 +19,7 @@ const Settings = () => {
   const toast = useToast();
   const navigate = useNavigate();
   const { getUserRoleName, refreshRole } = useAuth();
+  const { isDemoMode } = useDemo();
   
   const [userData, setUserData] = useState({
     _id: '',
@@ -106,6 +109,11 @@ const Settings = () => {
   };
 
   const handleSave = async () => {
+    if (isDemoMode) {
+      reactHotToast.error("Demo mode: Cannot update profile. This is a read-only demo.");
+      return;
+    }
+    
     setSaving(true);
     try {
       // Update user data via API
@@ -210,6 +218,7 @@ const Settings = () => {
                       colorScheme="blue"
                       variant="outline"
                       onClick={handleEdit}
+                      isDisabled={isDemoMode}
                       size={{ base: 'xs', sm: 'sm', md: 'md' }}
                       fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
                       px={{ base: 2, sm: 3, md: 4 }}
@@ -235,6 +244,7 @@ const Settings = () => {
                         onClick={handleSave}
                         isLoading={saving}
                         loadingText="Saving..."
+                        isDisabled={isDemoMode}
                         size={{ base: 'xs', sm: 'sm', md: 'md' }}
                         fontSize={{ base: 'xs', sm: 'sm', md: 'md' }}
                         px={{ base: 2, sm: 3, md: 4 }}

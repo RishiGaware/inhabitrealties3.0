@@ -52,6 +52,8 @@ import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
 
 import { fetchProperties } from '../../services/propertyService';
 import { fetchUsers } from '../../services/usermanagement/userService';
+import { useDemo } from '../../context/DemoContext';
+import { demoMeetings } from '../../data/demoData';
 
 const SalesMeetings = () => {
   const [activeView, setActiveView] = useState('scheduled'); // 'scheduled' or 'my'
@@ -88,6 +90,7 @@ const SalesMeetings = () => {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onClose: onViewModalClose } = useDisclosure();
+  const { isDemoMode } = useDemo();
 
 
   
@@ -166,6 +169,22 @@ const SalesMeetings = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
+      if (isDemoMode) {
+        setRawMeetings(demoMeetings);
+        setUsers([]);
+        setProperties([]);
+        setStatuses([]);
+        setCounts({
+          totalMeetings: demoMeetings.length,
+          totalScheduled: demoMeetings.filter(m => m.status?.name === 'Scheduled').length,
+          totalRescheduled: demoMeetings.filter(m => m.status?.name === 'Rescheduled').length,
+          totalCompleted: demoMeetings.filter(m => m.status?.name === 'Completed').length,
+          totalCancelled: demoMeetings.filter(m => m.status?.name === 'Cancelled').length
+        });
+        setLoading(false);
+        return;
+      }
+      
       // Get current user ID from auth
       const auth = JSON.parse(localStorage.getItem("auth"));
       const currentUserId = auth?.data?._id;
@@ -220,6 +239,12 @@ const SalesMeetings = () => {
   const fetchMyMeetingsData = async () => {
     setLoading(true);
     try {
+      if (isDemoMode) {
+        setRawMyMeetings(demoMeetings);
+        setLoading(false);
+        return;
+      }
+      
       // Get current user ID from context or localStorage
       const auth = JSON.parse(localStorage.getItem("auth"));
       const currentUserId = auth?.data?._id;
@@ -504,12 +529,20 @@ const SalesMeetings = () => {
 
 
   const handleAddMeeting = () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot add meetings. This is a read-only demo.');
+      return;
+    }
     setSelectedMeeting(null);
     resetForm();
     setIsAddModalOpen(true);
   };
 
   const handleEditMeeting = (meeting) => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot edit meetings. This is a read-only demo.');
+      return;
+    }
     
     setSelectedMeeting(meeting);
     setFormData({
@@ -542,12 +575,22 @@ const SalesMeetings = () => {
   };
 
   const handleDeleteMeeting = (meeting) => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot delete meetings. This is a read-only demo.');
+      return;
+    }
     setSelectedMeeting(meeting);
     setIsDeleteModalOpen(true);
   };
 
 
   const handleConfirmDelete = async () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot delete meetings. This is a read-only demo.');
+      setIsDeleteModalOpen(false);
+      return;
+    }
+    
     if (!selectedMeeting) return;
     
     try {
@@ -568,6 +611,11 @@ const SalesMeetings = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot save meetings. This is a read-only demo.');
+      return;
+    }
     
     if (!validateForm()) {
       return;
@@ -809,6 +857,7 @@ const SalesMeetings = () => {
             onClick={() => handleEditMeeting(meeting)}
             colorScheme="brand"
             variant="outline"
+            isDisabled={isDemoMode}
             _hover={{
               bg: "purple.50",
               borderColor: "purple.400",
@@ -828,6 +877,7 @@ const SalesMeetings = () => {
             onClick={() => handleDeleteMeeting(meeting)}
             colorScheme="red"
             variant="outline"
+            isDisabled={isDemoMode}
             _hover={{
               bg: "red.50",
               borderColor: "red.400",
@@ -1059,7 +1109,7 @@ const SalesMeetings = () => {
         </Heading>
         
         {activeView === 'scheduled' && (
-          <CommonAddButton onClick={handleAddMeeting} />
+          <CommonAddButton onClick={handleAddMeeting} isDisabled={isDemoMode} />
         )}
       </HStack>
 

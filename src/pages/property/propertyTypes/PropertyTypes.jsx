@@ -30,6 +30,8 @@ import Loader from '../../../components/common/Loader';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
 import ServerError from '../../../components/common/errors/ServerError';
 import NoInternet from '../../../components/common/errors/NoInternet';
+import { useDemo } from '../../../context/DemoContext';
+import { showErrorToast } from '../../../utils/toastUtils';
 
 const PropertyTypes = () => {
   const [selectedPropertyType, setSelectedPropertyType] = useState(null);
@@ -54,6 +56,7 @@ const PropertyTypes = () => {
   // Get property type context
   const propertyTypeContext = usePropertyTypeContext();
   const { propertyTypes, getAllPropertyTypes, addPropertyType, updatePropertyType, removePropertyType, loading } = propertyTypeContext;
+  const { isDemoMode } = useDemo();
 
   // Memoize filtered property types to prevent unnecessary re-renders
   const filteredPropertyTypes = useMemo(() => {
@@ -154,6 +157,12 @@ const PropertyTypes = () => {
   };
 
   const confirmDelete = async () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot delete property types. This is a read-only demo.');
+      onDeleteClose();
+      return;
+    }
+    
     if (propertyTypeToDelete && !isApiCallInProgress && !isDeleteLoading) {
       setIsApiCallInProgress(true);
       setIsDeleteLoading(true);
@@ -172,6 +181,11 @@ const PropertyTypes = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot save changes. This is a read-only demo.');
+      return;
+    }
     
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
@@ -311,6 +325,8 @@ const PropertyTypes = () => {
         onClick={() => handleEdit(propertyType)}
         colorScheme="brand"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Edit property type'}
       />
       <IconButton
         key="delete"
@@ -320,6 +336,8 @@ const PropertyTypes = () => {
         onClick={() => handleDelete(propertyType)}
         colorScheme="red"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Delete property type'}
       />
     </HStack>
   );

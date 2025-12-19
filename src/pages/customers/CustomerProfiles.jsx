@@ -34,6 +34,9 @@ import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import { showErrorToast } from '../../utils/toastUtils';
 import { exportToCSV, generateFilename } from '../../utils/exportUtils';
+import { useDemo } from '../../context/DemoContext';
+import { demoUsers, demoRoles } from '../../data/demoData';
+import { toast } from 'react-hot-toast';
 
 const CustomerProfiles = () => {
   // All hooks must be called at the top level
@@ -65,6 +68,7 @@ const CustomerProfiles = () => {
   // Get user context
   const userContext = useUserContext();
   const { users, getAllUsers, addUser, updateUser, removeUser } = userContext;
+  const { isDemoMode } = useDemo();
 
   // Convert roles to options for dropdown - display name but use _id as value
   const roleOptions = useMemo(() => {
@@ -84,6 +88,11 @@ const CustomerProfiles = () => {
   const getAllRoles = async () => {
     setRolesLoading(true);
     try {
+      if (isDemoMode) {
+        setRoles(demoRoles);
+        setRolesLoading(false);
+        return;
+      }
       const response = await fetchRoles();
       // Handle the response format: { message, count, data }
       const rolesData = response.data || response;
@@ -123,6 +132,18 @@ const CustomerProfiles = () => {
     try {
       // First, get all roles to find the "USER" role ID
       await getAllRoles();
+      
+      if (isDemoMode) {
+        // Filter demo users for USER role
+        const userRole = demoRoles.find(role => role.name === "USER");
+        if (userRole) {
+          const demoCustomers = demoUsers.filter(u => u.role === userRole._id);
+          setFilteredUsers(demoCustomers);
+          setIsFiltered(true);
+        }
+        setLoading(false);
+        return;
+      }
       
       // Wait a bit for roles to be set in state, then find the "USER" role ID
       const userRole = roles.find(role => role.name === "USER");
@@ -253,6 +274,10 @@ const CustomerProfiles = () => {
   };
 
   const handleAddNew = () => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setSelectedUser(null);
     setFormData({
       firstName: '',
@@ -272,6 +297,10 @@ const CustomerProfiles = () => {
   };
 
   const handleEdit = (user) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setSelectedUser(user);
     const data = {
       firstName: user.firstName || '',
@@ -290,6 +319,10 @@ const CustomerProfiles = () => {
   };
 
   const handleDelete = (user) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setUserToDelete(user);
     onDeleteOpen();
   };

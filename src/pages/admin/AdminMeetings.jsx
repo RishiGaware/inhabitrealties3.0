@@ -50,6 +50,8 @@ import { showErrorToast, showSuccessToast } from '../../utils/toastUtils';
 
 import { fetchProperties } from '../../services/propertyService';
 import { fetchUsers, fetchUsersByRole } from '../../services/usermanagement/userService';
+import { useDemo } from '../../context/DemoContext';
+import { demoMeetings } from '../../data/demoData';
 
 const AdminMeetings = () => {
   const [activeView, setActiveView] = useState('scheduled'); // 'scheduled' or 'my'
@@ -90,6 +92,7 @@ const AdminMeetings = () => {
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onClose: onViewModalClose } = useDisclosure();
+  const { isDemoMode } = useDemo();
 
 
   
@@ -169,7 +172,7 @@ const AdminMeetings = () => {
     setLoading(true);
     try {
       // Fetch meetings, users, properties, and statuses in parallel
-      const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse, salesResponse, executiveResponse] = await Promise.all([
+      const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse, salesResponse, executiveResponse] = isDemoMode ? [{data: demoMeetings}, {data:[]}, {data:[]}, {data:[]}, {data:[]}, {data:[]}] : await Promise.all([
         fetchAllMeetingSchedules(),
         fetchUsers(),
         fetchProperties(),
@@ -479,12 +482,20 @@ const AdminMeetings = () => {
   const startIndex = (currentPage - 1) * itemsPerPage;
   
   const handleAddMeeting = () => {
+    if (isDemoMode) {
+      showErrorToast('Not allowed in demo version');
+      return;
+    }
     setSelectedMeeting(null);
     resetForm();
     setIsAddModalOpen(true);
   };
 
   const handleEditMeeting = (meeting) => {
+    if (isDemoMode) {
+      showErrorToast('Not allowed in demo version');
+      return;
+    }
     
     setSelectedMeeting(meeting);
     setFormData({
@@ -519,6 +530,10 @@ const AdminMeetings = () => {
   };
 
   const handleDeleteMeeting = (meeting) => {
+    if (isDemoMode) {
+      showErrorToast('Not allowed in demo version');
+      return;
+    }
     setSelectedMeeting(meeting);
     setIsDeleteModalOpen(true);
   };

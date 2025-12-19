@@ -39,6 +39,8 @@ import {
 } from '../../../services/dashboard/dashboardService';
 import { showErrorToast } from '../../../utils/toastUtils';
 import Loader from '../../../components/common/Loader';
+import { useDemo } from '../../../context/DemoContext';
+import { demoStats, demoRecentActivities } from '../../../data/demoData';
 
 const SalesDashboard = () => {
   const [loading, setLoading] = useState(true);
@@ -63,6 +65,7 @@ const SalesDashboard = () => {
   const [conversionRate, setConversionRate] = useState(0);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { isDemoMode } = useDemo();
 
   // Color mode values
   const bgColor = useColorModeValue('gray.50', 'gray.900');
@@ -81,25 +84,29 @@ const SalesDashboard = () => {
         // Check if user has a valid token
         const token = localStorage.getItem('auth');
         
-        if (!token) {
+        if (!token && !isDemoMode) {
           throw new Error('No authentication token found. Please log in again.');
         }
         
         // Parse the auth data to get the token
-        let authData;
-        try {
-          authData = JSON.parse(token);
-        } catch (e) {
-          throw new Error('Invalid authentication data. Please log in again.');
+        let authData = null;
+        if (token) {
+          try {
+            authData = JSON.parse(token);
+          } catch (e) {
+            if (!isDemoMode) {
+              throw new Error('Invalid authentication data. Please log in again.');
+            }
+          }
         }
         
-        if (!authData.token) {
+        if ((!authData || !authData.token) && !isDemoMode) {
           throw new Error('No token found in auth data. Please log in again.');
         }
         
         
         // Fetch all dashboard data in parallel
-        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = await Promise.all([
+        const [overviewResponse, activitiesResponse, financialResponse, conversionResponse] = isDemoMode ? [{}, {}, {}, {}] : await Promise.all([
           fetchDashboardOverview(),
           fetchRecentActivities(),
           fetchFinancialSummary(),
@@ -107,7 +114,25 @@ const SalesDashboard = () => {
         ]);
 
         // Update stats with real data (filtered for sales person)
-        if (overviewResponse.statusCode === 200) {
+        if (isDemoMode) {
+           setStats({
+            myLeads: Math.floor(demoStats.totalLeads * 0.3),
+            myProperties: Math.floor(demoStats.totalProperties * 0.2),
+            mySales: Math.floor(demoStats.soldProperties * 0.4),
+            myRevenue: Math.floor(demoStats.totalRevenue * 0.3),
+            pendingFollowups: demoStats.pendingPayments,
+            thisMonthTarget: 5000000,
+            hotLeads: Math.floor(demoStats.totalLeads * 0.1),
+            coldLeads: Math.floor(demoStats.totalLeads * 0.1),
+            warmLeads: Math.floor(demoStats.totalLeads * 0.1),
+            closedDeals: Math.floor(demoStats.soldProperties * 0.4),
+            averageDealSize: 2500000,
+            conversionRate: 12,
+            monthlyQuota: 5000000,
+            weeklyProgress: 45,
+            topPerformer: true
+          });
+        } else if (overviewResponse.statusCode === 200) {
           const overviewData = overviewResponse.data;
           const myLeads = Math.floor(overviewData.totalLeads * 0.3) || 0;
           const myRevenue = Math.floor(financialResponse.data?.totalRevenue * 0.3) || 0;
@@ -133,7 +158,19 @@ const SalesDashboard = () => {
         }
 
         // Update recent activities with real data
-        if (activitiesResponse.statusCode === 200) {
+        if (isDemoMode) {
+           const activities = demoRecentActivities.map((activity, index) => ({
+            id: index,
+            type: activity.type,
+            title: activity.message,
+            subtitle: 'Demo Activity',
+            description: activity.message,
+            time: new Date().toLocaleDateString(),
+            icon: FaHandshake,
+            color: 'green'
+          }));
+          setRecentActivities(activities);
+        } else if (activitiesResponse.statusCode === 200) {
           const activities = activitiesResponse.data
             .filter(activity => activity.type === 'lead') // Focus on leads for sales
             .map((activity, index) => ({

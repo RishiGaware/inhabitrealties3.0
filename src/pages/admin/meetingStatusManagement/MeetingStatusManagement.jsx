@@ -43,6 +43,8 @@ import {
   deleteMeetingScheduleStatus
 } from '../../../services/meetings/meetingScheduleStatusService';
 import { showSuccessToast, showErrorToast } from '../../../utils/toastUtils';
+import { useDemo } from '../../../context/DemoContext';
+import { demoMeetingStatuses } from '../../../data/demoData';
 
 const MeetingStatusManagement = () => {
   const [selectedStatus, setSelectedStatus] = useState(null);
@@ -70,6 +72,7 @@ const MeetingStatusManagement = () => {
   const [statusToDelete, setStatusToDelete] = useState(null);
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [statusToView, setStatusToView] = useState(null);
+  const { isDemoMode } = useDemo();
 
   // Color mode values
   const textColor = useColorModeValue('gray.800', 'white');
@@ -83,6 +86,11 @@ const MeetingStatusManagement = () => {
   const fetchStatuses = async () => {
     setLoading(true);
     try {
+      if (isDemoMode) {
+        setStatuses(demoMeetingStatuses);
+        setLoading(false);
+        return;
+      }
       const response = await fetchAllMeetingScheduleStatuses();
       setStatuses(response.data || []);
     } catch (error) {
@@ -220,6 +228,11 @@ const MeetingStatusManagement = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot save changes. This is a read-only demo.');
+      return;
+    }
     
     if (isApiCallInProgress || isSubmitting) {
       return;

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { fetchFollowUpStatuses, fetchFollowUpStatusById, createFollowUpStatus, editFollowUpStatus, deleteFollowUpStatus } from '../services/leadmanagement/followUpStatusService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
+import { demoFollowUpStatuses } from '../data/demoData';
 
 // Default context value
 const defaultContextValue = {
@@ -22,6 +23,14 @@ export const FollowUpStatusProvider = ({ children }) => {
   const getAllFollowUpStatuses = useCallback(async () => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        setFollowUpStatuses(demoFollowUpStatuses);
+        setLoading(false);
+        return;
+      }
+      
       const res = await fetchFollowUpStatuses();
       // Backend returns: { message: 'Follow up statuses retrieved successfully', count: 3, data: [...] }
       setFollowUpStatuses(res.data || []);
@@ -89,6 +98,14 @@ export const FollowUpStatusProvider = ({ children }) => {
   const addFollowUpStatus = async (followUpStatusData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot add follow-up statuses. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await createFollowUpStatus(followUpStatusData);
       // Add the new followup status to local state directly
       // Backend returns: { message: 'Follow up status created successfully', data: followUpStatus }
@@ -139,6 +156,13 @@ export const FollowUpStatusProvider = ({ children }) => {
   const updateFollowUpStatus = async (id, followUpStatusData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot update follow-up statuses. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
       
       const response = await editFollowUpStatus(id, followUpStatusData);
       // Update the local state directly instead of fetching all followup statuses again
@@ -209,6 +233,14 @@ export const FollowUpStatusProvider = ({ children }) => {
   const removeFollowUpStatus = async (id) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot delete follow-up statuses. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await deleteFollowUpStatus(id);
       // Remove the followup status from local state directly (soft delete)
       // Backend returns: { message: 'Status deleted successfully', data: { _id: '...', published: false } }

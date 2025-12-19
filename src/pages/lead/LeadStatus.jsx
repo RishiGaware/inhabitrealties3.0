@@ -28,6 +28,8 @@ import DeleteConfirmationModal from '../../components/common/DeleteConfirmationM
 import { useLeadStatusContext } from '../../context/LeadStatusContext';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import { useDemo } from '../../context/DemoContext';
+import { showErrorToast } from '../../utils/toastUtils';
 
 const LeadStatus = () => {
   const [selectedLeadStatus, setSelectedLeadStatus] = useState(null);
@@ -51,6 +53,7 @@ const LeadStatus = () => {
   // Get lead status context
   const leadStatusContext = useLeadStatusContext();
   const { leadStatuses, getAllLeadStatuses, addLeadStatus, updateLeadStatus, removeLeadStatus } = leadStatusContext;
+  const { isDemoMode } = useDemo();
 
   // Memoize filtered lead statuses to prevent unnecessary re-renders
   const filteredLeadStatuses = useMemo(() => {
@@ -160,6 +163,12 @@ const LeadStatus = () => {
   };
 
   const confirmDelete = async () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot delete lead statuses. This is a read-only demo.');
+      onDeleteClose();
+      return;
+    }
+    
     if (leadStatusToDelete && !isApiCallInProgress) {
       setIsApiCallInProgress(true);
       try {
@@ -176,6 +185,11 @@ const LeadStatus = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot save changes. This is a read-only demo.');
+      return;
+    }
     
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
@@ -287,6 +301,8 @@ const LeadStatus = () => {
         onClick={() => handleEdit(leadStatus)}
         colorScheme="brand"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Edit lead status'}
       />
       <IconButton
         key="delete"
@@ -296,6 +312,8 @@ const LeadStatus = () => {
         onClick={() => handleDelete(leadStatus)}
         colorScheme="red"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Delete lead status'}
       />
     </HStack>
   );

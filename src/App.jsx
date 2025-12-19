@@ -105,6 +105,7 @@ import Unauthorized from './pages/common/Unauthorized';
 import { ROUTES } from './utils/constants';
 import AdminMeetings from './pages/admin/AdminMeetings';
 import SalesMeetings from './pages/sales/SalesMeetings';
+import DemoRoleSelection from './pages/demo/DemoRoleSelection';
 
 const MainLayout = ({ children }) => {
   return (
@@ -167,6 +168,62 @@ const App = () => {
             <Route path={ROUTES.ABOUT} element={<MainLayout><AboutUs /></MainLayout>} />
             <Route path={ROUTES.CONTACT} element={<MainLayout><Contact /></MainLayout>} />
             <Route path={ROUTES.PROPERTY_DETAILS} element={<MainLayout><PropertyDetails /></MainLayout>} />
+            
+            {/* Demo Routes */}
+            <Route path="/demo" element={<MainLayout><DemoRoleSelection /></MainLayout>} />
+            <Route path="/demo/dashboard" element={<DashboardLayout><Dashboard /></DashboardLayout>} />
+            <Route path="/demo/executive-dashboard" element={<DashboardLayout><ExecutiveDashboard /></DashboardLayout>} />
+            <Route path="/demo/sales-dashboard" element={<DashboardLayout><SalesDashboard /></DashboardLayout>} />
+            <Route path="/demo/user-dashboard" element={<DashboardLayout><UserDashboard /></DashboardLayout>} />
+            
+            {/* Demo Admin Routes */}
+            <Route path="/demo/admin/user-management" element={<DashboardLayout><UserManagement /></DashboardLayout>} />
+            <Route path="/demo/admin/role-management" element={<DashboardLayout><RoleManagement /></DashboardLayout>} />
+            <Route path="/demo/admin/meeting-status-management" element={<DashboardLayout><MeetingStatusManagement /></DashboardLayout>} />
+            <Route path="/demo/admin/document-type-management" element={<DashboardLayout><DocumentTypeManagement /></DashboardLayout>} />
+            <Route path="/demo/admin/document-management" element={<DashboardLayout><DocumentManagement /></DashboardLayout>} />
+            
+            {/* Demo Property Routes */}
+            <Route path="/demo/property/property-master" element={<DashboardLayout><PropertyMaster /></DashboardLayout>} />
+            <Route path="/demo/property/property-types" element={<DashboardLayout><PropertyTypes /></DashboardLayout>} />
+            <Route path="/demo/property/favorite-properties" element={<DashboardLayout><PropertyFavoriteProperties /></DashboardLayout>} />
+            <Route path="/demo/properties" element={<DashboardLayout><PropertyMaster isViewOnly={true} /></DashboardLayout>} />
+            <Route path="/demo/properties/favorite-properties" element={<DashboardLayout><FavoriteProperties /></DashboardLayout>} />
+            
+            {/* Demo Lead Routes */}
+            <Route path="/demo/lead/add" element={<DashboardLayout><Leads /></DashboardLayout>} />
+            <Route path="/demo/lead/view" element={<DashboardLayout><LeadStatus /></DashboardLayout>} />
+            <Route path="/demo/lead/qualification" element={<DashboardLayout><LeadFollowUp /></DashboardLayout>} />
+            <Route path="/demo/lead/reference-source" element={<DashboardLayout><ReferenceSource /></DashboardLayout>} />
+            
+            {/* Demo Meeting Routes */}
+            <Route path="/demo/admin-meetings" element={<DashboardLayout><AdminMeetings /></DashboardLayout>} />
+            <Route path="/demo/sales-meetings" element={<DashboardLayout><SalesMeetings /></DashboardLayout>} />
+            <Route path="/demo/my-meetings" element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
+            
+            {/* Demo Booking Routes */}
+            <Route path="/demo/purchase-bookings/all" element={<DashboardLayout><AllPurchaseBookings /></DashboardLayout>} />
+            <Route path="/demo/purchase-bookings/my-assigned" element={<DashboardLayout><MyAssignedBookings /></DashboardLayout>} />
+            <Route path="/demo/purchase-bookings/my-bookings" element={<DashboardLayout><MyPurchaseBookings /></DashboardLayout>} />
+            <Route path="/demo/purchase-bookings/create" element={<DashboardLayout><CreateNewPurchase /></DashboardLayout>} />
+            <Route path="/demo/rental-bookings/all" element={<DashboardLayout><AllRentalBookings /></DashboardLayout>} />
+            <Route path="/demo/rental-bookings/my-assigned" element={<DashboardLayout><MyAssignedRentals /></DashboardLayout>} />
+            <Route path="/demo/rental-bookings/my-bookings" element={<DashboardLayout><MyRentalBookings /></DashboardLayout>} />
+            <Route path="/demo/rental-bookings/create" element={<DashboardLayout><CreateNewRental /></DashboardLayout>} />
+            
+            {/* Demo Payment Routes */}
+            <Route path="/demo/payment-history/all" element={<DashboardLayout><AllPaymentHistory /></DashboardLayout>} />
+            <Route path="/demo/payment-history/assigned" element={<DashboardLayout><AssignedPaymentHistory /></DashboardLayout>} />
+            <Route path="/demo/payment-history/my" element={<DashboardLayout><MyPaymentHistory /></DashboardLayout>} />
+            
+            {/* Demo Client Routes */}
+            <Route path="/demo/client/my-bookings" element={<DashboardLayout><MyBookings /></DashboardLayout>} />
+            <Route path="/demo/client/my-meetings" element={<DashboardLayout><MyMeetings /></DashboardLayout>} />
+            <Route path="/demo/client/payments" element={<DashboardLayout><ClientPayments /></DashboardLayout>} />
+            <Route path="/demo/client/documents" element={<DashboardLayout><ClientDocuments /></DashboardLayout>} />
+            
+            {/* Demo Settings Route */}
+            <Route path="/demo/settings" element={<DashboardLayout><Settings /></DashboardLayout>} />
             
             {/* Dashboard Routes */}
             <Route path={ROUTES.DASHBOARD} element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />

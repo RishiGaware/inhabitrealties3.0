@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { fetchReferenceSources, createReferenceSource, editReferenceSource, deleteReferenceSource } from '../services/leadmanagement/referenceSourceService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
+import { demoReferenceSources } from '../data/demoData';
 
 const ReferenceSourceContext = createContext();
 
@@ -11,6 +12,14 @@ export const ReferenceSourceProvider = ({ children }) => {
   const getAllReferenceSources = useCallback(async () => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        setReferenceSources(demoReferenceSources);
+        setLoading(false);
+        return;
+      }
+      
       const res = await fetchReferenceSources();
       // Backend returns: { message: 'all reference sources', count: 2, data: [...] }
       setReferenceSources(res.data || []);
@@ -26,6 +35,14 @@ export const ReferenceSourceProvider = ({ children }) => {
   const addReferenceSource = async (data) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot add reference sources. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const res = await createReferenceSource(data);
       // Add the new reference source to local state directly
       // Backend returns: { message: 'reference source added successfully', data: referenceSource }
@@ -51,6 +68,14 @@ export const ReferenceSourceProvider = ({ children }) => {
   const updateReferenceSource = async (id, data) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot update reference sources. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const res = await editReferenceSource(id, data);
       
       // Update the local state directly instead of fetching all reference sources again
@@ -79,6 +104,14 @@ export const ReferenceSourceProvider = ({ children }) => {
   const removeReferenceSource = async (id) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot delete reference sources. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const res = await deleteReferenceSource(id);
       // Remove from local state directly
       setReferenceSources(prev => prev.filter(src => src._id !== id));

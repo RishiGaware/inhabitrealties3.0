@@ -56,6 +56,8 @@ import { meetingAPI } from "../../../services/api";
 import { showErrorToast } from "../../../utils/toastUtils";
 import { useAuth } from "../../../context/AuthContext";
 import { hasRouteAccess } from "../../../utils/rolePermissions";
+import { useDemo } from "../../../context/DemoContext";
+import { demoStats, demoRecentActivities } from "../../../data/demoData";
 
 // Animation variants
 const containerVariants = {
@@ -131,6 +133,7 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
   const { getUserRoleName } = useAuth();
+  const { isDemoMode } = useDemo();
 
   // Move all useColorModeValue hooks to the top level
   const bgColor = useColorModeValue("gray.50", "gray.900");
@@ -151,27 +154,31 @@ const Dashboard = () => {
         // Check if user has a valid token
         const token = localStorage.getItem("auth"); 
 
-        if (!token) {
+        if (!token && !isDemoMode) {
           throw new Error(
             "No authentication token found. Please log in again."
           );
         }
 
         // Parse the auth data to get the token
-        let authData;
-        try {
-          authData = JSON.parse(token);
-        } catch {
-          throw new Error("Invalid authentication data. Please log in again.");
+        let authData = null;
+        if (token) {
+          try {
+            authData = JSON.parse(token);
+          } catch {
+            if (!isDemoMode) {
+              throw new Error('Invalid authentication data. Please log in again.');
+            }
+          }
         }
-
-        if (!authData.token) {
-          throw new Error("No token found in auth data. Please log in again.");
+        
+        if ((!authData || !authData.token) && !isDemoMode) {
+          throw new Error('No token found in auth data. Please log in again.');
         }
 
 
         // Get user ID from auth data
-        const userId = authData.user?.id || authData.userId;
+        const userId = isDemoMode ? 'demo_user_id' : (authData?.user?.id || authData?.userId);
 
         // Fetch all dashboard data in parallel
         const [
@@ -181,7 +188,7 @@ const Dashboard = () => {
           conversionResponse,
           todaysMeetingsResponse,
           tomorrowsMeetingsResponse,
-        ] = await Promise.all([
+        ] = isDemoMode ? [{}, {}, {}, {}, {}, {}] : await Promise.all([
           fetchDashboardOverview(),
           fetchRecentActivities(),
           fetchFinancialSummary(),
@@ -216,7 +223,9 @@ const Dashboard = () => {
       
 
         // Update stats with real data
-        if (overviewResponse.statusCode === 200) {
+        if (isDemoMode) {
+          setStats(demoStats);
+        } else if (overviewResponse.statusCode === 200) {
           const overviewData = overviewResponse.data;
           setStats({
             totalProperties: overviewData.totalProperties || 0,
@@ -237,7 +246,20 @@ const Dashboard = () => {
         }
 
         // Update recent activities with real data
-        if (activitiesResponse.statusCode === 200) {
+        if (isDemoMode) {
+           const activities = demoRecentActivities.map((activity) => ({
+            ...activity,
+            icon:
+              activity.type === "property"
+                ? FaBuilding
+                : activity.type === "lead"
+                ? BiUserPlus
+                : activity.type === "booking"
+                ? MdInventory
+                : FaUsers,
+           }));
+           setRecentActivities(activities);
+        } else if (activitiesResponse.statusCode === 200) {
           const activities = activitiesResponse.data.map((activity, index) => ({
             id: index + 1,
             type: activity.type,

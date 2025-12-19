@@ -8,6 +8,7 @@ import {
   fetchDocumentTypesWithParams
 } from '../services/documenttypes/documentTypeService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
+import { demoDocumentTypes } from '../data/demoData';
 
 // Default context value
 const defaultContextValue = {
@@ -31,6 +32,14 @@ export const DocumentTypeProvider = ({ children }) => {
   const getAllDocumentTypes = useCallback(async () => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        setDocumentTypes(demoDocumentTypes);
+        setLoading(false);
+        return;
+      }
+      
       const res = await fetchDocumentTypes();
       setDocumentTypes(res.data || []);
     } catch (err) {
@@ -104,6 +113,14 @@ export const DocumentTypeProvider = ({ children }) => {
   const addDocumentType = async (documentTypeData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot add document types. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await createDocumentType(documentTypeData);
       
       const newDocumentType = {
@@ -215,6 +232,14 @@ export const DocumentTypeProvider = ({ children }) => {
   const removeDocumentType = async (id) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot delete document types. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await deleteDocumentType(id);
       
       setDocumentTypes(prevTypes => prevTypes.filter(type => type._id !== id));

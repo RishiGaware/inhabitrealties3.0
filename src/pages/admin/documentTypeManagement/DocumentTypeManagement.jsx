@@ -26,6 +26,8 @@ import DeleteConfirmationModal from '../../../components/common/DeleteConfirmati
 import { useDocumentTypeContext } from '../../../context/DocumentTypeContext';
 import Loader from '../../../components/common/Loader';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
+import { useDemo } from '../../../context/DemoContext';
+import { showErrorToast } from '../../../utils/toastUtils';
 
 const DocumentTypeManagement = () => {
   const [selectedDocumentType, setSelectedDocumentType] = useState(null);
@@ -49,6 +51,7 @@ const DocumentTypeManagement = () => {
   // Get document type context
   const documentTypeContext = useDocumentTypeContext();
   const { documentTypes, getAllDocumentTypes, addDocumentType, updateDocumentType, removeDocumentType, loading } = documentTypeContext;
+  const { isDemoMode } = useDemo();
 
   // Memoize filtered document types to prevent unnecessary re-renders
   const filteredDocumentTypes = useMemo(() => {
@@ -144,6 +147,12 @@ const DocumentTypeManagement = () => {
   };
 
   const confirmDelete = async () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot delete document types. This is a read-only demo.');
+      onDeleteClose();
+      return;
+    }
+    
     if (documentTypeToDelete && !isApiCallInProgress && !isDeleteLoading) {
       setIsApiCallInProgress(true);
       setIsDeleteLoading(true);
@@ -162,6 +171,11 @@ const DocumentTypeManagement = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot save changes. This is a read-only demo.');
+      return;
+    }
     
     if (isApiCallInProgress || isSubmitting) {
       return;
@@ -266,6 +280,8 @@ const DocumentTypeManagement = () => {
         onClick={() => handleEdit(documentType)}
         colorScheme="brand"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Edit document type'}
       />
       <IconButton
         key="delete"
@@ -275,6 +291,8 @@ const DocumentTypeManagement = () => {
         onClick={() => handleDelete(documentType)}
         colorScheme="red"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Delete document type'}
       />
     </HStack>
   );

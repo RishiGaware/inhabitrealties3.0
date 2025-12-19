@@ -28,6 +28,8 @@ import DeleteConfirmationModal from '../../components/common/DeleteConfirmationM
 import { useFollowUpStatusContext } from '../../context/FollowUpStatusContext';
 import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
+import { useDemo } from '../../context/DemoContext';
+import { showErrorToast } from '../../utils/toastUtils';
 
 const LeadFollowUp = () => {
   const [selectedFollowUpStatus, setSelectedFollowUpStatus] = useState(null);
@@ -51,6 +53,7 @@ const LeadFollowUp = () => {
   // Get followup status context
   const followUpStatusContext = useFollowUpStatusContext();
   const { followUpStatuses, getAllFollowUpStatuses, addFollowUpStatus, updateFollowUpStatus, removeFollowUpStatus } = followUpStatusContext;
+  const { isDemoMode } = useDemo();
 
   // Memoize filtered followup statuses to prevent unnecessary re-renders
   const filteredFollowUpStatuses = useMemo(() => {
@@ -160,6 +163,12 @@ const LeadFollowUp = () => {
   };
 
   const confirmDelete = async () => {
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot delete follow-up statuses. This is a read-only demo.');
+      onDeleteClose();
+      return;
+    }
+    
     if (followUpStatusToDelete && !isApiCallInProgress) {
       setIsApiCallInProgress(true);
       try {
@@ -176,6 +185,11 @@ const LeadFollowUp = () => {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+    
+    if (isDemoMode) {
+      showErrorToast('Demo mode: Cannot save changes. This is a read-only demo.');
+      return;
+    }
     
     // Prevent multiple API calls
     if (isApiCallInProgress || isSubmitting) {
@@ -286,6 +300,8 @@ const LeadFollowUp = () => {
         onClick={() => handleEdit(followUpStatus)}
         colorScheme="brand"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Edit followup status'}
       />
       <IconButton
         key="delete"
@@ -295,6 +311,8 @@ const LeadFollowUp = () => {
         onClick={() => handleDelete(followUpStatus)}
         colorScheme="red"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Delete followup status'}
       />
     </HStack>
   );

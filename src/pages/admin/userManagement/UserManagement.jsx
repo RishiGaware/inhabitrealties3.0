@@ -32,6 +32,9 @@ import { fetchRoles } from '../../../services/rolemanagement/roleService';
 import Loader from '../../../components/common/Loader';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
 import { exportToCSV, generateFilename } from '../../../utils/exportUtils';
+import { useDemo } from '../../../context/DemoContext';
+import { demoUsers, demoRoles } from '../../../data/demoData';
+import { toast } from 'react-hot-toast';
 
 const UserManagement = () => {
   // All hooks must be called at the top level
@@ -62,6 +65,10 @@ const UserManagement = () => {
   // Get user context
   const userContext = useUserContext();
   const { users, getAllUsers, addUser, updateUser, removeUser } = userContext;
+  const { isDemoMode } = useDemo();
+
+  // Use demo users if in demo mode, otherwise use context users
+  const displayUsersList = isDemoMode ? demoUsers : users;
 
   // Convert roles to options for dropdown - display name but use _id as value
   const roleOptions = useMemo(() => {
@@ -81,6 +88,11 @@ const UserManagement = () => {
   const getAllRoles = async () => {
     setRolesLoading(true);
     try {
+      if (isDemoMode) {
+        setRoles(demoRoles);
+        setRolesLoading(false);
+        return;
+      }
       const response = await fetchRoles();
       
       // Handle the response format: { message, count, data }
@@ -96,7 +108,7 @@ const UserManagement = () => {
 
   // Memoize filtered users to prevent unnecessary re-renders
   const filteredUsers = useMemo(() => {
-    let filtered = users;
+    let filtered = displayUsersList;
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,12 +120,14 @@ const UserManagement = () => {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
     return filtered;
-  }, [users, searchTerm, roleFilter]);
+  }, [displayUsersList, searchTerm, roleFilter]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      await getAllUsers();
+      if (!isDemoMode) {
+        await getAllUsers();
+      }
       await getAllRoles();
     } finally {
       setLoading(false);
@@ -138,6 +152,10 @@ const UserManagement = () => {
   };
 
   const handleAddNew = () => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setSelectedUser(null);
     setFormData({
       firstName: '',
@@ -158,6 +176,10 @@ const UserManagement = () => {
   };
 
   const handleEdit = (user) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setSelectedUser(user);
     const data = {
       firstName: user.firstName || '',
@@ -177,6 +199,10 @@ const UserManagement = () => {
   };
 
   const handleDelete = (user) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setUserToDelete(user);
     onDeleteOpen();
   };

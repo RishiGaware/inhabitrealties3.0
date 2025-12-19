@@ -19,11 +19,14 @@ import SearchAndFilter from '../../components/common/SearchAndFilter';
 import Loader from '../../components/common/Loader';
 import PaymentViewerModal from '../../components/common/PaymentViewerModal';
 import api, { purchaseBookingAPI, rentalBookingAPI } from '../../services/api';
+import { useDemo } from '../../context/DemoContext';
+import { demoPayments } from '../../data/demoData';
 
 const AllPaymentHistory = () => {
   const toast = useToast();
   const { isOpen: isViewerOpen, onOpen: onViewerOpen, onClose: onViewerClose } = useDisclosure();
   const [selectedPayment, setSelectedPayment] = useState(null);
+  const { isDemoMode } = useDemo();
   
   // State management
   const [payments, setPayments] = useState([]);
@@ -42,10 +45,15 @@ const AllPaymentHistory = () => {
     const run = async () => {
     try {
       setIsLoading(true);
-        const res = await api.get('/payment-history/all');
-        const data = Array.isArray(res?.data?.data) ? res.data.data : [];
-        setPayments(data);
-        setFilteredPayments(data);
+        if (isDemoMode) {
+          setPayments(demoPayments);
+          setFilteredPayments(demoPayments);
+        } else {
+          const res = await api.get('/payment-history/all');
+          const data = Array.isArray(res?.data?.data) ? res.data.data : [];
+          setPayments(data);
+          setFilteredPayments(data);
+        }
     } catch (error) {
       console.error('Error fetching payments:', error);
       toast({

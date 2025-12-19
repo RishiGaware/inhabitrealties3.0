@@ -214,12 +214,26 @@ export const AuthProvider = ({ children }) => {
   };
 
   // Helper functions to access specific parts of the auth data
-  const getUser = () => auth?.data || null;
+  const getUser = () => {
+    const isDemoMode = localStorage.getItem('demoMode') === 'true';
+    if (isDemoMode) return { _id: 'demo_user_id', firstName: 'Demo', lastName: 'User', email: 'demo@example.com', role: localStorage.getItem('demoRole') || 'USER' };
+    return auth?.data || null;
+  };
   const getToken = () => auth?.token || null;
   const getMessage = () => auth?.message || '';
-  const getUserId = () => auth?.data?._id || null;
-  const getUserEmail = () => auth?.data?.email || '';
+  const getUserId = () => {
+    const isDemoMode = localStorage.getItem('demoMode') === 'true';
+    if (isDemoMode) return 'demo_user_id';
+    return auth?.data?._id || null;
+  };
+  const getUserEmail = () => {
+    const isDemoMode = localStorage.getItem('demoMode') === 'true';
+    if (isDemoMode) return 'demo@example.com';
+    return auth?.data?.email || '';
+  };
   const getUserName = () => {
+    const isDemoMode = localStorage.getItem('demoMode') === 'true';
+    if (isDemoMode) return 'Demo User';
     if (!auth?.data) return '';
     return `${auth.data.firstName || ''} ${auth.data.lastName || ''}`.trim();
   };
@@ -230,6 +244,12 @@ export const AuthProvider = ({ children }) => {
     return savedRoleDetails ? JSON.parse(savedRoleDetails) : null;
   };
   const getUserRoleName = () => {
+    // Check if in demo mode first
+    const isDemoMode = localStorage.getItem('demoMode') === 'true';
+    if (isDemoMode) {
+      const demoRole = localStorage.getItem('demoRole');
+      return demoRole || null;
+    }
     const roleDetails = getUserRoleDetails();
     return roleDetails?.name || null;
   };

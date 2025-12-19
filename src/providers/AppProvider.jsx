@@ -11,34 +11,37 @@ import { ReferenceSourceProvider } from '../context/ReferenceSourceContext';
 import { UserProfilePictureProvider } from '../context/UserProfilePictureContext';
 import { DocumentTypeProvider } from '../context/DocumentTypeContext';
 import { DocumentProvider } from '../context/DocumentContext';
+import { DemoProvider } from '../context/DemoContext';
 
 
 const AppProvider = ({ children }) => {
   return (
     <UserProvider>
       <ThemeProvider>
-        <AuthProvider>
-          <RoleProvider>
-            <PropertyTypeProvider>
-              <LeadStatusProvider>
-                <FollowUpStatusProvider>
-                  <LeadsProvider>
-                    <ReferenceSourceProvider>
-                      <UserProfilePictureProvider>
-                        <DocumentTypeProvider>
-                          <DocumentProvider>
-                    
-                                                          {children}
-                          </DocumentProvider>
-                        </DocumentTypeProvider>
-                      </UserProfilePictureProvider>
-                    </ReferenceSourceProvider>
-                  </LeadsProvider>
-                </FollowUpStatusProvider>
-              </LeadStatusProvider>
-            </PropertyTypeProvider>
-          </RoleProvider>
-        </AuthProvider>
+        <DemoProvider>
+          <AuthProvider>
+            <RoleProvider>
+              <PropertyTypeProvider>
+                <LeadStatusProvider>
+                  <FollowUpStatusProvider>
+                    <LeadsProvider>
+                      <ReferenceSourceProvider>
+                        <UserProfilePictureProvider>
+                          <DocumentTypeProvider>
+                            <DocumentProvider>
+                          
+                                                            {children}
+                            </DocumentProvider>
+                          </DocumentTypeProvider>
+                        </UserProfilePictureProvider>
+                      </ReferenceSourceProvider>
+                    </LeadsProvider>
+                  </FollowUpStatusProvider>
+                </LeadStatusProvider>
+              </PropertyTypeProvider>
+            </RoleProvider>
+          </AuthProvider>
+        </DemoProvider>
       </ThemeProvider>
     </UserProvider>
   );

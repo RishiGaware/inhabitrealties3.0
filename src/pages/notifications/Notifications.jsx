@@ -6,6 +6,8 @@ import { notificationService } from '../../services/notifications/notificationSe
 import { formatDistanceToNow } from 'date-fns';
 import { useAuth } from '../../context/AuthContext';
 import toast from 'react-hot-toast';
+import { useDemo } from '../../context/DemoContext';
+import { demoRecentActivities } from '../../data/demoData';
 
 // Play notification sound
 const playNotificationSound = () => {
@@ -146,6 +148,7 @@ const getToastIcon = (type) => {
 const Notifications = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
   const { getUserRoleName } = useAuth();
+  const { isDemoMode } = useDemo();
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const previousNotificationsRef = useRef([]);
@@ -185,6 +188,12 @@ const Notifications = ({ isOpen, onClose }) => {
 
   // Handle mark as read
   const handleMarkAsRead = async (notificationId) => {
+    if (isDemoMode) {
+      setNotifications(prev => 
+        prev.map(n => n._id === notificationId ? { ...n, isRead: true } : n)
+      );
+      return;
+    }
     try {
       await notificationService.markAsRead(notificationId);
       setNotifications(prev => 
@@ -268,6 +277,24 @@ const Notifications = ({ isOpen, onClose }) => {
 
   // Fetch notifications
   const fetchNotifications = async () => {
+    if (isDemoMode) {
+      // Use demo activities as notifications
+      const demoNotifications = demoRecentActivities.map((activity, index) => ({
+        _id: `demo_notif_${index}`,
+        title: activity.type.toUpperCase(),
+        message: activity.message,
+        type: activity.type === 'property' ? 'meeting_schedule' : 'lead_created', // Map to supported types
+        isRead: false,
+        createdAt: new Date().toISOString()
+      }));
+      
+      if (!isInitializedRef.current) {
+        setNotifications(demoNotifications);
+        isInitializedRef.current = true;
+      }
+      return;
+    }
+
     try {
       setLoading(true);
       const response = await notificationService.getMyNotifications({ limit: 50 });
@@ -329,6 +356,10 @@ const Notifications = ({ isOpen, onClose }) => {
   }, []); // Run once on mount, not dependent on isOpen
 
   const handleDelete = async (notificationId) => {
+    if (isDemoMode) {
+      setNotifications(prev => prev.filter(n => n._id !== notificationId));
+      return;
+    }
     try {
       await notificationService.deleteNotification(notificationId);
       setNotifications(prev => prev.filter(n => n._id !== notificationId));
@@ -341,6 +372,10 @@ const Notifications = ({ isOpen, onClose }) => {
   const handleMarkAllAsRead = async (checked) => {
     setAllReadChecked(checked);
     if (checked) {
+      if (isDemoMode) {
+        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        return;
+      }
       try {
         await notificationService.markAllAsRead();
         setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));

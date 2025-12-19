@@ -26,6 +26,7 @@ import DeleteConfirmationModal from '../../../components/common/DeleteConfirmati
 import { useRoleContext } from '../../../context/RoleContext';
 import Loader from '../../../components/common/Loader';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
+import { useDemo } from '../../../context/DemoContext';
 
 const RoleManagement = () => {
   const [selectedRole, setSelectedRole] = useState(null);
@@ -48,6 +49,7 @@ const RoleManagement = () => {
   // Get role context
   const roleContext = useRoleContext();
   const { roles, getAllRoles, addRole, updateRole, removeRole, loading } = roleContext;
+  const { isDemoMode } = useDemo();
 
   // Memoize filtered roles to prevent unnecessary re-renders
   const filteredRoles = useMemo(() => {
@@ -267,6 +269,8 @@ const RoleManagement = () => {
         onClick={() => handleEdit(role)}
         colorScheme="brand"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Edit role'}
       />
       <IconButton
         key="delete"
@@ -276,6 +280,8 @@ const RoleManagement = () => {
         onClick={() => handleDelete(role)}
         colorScheme="red"
         variant="outline"
+        isDisabled={isDemoMode}
+        title={isDemoMode ? 'Demo mode: Read-only' : 'Delete role'}
       />
     </HStack>
   );

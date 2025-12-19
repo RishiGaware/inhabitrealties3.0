@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { fetchRoles, createRole, editRole, deleteRole } from '../services/rolemanagement/roleService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
+import { demoRoles } from '../data/demoData';
 
 // Default context value
 const defaultContextValue = {
@@ -21,6 +22,14 @@ export const RoleProvider = ({ children }) => {
   const getAllRoles = useCallback(async () => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        setRoles(demoRoles);
+        setLoading(false);
+        return;
+      }
+      
       const res = await fetchRoles();
       // Backend returns: { message: 'all roles', count: 2, data: [...] }
       setRoles(res.data || []);
@@ -57,6 +66,14 @@ export const RoleProvider = ({ children }) => {
   const addRole = async (roleData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot add roles. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await createRole(roleData);
       // Add the new role to local state directly
       // Backend returns: { message: 'role added successfully', data: role }
@@ -107,6 +124,14 @@ export const RoleProvider = ({ children }) => {
   const updateRole = async (id, roleData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot update roles. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await editRole(id, roleData);
       // Update the local state directly instead of fetching all roles again
       // Backend returns: { message: 'role updated successfully' } - no data
@@ -175,6 +200,14 @@ export const RoleProvider = ({ children }) => {
   const removeRole = async (id) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot delete roles. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await deleteRole(id);
       // Remove the role from local state directly (soft delete)
       // Backend returns: { message: 'role deleted successfully' } - no data

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { fetchLeadStatuses, fetchLeadStatusById, createLeadStatus, editLeadStatus, deleteLeadStatus } from '../services/leadmanagement/leadStatusService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
+import { demoLeadStatuses } from '../data/demoData';
 
 // Default context value
 const defaultContextValue = {
@@ -22,6 +23,14 @@ export const LeadStatusProvider = ({ children }) => {
   const getAllLeadStatuses = useCallback(async () => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        setLeadStatuses(demoLeadStatuses);
+        setLoading(false);
+        return;
+      }
+      
       const res = await fetchLeadStatuses();
       // Backend returns: { message: 'all lead statuses', count: 2, data: [...] }
       setLeadStatuses(res.data || []);
@@ -89,6 +98,14 @@ export const LeadStatusProvider = ({ children }) => {
   const addLeadStatus = async (leadStatusData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot add lead statuses. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await createLeadStatus(leadStatusData);
       
       // Add the new lead status to local state directly
@@ -140,6 +157,14 @@ export const LeadStatusProvider = ({ children }) => {
   const updateLeadStatus = async (id, leadStatusData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot update lead statuses. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await editLeadStatus(id, leadStatusData);
       
       // Update the local state directly instead of fetching all lead statuses again
@@ -210,6 +235,14 @@ export const LeadStatusProvider = ({ children }) => {
   const removeLeadStatus = async (id) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot delete lead statuses. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await deleteLeadStatus(id);
       
       // Remove the lead status from local state directly (soft delete)

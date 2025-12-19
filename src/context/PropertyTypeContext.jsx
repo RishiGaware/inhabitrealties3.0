@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import { fetchPropertyTypes, createPropertyType, editPropertyType, deletePropertyType } from '../services/propertytypes/propertyTypeService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
+import { demoPropertyTypes } from '../data/demoData';
 
 // Default context value
 const defaultContextValue = {
@@ -21,6 +22,14 @@ export const PropertyTypeProvider = ({ children }) => {
   const getAllPropertyTypes = useCallback(async () => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        setPropertyTypes(demoPropertyTypes);
+        setLoading(false);
+        return;
+      }
+      
       const res = await fetchPropertyTypes();
       // Backend returns: { message: 'all property types', count: 2, data: [...] }
       setPropertyTypes(res.data || []);
@@ -57,6 +66,14 @@ export const PropertyTypeProvider = ({ children }) => {
   const addPropertyType = async (propertyTypeData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot add property types. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await createPropertyType(propertyTypeData);
       // Add the new property type to local state directly
       // Backend returns: { message: 'property type added successfully', data: propertyType }
@@ -107,6 +124,14 @@ export const PropertyTypeProvider = ({ children }) => {
   const updatePropertyType = async (id, propertyTypeData) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot update property types. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await editPropertyType(id, propertyTypeData);
       // Update the local state directly instead of fetching all property types again
       // Backend returns: { message: 'property type updated successfully' } - no data
@@ -175,6 +200,14 @@ export const PropertyTypeProvider = ({ children }) => {
   const removePropertyType = async (id) => {
     setLoading(true);
     try {
+      // Check if in demo mode
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      if (isDemoMode) {
+        showErrorToast('Demo mode: Cannot delete property types. This is a read-only demo.');
+        setLoading(false);
+        return;
+      }
+      
       const response = await deletePropertyType(id);
       // Remove the property type from local state directly (soft delete)
       // Backend returns: { message: 'property type deleted successfully' } - no data

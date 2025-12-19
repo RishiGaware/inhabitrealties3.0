@@ -29,6 +29,9 @@ import ServerError from '../../../components/common/errors/ServerError';
 import NoInternet from '../../../components/common/errors/NoInternet';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ROUTES } from '../../../utils/constants';
+import { useDemo } from '../../../context/DemoContext';
+import { demoProperties } from '../../../data/demoData';
+import { toast } from 'react-hot-toast';
 
 const PropertyMaster = ({ isViewOnly = false }) => {
   const [selectedType, setSelectedType] = useState('ALL');
@@ -55,6 +58,7 @@ const PropertyMaster = ({ isViewOnly = false }) => {
   const propertyTypeContext = usePropertyTypeContext();
   const { propertyTypes, getAllPropertyTypes, loading: propertyTypesLoading } = propertyTypeContext;
   const { getUserId, isAuthenticated } = useAuth();
+  const { isDemoMode } = useDemo();
 
   // Fetch properties and favorites on component mount
   useEffect(() => {
@@ -100,6 +104,11 @@ const PropertyMaster = ({ isViewOnly = false }) => {
     setLoading(true);
     setErrorType(null);
     try {
+      if (isDemoMode) {
+        setProperties(demoProperties);
+        setLoading(false);
+        return;
+      }
       console.log('[PropertyMaster] Fetching all properties...');
       const response = await fetchProperties();
       const properties = response.data || [];
@@ -145,6 +154,10 @@ const PropertyMaster = ({ isViewOnly = false }) => {
   };
 
   const handleAddProperty = async (propertyData, brochureFile = null) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     if (isApiCallInProgress || isSubmitting) {
       return;
     }
@@ -250,6 +263,10 @@ const PropertyMaster = ({ isViewOnly = false }) => {
   };
 
   const handleUpdateProperty = async (updatedData, brochureFile = null) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     if (isApiCallInProgress || isSubmitting) {
       return;
     }
@@ -433,11 +450,21 @@ const PropertyMaster = ({ isViewOnly = false }) => {
   };
 
   const handleDeleteProperty = (property) => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      return;
+    }
     setPropertyToDelete(property);
     onDeleteOpen();
   };
 
   const confirmDelete = async () => {
+    if (isDemoMode) {
+      toast.error("Not allowed in demo version");
+      onDeleteClose();
+      return;
+    }
+    
     if (propertyToDelete && !isApiCallInProgress) {
       setIsApiCallInProgress(true);
       try {
