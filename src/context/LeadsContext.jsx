@@ -98,7 +98,7 @@ export const LeadsProvider = ({ children }) => {
         published: response.data?.published !== undefined ? response.data.published : true,
       };
       
-      setLeads(prevLeads => [...prevLeads, newLead]);
+      setLeads(prevLeads => [newLead, ...prevLeads]);
       
       // Show the actual success message from the backend
       const successMessage = response?.message || 'Lead added successfully';

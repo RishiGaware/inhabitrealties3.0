@@ -57,7 +57,7 @@ export const LEADS_ENDPOINTS = {
   CREATE: '/leads/create',
   EDIT: (id) => `/leads/edit/${id}`,
   DELETE: (id) => `/leads/delete/${id}`,
-  GET_ALL_WITH_PARAMS: '/leads/getallleadswithparams',
+  GET_ALL_WITH_PARAMS: '/leads/withparams',
 };
 
 export const PROPERTY_ENDPOINTS = {
@@ -162,20 +162,20 @@ export const PURCHASE_BOOKING_ENDPOINTS = {
   CREATE: '/purchase-bookings/create',
   UPDATE: (id) => `/purchase-bookings/update/${id}`,
   DELETE: (id) => `/purchase-bookings/delete/${id}`,
-  
+
   // User-specific operations
   GET_MY_BOOKINGS: (userId) => `/purchase-bookings/my-bookings/${userId}`,
   GET_ASSIGNED_TO_SALESPERSON: (salespersonId) => `/purchase-bookings/assigned/${salespersonId}`,
-  
+
   // Installment operations
   GET_INSTALLMENT_SCHEDULE: (id) => `/purchase-bookings/${id}/installment-schedule`,
   RECORD_INSTALLMENT: (id) => `/purchase-bookings/${id}/record-installment`,
   UPDATE_INSTALLMENT_STATUS: (id) => `/purchase-bookings/${id}/update-installment-status`,
-  
+
   // Reports
   GET_REPORTS_PENDING_INSTALLMENTS: '/purchase-bookings/reports/pending-installments',
   GET_REPORTS_OVERDUE_INSTALLMENTS: '/purchase-bookings/reports/overdue-installments',
-  
+
   // Additional operations
   CONFIRM: (id) => `/purchase-bookings/confirm/${id}`,
   ADD_DOCUMENTS: (id) => `/purchase-bookings/${id}/add-documents`,

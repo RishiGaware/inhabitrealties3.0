@@ -6,7 +6,7 @@ import FormModal from '../../components/common/FormModal';
 import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
 import SearchAndFilter from '../../components/common/SearchAndFilter';
 import { fetchLeads, fetchLeadsWithParams } from '../../services/leadmanagement/leadsService';
-import { FiUser, FiMail, FiPhone, FiHome, FiFlag, FiRepeat, FiLink, FiUsers, FiUserCheck, FiUserPlus, FiEdit2, FiInfo } from 'react-icons/fi';
+import { FiUser, FiMail, FiPhone, FiHome, FiFlag, FiRepeat, FiLink, FiUsers, FiUserCheck, FiUserPlus, FiEdit2, FiInfo, FiCalendar } from 'react-icons/fi';
 import { motion, AnimatePresence } from 'framer-motion';
 import Loader from '../../components/common/Loader';
 import { fetchLeadStatuses } from '../../services/leadmanagement/leadStatusService';
@@ -74,8 +74,14 @@ const Leads = () => {
   // Helper function to get property name by ID
   const getPropertyNameById = (propertyId) => {
     if (!propertyId) return 'N/A';
-    const property = propertyOptions.find(option => option.value === propertyId);
-    return property ? property.label : 'Property not found';
+    // Handle if propertyId is an object (populated)
+    const id = propertyId._id || propertyId;
+    // If we have the populated object with name, use it directly as fallback
+    if (propertyId.name && propertyId.propertyAddress) {
+       return `${propertyId.name} - ${propertyId.propertyAddress.area}, ${propertyId.propertyAddress.city}`;
+    }
+    const property = propertyOptions.find(option => option.value === id);
+    return property ? property.label : (propertyId.name || 'Property not found');
   };
 
   // Count active filters
@@ -150,16 +156,41 @@ const Leads = () => {
     setSelectedLeadDetails(null);
   };
 
+  // Helper to get color scheme for lead status
+  const getStatusColorScheme = (statusName) => {
+    if (!statusName) return 'gray';
+    const name = statusName.toLowerCase();
+    
+    if (name.includes('completed')) return 'green';
+    if (name.includes('new lead')) return 'blue';
+    if (name.includes('warm')) return 'orange';
+    if (name.includes('high budget')) return 'purple';
+    if (name.includes('cold')) return 'gray';
+    if (name.includes('urgent')) return 'red';
+    if (name.includes('inquiry')) return 'yellow';
+    if (name.includes('low budget')) return 'pink';
+    if (name.includes('ready to move')) return 'teal';
+    if (name.includes('active')) return 'cyan';
+    
+    return 'brand';
+  };
+
   const handleAddNew = () => {
     setSelectedLead(null);
     setIsEditMode(false);
+    
+    // Find default "New Lead" status
+    const defaultStatus = leadStatusOptions.find(
+      status => status.name?.toLowerCase().includes('new lead') || status.name?.toLowerCase() === 'new'
+    );
+
     setFormData({
       firstName: '',
       lastName: '',
       email: '',
       phoneNumber: '',
       propertyId: '',
-      leadStatusId: '',
+      leadStatusId: defaultStatus ? defaultStatus._id : '',
       followUpStatusId: '',
       referanceFromId: '',
       assignedToUserId: '',
@@ -174,7 +205,7 @@ const Leads = () => {
     setFormData({
       userId: lead.userId?._id || '',
       leadDesignation: lead.leadDesignation || '',
-      leadInterestedPropertyId: lead.leadInterestedPropertyId || '',
+      leadInterestedPropertyId: lead.leadInterestedPropertyId?._id || lead.leadInterestedPropertyId || '',
       leadStatus: lead.leadStatus?._id || '',
       followUpStatus: lead.followUpStatus?._id || '',
       referanceFrom: lead.referanceFrom?._id || '',
@@ -549,6 +580,9 @@ const Leads = () => {
                   >
                     <Text as="span" display="flex" alignItems="center" gap={1} maxW="100%" whiteSpace="normal" wordBreak="break-word">📧 <span>{user.email}</span></Text>
                     <Text as="span" display="flex" alignItems="center" gap={1} maxW="100%" whiteSpace="normal" wordBreak="break-word">📞 <span>{user.phoneNumber}</span></Text>
+                    <Text as="span" display="flex" alignItems="center" gap={1} maxW="100%" whiteSpace="normal" wordBreak="break-word" fontSize="xs" color="gray.400" mt={1}>
+                      <Icon as={FiCalendar} /> <span>{new Date(lead.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    </Text>
                   </Flex>
                 </Flex>
                 <Flex gap={1} flexWrap="wrap" w="100%" mt={2}>
@@ -558,7 +592,7 @@ const Leads = () => {
                     </Badge>
                   )}
                   {lead.leadStatus?.name && (
-                    <Badge colorScheme="brand" variant="subtle" borderRadius="full" px={3} py={1} fontSize="xs" fontWeight="bold" whiteSpace="normal" wordBreak="break-word">
+                    <Badge colorScheme={getStatusColorScheme(lead.leadStatus.name)} variant="subtle" borderRadius="full" px={3} py={1} fontSize="xs" fontWeight="bold" whiteSpace="normal" wordBreak="break-word">
                       {lead.leadStatus.name}
                     </Badge>
                   )}
@@ -730,14 +764,14 @@ const Leads = () => {
                   <Flex gap={2} justify="center" flexWrap="wrap">
                     {selectedLeadDetails.leadStatus?.name && (
                       <Badge 
-                        colorScheme="yellow" 
+                        colorScheme={getStatusColorScheme(selectedLeadDetails.leadStatus.name)} 
                         variant="solid" 
                         borderRadius="full" 
                         px={2} 
                         py={1} 
                         fontSize="2xs" 
                         fontWeight="bold"
-                        boxShadow="0 2px 8px rgba(255,193,7,0.3)"
+                        boxShadow="0 2px 8px rgba(0,0,0,0.1)"
                       >
                         {selectedLeadDetails.leadStatus.name}
                       </Badge>
