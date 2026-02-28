@@ -367,7 +367,7 @@ const SalesDashboard = () => {
               trendValue="25"
               subtitle="Properties sold"
             />
-            <StatCard
+            {/* <StatCard
               title="My Revenue"
               value={formatCurrency(stats.myRevenue)}
               icon={FaDollarSign}
@@ -376,7 +376,7 @@ const SalesDashboard = () => {
               trendValue="20"
               subtitle="Revenue generated"
               onClick={() => navigate('/payment-history/assigned')}
-            />
+            /> */}
             <StatCard
               title="Pending Followups"
               value={stats.pendingFollowups}
@@ -434,7 +434,7 @@ const SalesDashboard = () => {
               trendValue="18"
               subtitle="Deals closed this month"
             />
-            <StatCard
+            {/* <StatCard
               title="Average Deal Size"
               value={formatCurrency(stats.averageDealSize)}
               icon={FaDollarSign}
@@ -442,7 +442,7 @@ const SalesDashboard = () => {
               trend="up"
               trendValue="10"
               subtitle="Average deal value"
-            />
+            /> */}
             <StatCard
               title="Conversion Rate"
               value={`${stats.conversionRate}%`}
