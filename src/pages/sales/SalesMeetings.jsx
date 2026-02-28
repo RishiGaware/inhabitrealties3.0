@@ -416,6 +416,15 @@ const SalesMeetings = () => {
         const isCompletedBySales = meeting.isCompletedBySales || false;
         const isCompletedByExecutive = meeting.isCompletedByExecutive || false;
         
+        // Extract real customer IDs (handle objects or strings)
+         actualCustomerIds = Array.isArray(meeting.customerId) 
+          ? meeting.customerId.map(c => (typeof c === 'object' && c !== null) ? (c._id || c) : c)
+          : (meeting.customerId ? [(typeof meeting.customerId === 'object' && meeting.customerId !== null) ? (meeting.customerId._id || meeting.customerId) : meeting.customerId] : []);
+
+         actualPropertyId = (typeof meeting.propertyId === 'object' && meeting.propertyId !== null) 
+          ? meeting.propertyId._id 
+          : (meeting.propertyId || '');
+
         return {
           id: meeting._id,
           title: meeting.title,
@@ -441,7 +450,9 @@ const SalesMeetings = () => {
           salesPersonId: salesPersonId,
           executiveId: executiveId,
           isCompletedBySales: isCompletedBySales,
-          isCompletedByExecutive: isCompletedByExecutive
+          isCompletedByExecutive: isCompletedByExecutive,
+          createdAt: meeting.createdAt,
+          scheduledByUserId: meeting.scheduledByUserId?._id || meeting.scheduledByUserId || ''
         };
       });
       
@@ -468,9 +479,19 @@ const SalesMeetings = () => {
         const isExecutive = meeting.executiveId?._id === currentUserId || 
                            meeting.executiveId === currentUserId ||
                            (typeof meeting.executiveId === 'object' && meeting.executiveId?._id === currentUserId);
-        if (!isSalesPerson && !isExecutive) return false;
+        const isScheduledByMe = meeting.scheduledByUserId === currentUserId;
+        const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+        
+        if (isCustomer) return false; // If I'm the customer, it belongs in "My Meetings"
+        if (!isSalesPerson && !isExecutive && !isScheduledByMe) return false;
       }
       
+      // For my-meetings view, ONLY show meetings where the user is the customer
+      if (activeView === 'my' && currentUserId) {
+         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         if (!isCustomer) return false;
+      }
+
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            meeting.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.propertyName && meeting.propertyName.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -478,19 +499,12 @@ const SalesMeetings = () => {
       return matchesSearch && matchesStatus;
     });
     
-    // Sort: Completed meetings first, then by meetingDate (earliest first)
+    // Sort: Newest created/added first, oldest at last
     return filtered.sort((a, b) => {
-      const aIsCompleted = a.status?.toLowerCase() === 'completed';
-      const bIsCompleted = b.status?.toLowerCase() === 'completed';
-      
-      // If one is completed and the other isn't, completed comes first
-      if (aIsCompleted && !bIsCompleted) return -1;
-      if (!aIsCompleted && bIsCompleted) return 1;
-      
-      // Both have same completion status, sort by date (earliest first)
-      const aDate = a.meetingDate ? new Date(a.meetingDate) : new Date(0);
-      const bDate = b.meetingDate ? new Date(b.meetingDate) : new Date(0);
-      return aDate - bDate;
+      // Sort by createdAt descending, fallback to meetingDate if createdAt missing
+      const aDate = a.createdAt ? new Date(a.createdAt) : (a.meetingDate ? new Date(a.meetingDate) : new Date(0));
+      const bDate = b.createdAt ? new Date(b.createdAt) : (b.meetingDate ? new Date(b.meetingDate) : new Date(0));
+      return bDate - aDate;
     });
   }, [meetings, searchTerm, statusFilter, activeView]);
 
@@ -520,7 +534,7 @@ const SalesMeetings = () => {
       endTime: meeting.endTime || '',
       duration: meeting.duration || '',
       status: meeting.statusId || '',
-      customerIds: meeting.customerIds && meeting.customerIds.length > 0 ? meeting.customerIds[0] : '',
+      customerIds: meeting.customerIds || [],
       propertyId: meeting.propertyId || '',
       notes: meeting.notes || ''
     });
@@ -1696,51 +1710,26 @@ const SalesMeetings = () => {
                   Participants & Property
                 </Box>
                 <VStack spacing={4}>
-                  {selectedMeeting ? (
-                    // Edit mode - Single select
-                    <SearchableSelect
-                      label="Customer"
-                      placeholder="Select customer"
-                      options={users.map(user => ({
-                        value: user._id,
-                        label: `${user.firstName} ${user.lastName}`
-                      }))}
-                      value={formData.customerIds}
-                      onChange={(value) => handleInputChange('customerIds', value)}
-                      error={formErrors.customerIds}
-                      isRequired
-                      bg="white"
-                      border="1px solid"
-                      borderColor="gray.200"
-                      _focus={{
-                        borderColor: "purple.400",
-                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
-                      }}
-                      w="full"
-                    />
-                  ) : (
-                    // Add mode - Multi select
-                    <MultiSelect
-                      label="Customers"
-                      placeholder="Select customers"
-                      options={users.map(user => ({
-                        value: user._id,
-                        label: `${user.firstName} ${user.lastName}`
-                      }))}
-                      value={formData.customerIds}
-                      onChange={(value) => handleInputChange('customerIds', value)}
-                      error={formErrors.customerIds}
-                      isRequired
-                      bg="white"
-                      border="1px solid"
-                      borderColor="gray.200"
-                      _focus={{
-                        borderColor: "purple.400",
-                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
-                      }}
-                      w="full"
-                    />
-                  )}
+                  <MultiSelect
+                    label="Customers"
+                    placeholder="Select customers"
+                    options={users.map(user => ({
+                      value: user._id,
+                      label: `${user.firstName} ${user.lastName}`
+                    }))}
+                    value={formData.customerIds}
+                    onChange={(value) => handleInputChange('customerIds', value)}
+                    error={formErrors.customerIds}
+                    isRequired
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                    w="full"
+                  />
                   <SearchableSelect
                     label="Property"
                     placeholder="Select property"

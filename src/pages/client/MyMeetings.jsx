@@ -322,7 +322,8 @@ const MyMeetings = () => {
           duration: meeting.duration,
           // Preserve original IDs for form editing
           customerIds: actualCustomerIds,
-          propertyId: actualPropertyId
+          propertyId: actualPropertyId,
+          createdAt: meeting.createdAt
         };
       });
       
@@ -335,7 +336,17 @@ const MyMeetings = () => {
 
   // Filter and sort meetings - Completed first, then by date (earliest first)
   const filteredMeetings = useMemo(() => {
+    // Get current user ID to filter my meetings
+    const auth = JSON.parse(localStorage.getItem("auth"));
+    const currentUserId = auth?.data?._id;
+
     const filtered = meetings.filter(meeting => {
+      // ONLY show meetings where the user is the customer
+      if (currentUserId) {
+         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         if (!isCustomer) return false;
+      }
+
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            meeting.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.propertyName && meeting.propertyName.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -343,19 +354,12 @@ const MyMeetings = () => {
       return matchesSearch && matchesStatus;
     });
     
-    // Sort: Completed meetings first, then by meetingDate (earliest first)
+    // Sort: Newest created/added first, oldest at last
     return filtered.sort((a, b) => {
-      const aIsCompleted = a.status?.toLowerCase() === 'completed';
-      const bIsCompleted = b.status?.toLowerCase() === 'completed';
-      
-      // If one is completed and the other isn't, completed comes first
-      if (aIsCompleted && !bIsCompleted) return -1;
-      if (!aIsCompleted && bIsCompleted) return 1;
-      
-      // Both have same completion status, sort by date (earliest first)
-      const aDate = a.meetingDate ? new Date(a.meetingDate) : new Date(0);
-      const bDate = b.meetingDate ? new Date(b.meetingDate) : new Date(0);
-      return aDate - bDate;
+      // Sort by createdAt descending, fallback to meetingDate if createdAt missing
+      const aDate = a.createdAt ? new Date(a.createdAt) : (a.meetingDate ? new Date(a.meetingDate) : new Date(0));
+      const bDate = b.createdAt ? new Date(b.createdAt) : (b.meetingDate ? new Date(b.meetingDate) : new Date(0));
+      return bDate - aDate;
     });
   }, [meetings, searchTerm, statusFilter]);
 

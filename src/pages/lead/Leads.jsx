@@ -17,6 +17,17 @@ import SearchableSelect from '../../components/common/SearchableSelect';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import ServerError from '../../components/common/errors/ServerError';
 import NoInternet from '../../components/common/errors/NoInternet';
+
+// Helper to sort newest first
+const sortByNewest = (dataArray) => {
+  if (!dataArray || !Array.isArray(dataArray)) return [];
+  return [...dataArray].sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    return dateB - dateA;
+  });
+};
+
 const Leads = () => {
   const [selectedLeadDetails, setSelectedLeadDetails] = useState(null);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
@@ -141,7 +152,7 @@ const Leads = () => {
     setErrorType(null);
     try {
       const data = await fetchLeads();
-      setFilteredLeads(data.data); // assuming API returns { data: [...] }
+      setFilteredLeads(sortByNewest(data.data)); // assuming API returns { data: [...] }
     } catch (error) {
       if (error.message === 'Network Error') setErrorType('network');
       else if (error.response?.status === 500) setErrorType('server');
@@ -252,7 +263,7 @@ const Leads = () => {
       };
       
       const res = await fetchLeadsWithParams(params);
-      setFilteredLeads(res.data || []);
+      setFilteredLeads(sortByNewest(res.data || []));
     } catch (error) {
       console.error('Search error:', error);
       // Fallback to client-side search if API fails
@@ -264,7 +275,7 @@ const Leads = () => {
         lead.note?.toLowerCase().includes(term.toLowerCase()) ||
         getPropertyNameById(lead.propertyId)?.toLowerCase().includes(term.toLowerCase())
     );
-    setFilteredLeads(filtered);
+    setFilteredLeads(sortByNewest(filtered));
     } finally {
       setLoading(false);
     }
@@ -287,7 +298,7 @@ const Leads = () => {
       };
       
       const res = await fetchLeadsWithParams(params);
-      setFilteredLeads(res.data || []);
+      setFilteredLeads(sortByNewest(res.data || []));
     } catch (error) {
       console.error('Search error:', error);
       // Fallback to client-side search if API fails
@@ -299,7 +310,7 @@ const Leads = () => {
         lead.note?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getPropertyNameById(lead.propertyId)?.toLowerCase().includes(searchTerm.toLowerCase())
       );
-      setFilteredLeads(filtered);
+      setFilteredLeads(sortByNewest(filtered));
     } finally {
       setLoading(false);
     }
@@ -371,11 +382,11 @@ const Leads = () => {
       if (params.propertyId || params.propertyType || params.search) {
         // Only fetch properties if property-related filters are used
         const res = await fetchPropertiesWithParams(params);
-        setFilteredLeads(res.data);
+        setFilteredLeads(sortByNewest(res.data));
       } else {
         // Otherwise, use the default leads filter
         const res = await fetchLeadsWithParams(params);
-        setFilteredLeads(res.data);
+        setFilteredLeads(sortByNewest(res.data));
       }
     } catch (error) {
       console.error('Filter error:', error);

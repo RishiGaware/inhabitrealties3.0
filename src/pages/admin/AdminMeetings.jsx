@@ -411,6 +411,20 @@ const AdminMeetings = () => {
           statusId = meeting.status._id || meeting.status;
         }
 
+        // Get sales person and executive IDs
+        const salesPersonId = meeting.salesPersonId?._id || meeting.salesPersonId || '';
+        const executiveId = meeting.executiveId?._id || meeting.executiveId || '';
+        const scheduledByUserId = meeting.scheduledByUserId?._id || meeting.scheduledByUserId || '';
+        
+        // Extract real customer IDs (handle objects or strings)
+        actualCustomerIds = Array.isArray(meeting.customerId) 
+          ? meeting.customerId.map(c => (typeof c === 'object' && c !== null) ? (c._id || c) : c)
+          : (meeting.customerId ? [(typeof meeting.customerId === 'object' && meeting.customerId !== null) ? (meeting.customerId._id || meeting.customerId) : meeting.customerId] : []);
+
+        actualPropertyId = (typeof meeting.propertyId === 'object' && meeting.propertyId !== null) 
+          ? meeting.propertyId._id 
+          : (meeting.propertyId || '');
+
         return {
           id: meeting._id,
           title: meeting.title,
@@ -426,13 +440,17 @@ const AdminMeetings = () => {
           endTime: meeting.endTime,
           status: statusName,
           statusId: statusId,
+          salesPersonId: salesPersonId,
+          executiveId: executiveId,
+          scheduledByUserId: scheduledByUserId,
           salesPersonEmail: meeting.scheduledByUserId?.email || 'No email',
           location: propertyDetails.location,
           notes: meeting.notes,
           duration: meeting.duration,
           // Preserve original IDs for form editing
           customerIds: actualCustomerIds,
-          propertyId: actualPropertyId
+          propertyId: actualPropertyId,
+          createdAt: meeting.createdAt
         };
       });
       
@@ -446,8 +464,24 @@ const AdminMeetings = () => {
 
   // Filter and sort meetings - Completed first, then by date (earliest first)
   const filteredMeetings = useMemo(() => {
+    // Get current user ID to filter my meetings
+    const auth = JSON.parse(localStorage.getItem("auth"));
+    const currentUserId = auth?.data?._id;
     
     const filtered = meetings.filter(meeting => {
+      // For scheduled view, show if I am admin (implicit since it's admin page) 
+      // but if we want to respect the "My Meetings" logic:
+      if (activeView === 'scheduled' && currentUserId) {
+         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         if (isCustomer) return false; // Move to My Meetings if I'm the customer
+      }
+
+      // For my-meetings view, ONLY show meetings where the user is the customer
+      if (activeView === 'my' && currentUserId) {
+         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         if (!isCustomer) return false;
+      }
+
       const matchesSearch = meeting.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            meeting.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (meeting.propertyName && meeting.propertyName.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -455,19 +489,12 @@ const AdminMeetings = () => {
       return matchesSearch && matchesStatus;
     });
     
-    // Sort: Completed meetings first, then by meetingDate (earliest first)
+    // Sort: Newest created/added first, oldest at last
     return filtered.sort((a, b) => {
-      const aIsCompleted = a.status?.toLowerCase() === 'completed';
-      const bIsCompleted = b.status?.toLowerCase() === 'completed';
-      
-      // If one is completed and the other isn't, completed comes first
-      if (aIsCompleted && !bIsCompleted) return -1;
-      if (!aIsCompleted && bIsCompleted) return 1;
-      
-      // Both have same completion status, sort by date (earliest first)
-      const aDate = a.meetingDate ? new Date(a.meetingDate) : new Date(0);
-      const bDate = b.meetingDate ? new Date(b.meetingDate) : new Date(0);
-      return aDate - bDate;
+      // Sort by createdAt descending, fallback to meetingDate if createdAt missing
+      const aDate = a.createdAt ? new Date(a.createdAt) : (a.meetingDate ? new Date(a.meetingDate) : new Date(0));
+      const bDate = b.createdAt ? new Date(b.createdAt) : (b.meetingDate ? new Date(b.meetingDate) : new Date(0));
+      return bDate - aDate;
     });
   }, [meetings, searchTerm, statusFilter]);
 
@@ -495,7 +522,7 @@ const AdminMeetings = () => {
       endTime: meeting.endTime || '',
       duration: meeting.duration || '',
       status: meeting.statusId || '',
-      customerIds: meeting.customerIds && meeting.customerIds.length > 0 ? meeting.customerIds[0] : '',
+      customerIds: meeting.customerIds || [],
       propertyId: meeting.propertyId || '',
       notes: meeting.notes || '',
       salesPersonId: meeting.salesPersonId || '',
@@ -1673,51 +1700,26 @@ const AdminMeetings = () => {
                   Participants & Property
                 </Box>
                 <VStack spacing={4}>
-                  {selectedMeeting ? (
-                    // Edit mode - Single select
-                    <SearchableSelect
-                      label="Customer"
-                      placeholder="Select customer"
-                      options={users.map(user => ({
-                        value: user._id,
-                        label: `${user.firstName} ${user.lastName}`
-                      }))}
-                      value={formData.customerIds}
-                      onChange={(value) => handleInputChange('customerIds', value)}
-                      error={formErrors.customerIds}
-                      isRequired
-                      bg="white"
-                      border="1px solid"
-                      borderColor="gray.200"
-                      _focus={{
-                        borderColor: "purple.400",
-                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
-                      }}
-                      w="full"
-                    />
-                  ) : (
-                    // Add mode - Multi select
-                    <MultiSelect
-                      label="Customers"
-                      placeholder="Select customers"
-                      options={users.map(user => ({
-                        value: user._id,
-                        label: `${user.firstName} ${user.lastName}`
-                      }))}
-                      value={formData.customerIds}
-                      onChange={(value) => handleInputChange('customerIds', value)}
-                      error={formErrors.customerIds}
-                      isRequired
-                      bg="white"
-                      border="1px solid"
-                      borderColor="gray.200"
-                      _focus={{
-                        borderColor: "purple.400",
-                        boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
-                      }}
-                      w="full"
-                    />
-                  )}
+                  <MultiSelect
+                    label="Customers"
+                    placeholder="Select customers"
+                    options={users.map(user => ({
+                      value: user._id,
+                      label: `${user.firstName} ${user.lastName}`
+                    }))}
+                    value={formData.customerIds}
+                    onChange={(value) => handleInputChange('customerIds', value)}
+                    error={formErrors.customerIds}
+                    isRequired
+                    bg="white"
+                    border="1px solid"
+                    borderColor="gray.200"
+                    _focus={{
+                      borderColor: "purple.400",
+                      boxShadow: "0 0 0 1px rgba(147, 51, 234, 0.2)"
+                    }}
+                    w="full"
+                  />
                   <SearchableSelect
                     label="Property"
                     placeholder="Select property"
