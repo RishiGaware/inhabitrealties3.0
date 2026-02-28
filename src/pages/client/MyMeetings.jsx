@@ -638,14 +638,14 @@ const MyMeetings = () => {
         }}
         transition="all 0.2s ease"
       />
-      <IconButton
+      {/* <IconButton
         aria-label="Edit meeting"
         icon={<FaEdit />}
         size="sm"
         onClick={() => handleEditMeeting(meeting)}
         colorScheme="green"
         variant="outline"
-      />
+      /> */}
     </HStack>
   );
 
