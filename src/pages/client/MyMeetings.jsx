@@ -343,7 +343,8 @@ const MyMeetings = () => {
     const filtered = meetings.filter(meeting => {
       // ONLY show meetings where the user is the customer
       if (currentUserId) {
-         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         const userIdStr = String(currentUserId);
+         const isCustomer = meeting.customerIds?.some(id => String(id) === userIdStr);
          if (!isCustomer) return false;
       }
 

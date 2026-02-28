@@ -351,14 +351,14 @@ const AdminMeetings = () => {
           }
         } else if (meeting.customerId && typeof meeting.customerId === 'object' && meeting.customerId.firstName) {
           // Backend populated single customer data - extract the ID
-          actualCustomerIds = [meeting.customerId._id || meeting.customerId.id];
+          actualCustomerIds = [String(meeting.customerId._id || meeting.customerId.id)];
           customerDetails = [{
             name: `${meeting.customerId.firstName} ${meeting.customerId.lastName}`,
             email: meeting.customerId.email
           }];
         } else if (users.length > 0 && meeting.customerId) {
           // Single customer by ID
-          actualCustomerIds = [meeting.customerId];
+          actualCustomerIds = [String(meeting.customerId)];
           customerDetails = [getCustomerDetails(meeting.customerId)];
         } else if (!meeting.customerId && !meeting.customerIds) {
           customerDetails = [{ name: 'No Customer', email: 'No email' }];
@@ -416,13 +416,9 @@ const AdminMeetings = () => {
         const executiveId = meeting.executiveId?._id || meeting.executiveId || '';
         const scheduledByUserId = meeting.scheduledByUserId?._id || meeting.scheduledByUserId || '';
         
-        // Extract real customer IDs (handle objects or strings)
-        actualCustomerIds = Array.isArray(meeting.customerId) 
-          ? meeting.customerId.map(c => (typeof c === 'object' && c !== null) ? (c._id || c) : c)
-          : (meeting.customerId ? [(typeof meeting.customerId === 'object' && meeting.customerId !== null) ? (meeting.customerId._id || meeting.customerId) : meeting.customerId] : []);
-
+        // Update actualPropertyId with ID from object if populated
         actualPropertyId = (typeof meeting.propertyId === 'object' && meeting.propertyId !== null) 
-          ? meeting.propertyId._id 
+          ? (meeting.propertyId._id || meeting.propertyId.id || '') 
           : (meeting.propertyId || '');
 
         return {
@@ -472,13 +468,15 @@ const AdminMeetings = () => {
       // For scheduled view, show if I am admin (implicit since it's admin page) 
       // but if we want to respect the "My Meetings" logic:
       if (activeView === 'scheduled' && currentUserId) {
-         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         const userIdStr = String(currentUserId);
+         const isCustomer = meeting.customerIds?.some(id => String(id) === userIdStr);
          if (isCustomer) return false; // Move to My Meetings if I'm the customer
       }
 
       // For my-meetings view, ONLY show meetings where the user is the customer
       if (activeView === 'my' && currentUserId) {
-         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         const userIdStr = String(currentUserId);
+         const isCustomer = meeting.customerIds?.some(id => String(id) === userIdStr);
          if (!isCustomer) return false;
       }
 

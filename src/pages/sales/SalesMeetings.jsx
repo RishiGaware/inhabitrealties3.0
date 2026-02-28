@@ -349,14 +349,14 @@ const SalesMeetings = () => {
           }
         } else if (meeting.customerId && typeof meeting.customerId === 'object' && meeting.customerId.firstName) {
           // Backend populated single customer data - extract the ID
-          actualCustomerIds = [meeting.customerId._id || meeting.customerId.id];
+          actualCustomerIds = [String(meeting.customerId._id || meeting.customerId.id)];
           customerDetails = [{
             name: `${meeting.customerId.firstName} ${meeting.customerId.lastName}`,
             email: meeting.customerId.email
           }];
         } else if (users.length > 0 && meeting.customerId) {
           // Single customer by ID
-          actualCustomerIds = [meeting.customerId];
+          actualCustomerIds = [String(meeting.customerId)];
           customerDetails = [getCustomerDetails(meeting.customerId)];
         } else if (!meeting.customerId && !meeting.customerIds) {
           customerDetails = [{ name: 'No Customer', email: 'No email' }];
@@ -417,12 +417,12 @@ const SalesMeetings = () => {
         const isCompletedByExecutive = meeting.isCompletedByExecutive || false;
         
         // Extract real customer IDs (handle objects or strings)
-         actualCustomerIds = Array.isArray(meeting.customerId) 
-          ? meeting.customerId.map(c => (typeof c === 'object' && c !== null) ? (c._id || c) : c)
-          : (meeting.customerId ? [(typeof meeting.customerId === 'object' && meeting.customerId !== null) ? (meeting.customerId._id || meeting.customerId) : meeting.customerId] : []);
+        actualCustomerIds = Array.isArray(meeting.customerIds) 
+          ? meeting.customerIds.map(c => String((typeof c === 'object' && c !== null) ? (c._id || c) : c))
+          : (meeting.customerId ? [String((typeof meeting.customerId === 'object' && meeting.customerId !== null) ? (meeting.customerId._id || meeting.customerId) : meeting.customerId)] : []);
 
-         actualPropertyId = (typeof meeting.propertyId === 'object' && meeting.propertyId !== null) 
-          ? meeting.propertyId._id 
+        actualPropertyId = (typeof meeting.propertyId === 'object' && meeting.propertyId !== null) 
+          ? (meeting.propertyId._id || meeting.propertyId.id || '') 
           : (meeting.propertyId || '');
 
         return {
@@ -471,16 +471,13 @@ const SalesMeetings = () => {
     const currentUserId = auth?.data?._id;
     
     const filtered = meetings.filter(meeting => {
-      // For sales meetings view, only show meetings where user is assigned as sales person or executive
+      // For sales meetings view, only show meetings where user is assigned as staff/scheduler
       if (activeView === 'scheduled' && currentUserId) {
-        const isSalesPerson = meeting.salesPersonId?._id === currentUserId || 
-                             meeting.salesPersonId === currentUserId ||
-                             (typeof meeting.salesPersonId === 'object' && meeting.salesPersonId?._id === currentUserId);
-        const isExecutive = meeting.executiveId?._id === currentUserId || 
-                           meeting.executiveId === currentUserId ||
-                           (typeof meeting.executiveId === 'object' && meeting.executiveId?._id === currentUserId);
-        const isScheduledByMe = meeting.scheduledByUserId === currentUserId;
-        const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+        const userIdStr = String(currentUserId);
+        const isSalesPerson = String(meeting.salesPersonId?._id || meeting.salesPersonId) === userIdStr;
+        const isExecutive = String(meeting.executiveId?._id || meeting.executiveId) === userIdStr;
+        const isScheduledByMe = String(meeting.scheduledByUserId?._id || meeting.scheduledByUserId) === userIdStr;
+        const isCustomer = meeting.customerIds?.some(id => String(id) === userIdStr);
         
         if (isCustomer) return false; // If I'm the customer, it belongs in "My Meetings"
         if (!isSalesPerson && !isExecutive && !isScheduledByMe) return false;
@@ -488,7 +485,8 @@ const SalesMeetings = () => {
       
       // For my-meetings view, ONLY show meetings where the user is the customer
       if (activeView === 'my' && currentUserId) {
-         const isCustomer = meeting.customerIds?.includes(currentUserId) || meeting.customerId === currentUserId;
+         const userIdStr = String(currentUserId);
+         const isCustomer = meeting.customerIds?.some(id => String(id) === userIdStr);
          if (!isCustomer) return false;
       }
 
