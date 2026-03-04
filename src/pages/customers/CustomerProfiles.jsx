@@ -17,6 +17,8 @@ import {
   Switch,
   FormLabel,
   Badge,
+  SimpleGrid,
+  Spinner,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon, DownloadIcon } from '@chakra-ui/icons';
 import CommonTable from '../../components/common/Table/CommonTable';
@@ -34,6 +36,12 @@ import Loader from '../../components/common/Loader';
 import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import { showErrorToast } from '../../utils/toastUtils';
 import { exportToCSV, generateFilename } from '../../utils/exportUtils';
+import { 
+  Users, 
+  CheckCircle, 
+  XCircle 
+} from 'lucide-react';
+
 
 const CustomerProfiles = () => {
   // All hooks must be called at the top level
@@ -59,8 +67,12 @@ const CustomerProfiles = () => {
   const [isDeleteLoading, setIsDeleteLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [originalFormData, setOriginalFormData] = useState(null);
-  const [filteredUsers, setFilteredUsers] = useState([]);
   const [isFiltered, setIsFiltered] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'published', 'unpublished'
+  const [stats, setStats] = useState({ total: 0, published: 0, unpublished: 0 });
+  const [isStatsLoading, setIsStatsLoading] = useState(false);
+  const [filteredUsers, setFilteredUsers] = useState([]);
+
 
   // Get user context
   const userContext = useUserContext();
@@ -88,9 +100,10 @@ const CustomerProfiles = () => {
       // Handle the response format: { message, count, data }
       const rolesData = response.data || response;
       setRoles(rolesData);
-      
+      return rolesData;
     } catch (error) {
       console.error('UserManagement: Fetch roles error:', error);
+      return [];
     } finally {
       setRolesLoading(false);
     }
@@ -102,8 +115,16 @@ const CustomerProfiles = () => {
     let filtered = isFiltered ? filteredUsers : users;
     
     // For customer management, only show users with "user" role
-    filtered = filtered.filter(user => user.role === "USER");
+    // This is a safety check as the API call should already return only users
+    filtered = filtered.filter(user => user.role === "USER" || (typeof user.role === 'object' && user.role?.name === "USER"));
     
+    // Applying status filter
+    if (statusFilter === 'published') {
+      filtered = filtered.filter(user => user.published === true);
+    } else if (statusFilter === 'unpublished') {
+      filtered = filtered.filter(user => user.published === false);
+    }
+
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -113,44 +134,64 @@ const CustomerProfiles = () => {
       );
     }
     return filtered;
-  }, [users, filteredUsers, isFiltered, searchTerm]);
+  }, [users, filteredUsers, isFiltered, searchTerm, statusFilter]);
+
 
   // Use filtered users from API if available, otherwise use local filtered users
   const displayUsers = isFiltered ? filteredUsers : localFilteredUsers;
+
+  const fetchCustomerStats = async (roleId) => {
+    setIsStatsLoading(true);
+    try {
+      const [totalRes, publishedRes, unpublishedRes] = await Promise.all([
+        fetchUsersWithParams({ roleId, published: null }),
+        fetchUsersWithParams({ roleId, published: true }),
+        fetchUsersWithParams({ roleId, published: false })
+      ]);
+      
+      setStats({
+        total: totalRes.count || 0,
+        published: publishedRes.count || 0,
+        unpublished: unpublishedRes.count || 0
+      });
+    } catch (error) {
+      console.error('CustomerProfiles: Error fetching stats:', error);
+      // Local fallback
+      const total = displayUsers.length;
+      const published = displayUsers.filter(u => u.published).length;
+      setStats({ total, published, unpublished: total - published });
+    } finally {
+      setIsStatsLoading(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       // First, get all roles to find the "USER" role ID
-      await getAllRoles();
+      const fetchedRoles = await getAllRoles();
       
-      // Wait a bit for roles to be set in state, then find the "USER" role ID
-      const userRole = roles.find(role => role.name === "USER");
+      let userRoleId = null;
+      const userRole = fetchedRoles.find(role => role.name === "USER");
       
       if (!userRole) {
         console.error('CustomerProfiles: User role not found, using fallback role ID');
-        // Fallback: Use the known USER role ID from your API response
-        const fallbackRoleId = "681632b6ab1624e874bb2dcf";
-        
-        // Use fetchUsersWithParams to get only users with "USER" role
-        const response = await fetchUsersWithParams({ roleId: fallbackRoleId });
-        
-        // Store the filtered users directly in state for customer management
-        if (response && response.data) {
-          setFilteredUsers(response.data);
-          setIsFiltered(true);
-        }
-        return;
+        userRoleId = "681632b6ab1624e874bb2dcf";
+      } else {
+        userRoleId = userRole._id;
       }
       
       // Use fetchUsersWithParams to get only users with "USER" role
-      const response = await fetchUsersWithParams({ roleId: userRole._id });
+      const response = await fetchUsersWithParams({ roleId: userRoleId });
       
-      // Store the filtered users directly in state for customer management
       if (response && response.data) {
         setFilteredUsers(response.data);
         setIsFiltered(true);
       }
+      
+      // Fetch stats for this role
+      await fetchCustomerStats(userRoleId);
+      
     } catch (error) {
       console.error('CustomerProfiles: Error fetching users:', error);
       showErrorToast('Failed to fetch users');
@@ -159,12 +200,18 @@ const CustomerProfiles = () => {
     }
   };
 
+
   // Fetch users with parameters from API
   const fetchUsersWithFilters = async (params) => {
     setLoading(true);
     try {
-      // Find the "USER" role ID
-      const userRole = roles.find(role => role.name === "USER");
+      // Find the "USER" role ID from current roles state or refetch if empty
+      let currentRoles = roles;
+      if (!currentRoles || currentRoles.length === 0) {
+        currentRoles = await getAllRoles();
+      }
+      
+      const userRole = currentRoles.find(role => role.name === "USER");
       
       if (!userRole) {
         console.error('CustomerProfiles: User role not found for filtering, using fallback');
@@ -571,23 +618,62 @@ const CustomerProfiles = () => {
     <Box p={5}>
       {/* Loader at the top, non-blocking */}
       {loading && <Loader size="xl" />}
-      <Flex justify="space-between" align="center" mb={6}>
+      {/* Header Section - Responsive */}
+      <Flex 
+        direction={{ base: 'column', sm: 'row' }} 
+        justify="space-between" 
+        align={{ base: 'start', sm: 'center' }} 
+        mb={6}
+        gap={4}
+      >
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           Customer Management
         </Heading>
-        <HStack spacing={2}>
+        <HStack spacing={2} width={{ base: '100%', sm: 'auto' }} justify={{ base: 'space-between', sm: 'flex-end' }}>
           <Button
             leftIcon={<DownloadIcon />}
             colorScheme="green"
             variant="outline"
             onClick={handleExportCSV}
             size="md"
+            flex={{ base: 1, sm: 'none' }}
           >
             Export CSV
           </Button>
           <CommonAddButton onClick={handleAddNew} />
         </HStack>
       </Flex>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+        <StatCard
+          title="Total Customers"
+          count={stats.total}
+          icon={Users}
+          color="text-blue-500"
+          isActive={statusFilter === 'all'}
+          onClick={() => setStatusFilter('all')}
+          isLoading={isStatsLoading}
+        />
+        <StatCard
+          title="Published"
+          count={stats.published}
+          icon={CheckCircle}
+          color="text-green-500"
+          isActive={statusFilter === 'published'}
+          onClick={() => setStatusFilter('published')}
+          isLoading={isStatsLoading}
+        />
+        <StatCard
+          title="Unpublished"
+          count={stats.unpublished}
+          icon={XCircle}
+          color="text-orange-500"
+          isActive={statusFilter === 'unpublished'}
+          onClick={() => setStatusFilter('unpublished')}
+          isLoading={isStatsLoading}
+        />
+      </div>
+
       {/* Search and Filter Section */}
       <SearchAndFilter
         searchTerm={searchTerm}
@@ -659,7 +745,7 @@ const CustomerProfiles = () => {
         isDisabled={selectedUser ? !isFormChanged() : false}
       >
         <VStack spacing={4}>
-          <HStack>
+          <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} width="100%">
             <FormControl isInvalid={!!errors.firstName}>
               <FloatingInput 
                 id="firstName" 
@@ -682,7 +768,7 @@ const CustomerProfiles = () => {
                 required={true}
               />
             </FormControl>
-          </HStack>
+          </SimpleGrid>
           <FormControl isInvalid={!!errors.email}>
             <FloatingInput 
               id="email" 
@@ -798,4 +884,34 @@ const CustomerProfiles = () => {
   );
 };
 
-export default CustomerProfiles; 
+const StatCard = ({ title, count, icon: Icon, color, isActive, onClick, isLoading }) => {
+  return (
+    <div
+      onClick={onClick}
+      className={`cursor-pointer rounded-xl border-2 bg-white p-3 sm:p-4 transition-all duration-200 
+      ${isActive ? "border-blue-500 shadow-md" : "border-transparent shadow-sm"} 
+      hover:-translate-y-1 hover:shadow-md`}
+    >
+      <div className="flex items-center gap-3">
+        <div className="p-2 sm:p-3 rounded-lg bg-gray-100 flex items-center justify-center">
+          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${color}`} />
+        </div>
+        <div className="flex flex-col">
+          <p className="text-xs sm:text-sm font-medium text-gray-500">
+            {title}
+          </p>
+          {isLoading ? (
+            <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <p className="text-lg sm:text-xl font-bold">
+              {count}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CustomerProfiles;
+ 

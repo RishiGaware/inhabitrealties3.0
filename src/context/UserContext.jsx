@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { fetchUsers, registerUser, editUser, deleteUser } from '../services/usermanagement/userService';
+import { fetchUsers, registerUser, editUser, deleteUser, fetchUsersWithParams } from '../services/usermanagement/userService';
 import { showSuccessToast, showErrorToast } from '../utils/toastUtils';
 
 // Default context value
 const defaultContextValue = {
   users: [],
   loading: false,
-  getAllUsers: () => {},
+  getAllUsers: (params) => {},
   addUser: () => {},
   updateUser: () => {},
   removeUser: () => {},
@@ -18,10 +18,15 @@ export const UserProvider = ({ children }) => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const getAllUsers = useCallback(async () => {
+  const getAllUsers = useCallback(async (params = null) => {
     setLoading(true);
     try {
-      const response = await fetchUsers();
+      let response;
+      if (params) {
+        response = await fetchUsersWithParams(params);
+      } else {
+        response = await fetchUsers();
+      }
       // Handle the new response format: { message, count, data }
       const usersData = response.data || response;
       setUsers(usersData);

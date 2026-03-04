@@ -17,6 +17,8 @@ import {
   Switch,
   FormLabel,
   Badge,
+  SimpleGrid,
+  Spinner,
 } from '@chakra-ui/react';
 import { EditIcon, DeleteIcon, SearchIcon, AddIcon, DownloadIcon } from '@chakra-ui/icons';
 import CommonTable from '../../../components/common/Table/CommonTable';
@@ -32,6 +34,13 @@ import { fetchRoles } from '../../../services/rolemanagement/roleService';
 import Loader from '../../../components/common/Loader';
 import CommonAddButton from '../../../components/common/Button/CommonAddButton';
 import { exportToCSV, generateFilename } from '../../../utils/exportUtils';
+import { 
+  Users, 
+  CheckCircle, 
+  XCircle,
+  TrendingUp
+} from 'lucide-react';
+
 
 const UserManagement = () => {
   // All hooks must be called at the top level
@@ -58,6 +67,11 @@ const UserManagement = () => {
   const [originalFormData, setOriginalFormData] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'published', 'unpublished'
+  const [stats, setStats] = useState({ total: 0, published: 0, unpublished: 0 });
+  const [isStatsLoading, setIsStatsLoading] = useState(false);
+
+
 
   // Get user context
   const userContext = useUserContext();
@@ -97,6 +111,14 @@ const UserManagement = () => {
   // Memoize filtered users to prevent unnecessary re-renders
   const filteredUsers = useMemo(() => {
     let filtered = users;
+    
+    // Status Filter
+    if (statusFilter === 'published') {
+      filtered = filtered.filter(user => user.published === true);
+    } else if (statusFilter === 'unpublished') {
+      filtered = filtered.filter(user => user.published === false);
+    }
+
     if (searchTerm) {
       filtered = filtered.filter(user =>
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,17 +130,47 @@ const UserManagement = () => {
       filtered = filtered.filter(user => user.role === roleFilter);
     }
     return filtered;
-  }, [users, searchTerm, roleFilter]);
+  }, [users, searchTerm, roleFilter, statusFilter]);
+
+  // Fetch stats from backend similar to mobile app
+  const fetchUserStats = async () => {
+    setIsStatsLoading(true);
+    try {
+      const { fetchUsersWithParams } = await import('../../../services/usermanagement/userService');
+      const [totalRes, publishedRes, unpublishedRes] = await Promise.all([
+        fetchUsersWithParams({ published: null }),
+        fetchUsersWithParams({ published: true }),
+        fetchUsersWithParams({ published: false })
+      ]);
+      
+      setStats({
+        total: totalRes.count || 0,
+        published: publishedRes.count || 0,
+        unpublished: unpublishedRes.count || 0
+      });
+    } catch (error) {
+      console.error('Error fetching user stats:', error);
+      // Fallback to local calculation if API fails
+      const total = users.length;
+      const published = users.filter(u => u.published).length;
+      const unpublished = total - published;
+      setStats({ total, published, unpublished });
+    } finally {
+      setIsStatsLoading(false);
+    }
+  };
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      await getAllUsers();
+      await getAllUsers({ published: null });
       await getAllRoles();
+      await fetchUserStats();
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchUsers();
@@ -485,24 +537,68 @@ const UserManagement = () => {
     <Box p={5}>
       {/* Loader at the top, non-blocking */}
       {loading && <Loader size="xl" />}
-      <Flex justify="space-between" align="center" mb={6}>
+      {/* Header Section - Responsive */}
+      <Flex 
+        direction={{ base: 'column', sm: 'row' }} 
+        justify="space-between" 
+        align={{ base: 'start', sm: 'center' }} 
+        mb={6}
+        gap={4}
+      >
         <Heading as="h1" fontSize={{ base: 'xl', md: '2xl' }} fontWeight="bold">
           User Management
         </Heading>
-        <HStack spacing={2}>
+        <HStack spacing={2} width={{ base: '100%', sm: 'auto' }} justify={{ base: 'space-between', sm: 'flex-end' }}>
           <Button
             leftIcon={<DownloadIcon />}
             colorScheme="green"
             variant="outline"
             onClick={handleExportCSV}
             size="md"
+            flex={{ base: 1, sm: 'none' }}
           >
             Export CSV
           </Button>
           <CommonAddButton onClick={handleAddNew} />
         </HStack>
       </Flex>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+
+  <StatCard
+    title="Total Users"
+    count={stats.total}
+    icon={Users}
+    color="text-blue-500"
+    isActive={statusFilter === "all"}
+    onClick={() => setStatusFilter("all")}
+    isLoading={isStatsLoading}
+  />
+
+  <StatCard
+    title="Published"
+    count={stats.published}
+    icon={CheckCircle}
+    color="text-green-500"
+    isActive={statusFilter === "published"}
+    onClick={() => setStatusFilter("published")}
+    isLoading={isStatsLoading}
+  />
+
+  <StatCard
+    title="Unpublished"
+    count={stats.unpublished}
+    icon={XCircle}
+    color="text-orange-500"
+    isActive={statusFilter === "unpublished"}
+    onClick={() => setStatusFilter("unpublished")}
+    isLoading={isStatsLoading}
+  />
+
+</div>
+
       {/* Search and Filter Section */}
+
       <SearchAndFilter
         searchTerm={searchTerm}
         onSearchChange={handleSearch}
@@ -577,7 +673,7 @@ const UserManagement = () => {
         isDisabled={selectedUser ? !isFormChanged() : false}
       >
         <VStack spacing={4}>
-          <HStack>
+          <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4} width="100%">
             <FormControl isInvalid={!!errors.firstName}>
               <FloatingInput 
                 id="firstName" 
@@ -600,7 +696,7 @@ const UserManagement = () => {
                 required={true}
               />
             </FormControl>
-          </HStack>
+          </SimpleGrid>
           <FormControl isInvalid={!!errors.email}>
             <FloatingInput 
               id="email" 
@@ -730,4 +826,38 @@ const UserManagement = () => {
   );
 };
 
-export default UserManagement; 
+const StatCard = ({ title, count, icon: Icon, color, isActive, onClick, isLoading }) => {
+  return (
+    <div
+      onClick={onClick}
+      className={`cursor-pointer rounded-xl border-2 bg-white p-3 sm:p-4 transition-all duration-200 
+      ${isActive ? "border-blue-500 shadow-md" : "border-transparent shadow-sm"} 
+      hover:-translate-y-1 hover:shadow-md`}
+    >
+      <div className="flex items-center gap-3">
+
+        <div className="p-2 sm:p-3 rounded-lg bg-gray-100 flex items-center justify-center">
+          <Icon className={`w-5 h-5 sm:w-6 sm:h-6 ${color}`} />
+        </div>
+
+        <div className="flex flex-col">
+          <p className="text-xs sm:text-sm font-medium text-gray-500">
+            {title}
+          </p>
+
+          {isLoading ? (
+            <div className="w-4 h-4 border-2 border-gray-300 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <p className="text-lg sm:text-xl font-bold">
+              {count}
+            </p>
+          )}
+        </div>
+
+      </div>
+    </div>
+  );
+};
+
+export default UserManagement;
+ 
