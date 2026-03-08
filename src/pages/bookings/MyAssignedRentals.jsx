@@ -22,10 +22,12 @@ import CommonAddButton from '../../components/common/Button/CommonAddButton';
 import RentalBookingViewer from '../../components/common/RentalBookingViewer';
 import RentalBookingEditForm from '../../components/common/RentalBookingEditForm';
 import { rentalBookingService } from '../../services/paymentManagement/rentalBookingService';
+import { useAuth } from '../../context/AuthContext';
 
 const MyAssignedRentals = () => {
   const navigate = useNavigate();
   const toast = useToast();
+  const { getUserId } = useAuth();
 
   // State management
   const [bookings, setBookings] = useState([]);
@@ -77,8 +79,18 @@ const MyAssignedRentals = () => {
       setIsLoading(true);
       
       // Use the rental booking service to get assigned rentals
-      // Note: You'll need to get the current user's ID from context or auth
-      const currentUserId = '68347215de3d56d44b9cbcad'; // This should come from user context
+      const currentUserId = getUserId();
+      if (!currentUserId) {
+        toast({
+          title: "Error",
+          description: "User ID not found. Please login again.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        setIsLoading(false);
+        return;
+      }
       const response = await rentalBookingService.getRentalBookingsBySalesperson(currentUserId);
       
       // Handle the actual API response format
