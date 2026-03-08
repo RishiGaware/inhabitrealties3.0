@@ -532,7 +532,7 @@ const ExecutiveDashboard = () => {
           </Box>
 
           {/* Role-wise Customers */}
-          <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor} mb={8}>
+          {/* <Card bg={cardBg} borderRadius="xl" boxShadow="lg" border="1px" borderColor={borderColor} mb={8}>
             <CardBody p={6}>
               <Text fontSize="xl" fontWeight="bold" color={textColor} mb={6}>
                 Role-wise Customer Distribution
@@ -570,7 +570,7 @@ const ExecutiveDashboard = () => {
                 )}
               </Grid>
             </CardBody>
-          </Card>
+          </Card> */}
 
           {/* Performance Overview */}
           <Grid templateColumns={{ base: "1fr", lg: "2fr 1fr" }} gap={6} mb={8}>

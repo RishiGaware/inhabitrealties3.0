@@ -933,7 +933,7 @@ const Dashboard = () => {
             </Box>
 
             {/* Role-wise Customers */}
-            <motion.div variants={itemVariants}>
+            {/* <motion.div variants={itemVariants}>
               <Card
                 bg={cardBg}
                 borderRadius="xl"
@@ -997,7 +997,7 @@ const Dashboard = () => {
                   </Grid>
                 </CardBody>
               </Card>
-            </motion.div>
+            </motion.div> */}
 
             {/* Additional Metrics */}
             <Box
