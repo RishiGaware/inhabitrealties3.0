@@ -312,7 +312,7 @@ const PropertyTypes = () => {
         colorScheme="brand"
         variant="outline"
       />
-      <IconButton
+      {/* <IconButton
         key="delete"
         aria-label="Delete property type"
         icon={<DeleteIcon />}
@@ -320,7 +320,7 @@ const PropertyTypes = () => {
         onClick={() => handleDelete(propertyType)}
         colorScheme="red"
         variant="outline"
-      />
+      /> */}
     </HStack>
   );
 
