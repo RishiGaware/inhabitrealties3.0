@@ -287,7 +287,7 @@ const LeadFollowUp = () => {
         colorScheme="brand"
         variant="outline"
       />
-      <IconButton
+      {/* <IconButton
         key="delete"
         aria-label="Delete followup status"
         icon={<DeleteIcon />}
@@ -295,7 +295,7 @@ const LeadFollowUp = () => {
         onClick={() => handleDelete(followUpStatus)}
         colorScheme="red"
         variant="outline"
-      />
+      /> */}
     </HStack>
   );
 
