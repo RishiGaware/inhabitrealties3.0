@@ -2,9 +2,9 @@ import api from '../api';
 import { MEETING_SCHEDULE_ENDPOINTS } from '../apiEndpoints';
 
 // Fetch all meeting schedules (admin, executive only)
-export const fetchAllMeetingSchedules = async () => {
+export const fetchAllMeetingSchedules = async (params = {}) => {
   try {
-    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_ALL);
+    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_ALL, { params });
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Fetch all error:', error);
@@ -12,16 +12,18 @@ export const fetchAllMeetingSchedules = async () => {
   }
 };
 
+
 // Get my meetings (for different user roles)
-export const getMyMeetings = async (userId) => {
+export const getMyMeetings = async (userId, params = {}) => {
   try {
-    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_MY_MEETINGS(userId));
+    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_MY_MEETINGS(userId), { params });
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Get my meetings error:', error);
     throw error;
   }
 };
+
 
 // Get meeting schedule by ID (scheduled by user ID)
 export const getMeetingScheduleById = async (userId) => {

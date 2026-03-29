@@ -81,15 +81,17 @@ const UserManagement = () => {
   const roleOptions = useMemo(() => {
     return roles.map(role => ({
       value: role._id,        // Use _id as value (this will be sent in payload)
-      label: role.name        // Use name as label (this will be displayed)
+      label: role.userCount !== undefined ? `${role.name} (${role.userCount})` : role.name        // Use name with count
     }));
   }, [roles]);
 
+
   // Helper function to get role label from value (for table display)
   const getRoleLabel = (roleValue) => {
-    const role = roleOptions.find(r => r.value === roleValue);
-    return role ? role.label : roleValue;
+    const role = roles.find(r => r._id === roleValue);
+    return role ? role.name : roleValue;
   };
+
 
   // Fetch roles from API
   const getAllRoles = async () => {
@@ -563,39 +565,57 @@ const UserManagement = () => {
         </HStack>
       </Flex>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4">
+        <StatCard
+          title="Total Users"
+          count={stats.total}
+          icon={Users}
+          color="text-blue-500"
+          isActive={statusFilter === "all" && !roleFilter}
+          onClick={() => {
+            setStatusFilter("all");
+            setRoleFilter("");
+          }}
+          isLoading={isStatsLoading}
+        />
 
-  <StatCard
-    title="Total Users"
-    count={stats.total}
-    icon={Users}
-    color="text-blue-500"
-    isActive={statusFilter === "all"}
-    onClick={() => setStatusFilter("all")}
-    isLoading={isStatsLoading}
-  />
+        {roles.map((role) => (
+          <StatCard
+            key={role._id}
+            title={role.name}
+            count={role.userCount || 0}
+            icon={TrendingUp}
+            color="text-purple-500"
+            isActive={roleFilter === role._id}
+            onClick={() => {
+              setRoleFilter(role._id);
+              setStatusFilter("all");
+            }}
+            isLoading={rolesLoading}
+          />
+        ))}
 
-  <StatCard
-    title="Published"
-    count={stats.published}
-    icon={CheckCircle}
-    color="text-green-500"
-    isActive={statusFilter === "published"}
-    onClick={() => setStatusFilter("published")}
-    isLoading={isStatsLoading}
-  />
+        <StatCard
+          title="Published"
+          count={stats.published}
+          icon={CheckCircle}
+          color="text-green-500"
+          isActive={statusFilter === "published"}
+          onClick={() => setStatusFilter("published")}
+          isLoading={isStatsLoading}
+        />
 
-  <StatCard
-    title="Unpublished"
-    count={stats.unpublished}
-    icon={XCircle}
-    color="text-orange-500"
-    isActive={statusFilter === "unpublished"}
-    onClick={() => setStatusFilter("unpublished")}
-    isLoading={isStatsLoading}
-  />
+        <StatCard
+          title="Unpublished"
+          count={stats.unpublished}
+          icon={XCircle}
+          color="text-orange-500"
+          isActive={statusFilter === "unpublished"}
+          onClick={() => setStatusFilter("unpublished")}
+          isLoading={isStatsLoading}
+        />
+      </div>
 
-</div>
 
       {/* Search and Filter Section */}
 

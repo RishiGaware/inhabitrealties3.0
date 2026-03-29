@@ -89,7 +89,9 @@ const AdminMeetings = () => {
   });
   const [formErrors, setFormErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' = Newest first, 'asc' = Oldest first
   const { isOpen: isViewModalOpen, onOpen: onViewModalOpen, onClose: onViewModalClose } = useDisclosure();
+
 
 
   
@@ -169,14 +171,20 @@ const AdminMeetings = () => {
     setLoading(true);
     try {
       // Fetch meetings, users, properties, and statuses in parallel
+      const params = {
+        sort: 'createdAt',
+        order: sortOrder
+      };
+      
       const [meetingsResponse, usersResponse, propertiesResponse, statusesResponse, salesResponse, executiveResponse] = await Promise.all([
-        fetchAllMeetingSchedules(),
+        fetchAllMeetingSchedules(params),
         fetchUsers(),
         fetchProperties(),
         fetchAllMeetingScheduleStatuses(),
         fetchUsersByRole('SALES'),
         fetchUsersByRole('EXECUTIVE')
       ]);
+
 
       // Set users and properties
       if (usersResponse && usersResponse.data) {
@@ -235,7 +243,12 @@ const AdminMeetings = () => {
 
       // Try to fetch from my-meetings endpoint first
       try {
-        const myMeetingsResponse = await getMyMeetings(currentUserId);
+        const params = {
+          sort: 'createdAt',
+          order: sortOrder
+        };
+        const myMeetingsResponse = await getMyMeetings(currentUserId, params);
+
         
         if (myMeetingsResponse && myMeetingsResponse.data) {
           setRawMyMeetings(myMeetingsResponse.data);
@@ -323,8 +336,13 @@ const AdminMeetings = () => {
   };
 
   useEffect(() => {
-    fetchAllData();
-  }, []);
+    if (activeView === 'scheduled') {
+      fetchAllData();
+    } else {
+      fetchMyMeetingsData();
+    }
+  }, [activeView, sortOrder]);
+
 
   // Transform meetings when users and properties are available
   useEffect(() => {
@@ -487,14 +505,11 @@ const AdminMeetings = () => {
       return matchesSearch && matchesStatus;
     });
     
-    // Sort: Newest created/added first, oldest at last
-    return filtered.sort((a, b) => {
-      // Sort by createdAt descending, fallback to meetingDate if createdAt missing
-      const aDate = a.createdAt ? new Date(a.createdAt) : (a.meetingDate ? new Date(a.meetingDate) : new Date(0));
-      const bDate = b.createdAt ? new Date(b.createdAt) : (b.meetingDate ? new Date(b.meetingDate) : new Date(0));
-      return bDate - aDate;
-    });
+    // Sorting is now handled by the backend, but we keep this as a fallback 
+    // or to handle client-side filtering results
+    return filtered;
   }, [meetings, searchTerm, statusFilter]);
+
 
   // Color mode values
   const textColor = useColorModeValue('gray.800', 'white');
@@ -558,7 +573,11 @@ const AdminMeetings = () => {
       setIsDeleteModalOpen(false);
       setSelectedMeeting(null);
       // Refresh data
-      fetchAllData();
+      if (activeView === 'scheduled') {
+        fetchAllData();
+      } else {
+        fetchMyMeetingsData();
+      }
     } catch (error) {
       console.error('Delete error:', error);
       showErrorToast('Failed to delete meeting');
@@ -600,7 +619,11 @@ const AdminMeetings = () => {
       setSelectedMeeting(null);
       resetForm();
       // Refresh data
-      fetchAllData();
+      if (activeView === 'scheduled') {
+        fetchAllData();
+      } else {
+        fetchMyMeetingsData();
+      }
     } catch (error) {
       console.error('Form submission error:', error);
       showErrorToast('Failed to save meeting');
@@ -1128,15 +1151,18 @@ const AdminMeetings = () => {
         onSearchChange={(e) => setSearchTerm(e.target.value)}
         onSearchSubmit={() => {}} // No API search needed for this page
         searchPlaceholder={activeView === 'my' ? "Search my meetings as customer..." : "Search meetings..."}
-        filters={{ status: statusFilter }}
+        filters={{ status: statusFilter, sortOrder: sortOrder }}
         onFilterChange={(key, value) => {
           if (key === 'status') {
             setStatusFilter(value);
+          } else if (key === 'sortOrder') {
+            setSortOrder(value);
           }
         }}
-        onApplyFilters={() => {}} // No API filter needed for this page
+        onApplyFilters={() => {}} 
         onClearFilters={() => {
           setStatusFilter('');
+          setSortOrder('desc');
         }}
         filterOptions={{
           status: {
@@ -1148,11 +1174,20 @@ const AdminMeetings = () => {
               { value: "Cancelled", label: "Cancelled" },
               { value: "Rescheduled", label: "Rescheduled" }
             ]
+          },
+          sortOrder: {
+            label: "Sort By",
+            placeholder: "Select Order",
+            options: [
+              { value: 'desc', label: 'Newest to Oldest' },
+              { value: 'asc', label: 'Oldest to Newest' }
+            ]
           }
         }}
         title="Filter Meetings"
-        activeFiltersCount={statusFilter ? 1 : 0}
+        activeFiltersCount={(statusFilter ? 1 : 0) + (sortOrder !== 'desc' ? 1 : 0)}
       />
+
 
       {/* Table */}
       <TableContainer>
