@@ -4,7 +4,9 @@ import { MEETING_SCHEDULE_ENDPOINTS } from '../apiEndpoints';
 // Fetch all meeting schedules (admin, executive only)
 export const fetchAllMeetingSchedules = async (params = {}) => {
   try {
-    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_ALL, { params });
+    const clientDate = new Date().toISOString();
+    const queryParams = { ...params, clientDate };
+    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_ALL, { params: queryParams });
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Fetch all error:', error);
@@ -16,7 +18,9 @@ export const fetchAllMeetingSchedules = async (params = {}) => {
 // Get my meetings (for different user roles)
 export const getMyMeetings = async (userId, params = {}) => {
   try {
-    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_MY_MEETINGS(userId), { params });
+    const clientDate = new Date().toISOString();
+    const queryParams = { ...params, clientDate };
+    const response = await api.get(MEETING_SCHEDULE_ENDPOINTS.GET_MY_MEETINGS(userId), { params: queryParams });
     return response.data;
   } catch (error) {
     console.error('meetingScheduleService: Get my meetings error:', error);

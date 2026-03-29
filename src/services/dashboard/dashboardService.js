@@ -3,7 +3,8 @@ import api from '../api';
 // Dashboard service for fetching dashboard data
 export const fetchDashboardOverview = async () => {
   try {
-    const response = await api.get('/dashboard/overview');
+    const clientDate = new Date().toISOString();
+    const response = await api.get(`/dashboard/overview?clientDate=${clientDate}`);
     return response.data;
   } catch (error) {
     console.error('Dashboard Service: Fetch overview error:', error);
@@ -73,7 +74,8 @@ export const fetchFinancialSummary = async () => {
 
 export const fetchTodaySchedules = async () => {
   try {
-    const response = await api.get('/dashboard/today-schedules');
+    const clientDate = new Date().toISOString();
+    const response = await api.get(`/dashboard/today-schedules?clientDate=${clientDate}`);
     return response.data;
   } catch (error) {
     console.error('Dashboard Service: Fetch today schedules error:', error);
@@ -83,7 +85,8 @@ export const fetchTodaySchedules = async () => {
 
 export const fetchLeadConversionRates = async () => {
   try {
-    const response = await api.get('/dashboard/lead-conversion');
+    const clientDate = new Date().toISOString();
+    const response = await api.get(`/dashboard/lead-conversion?clientDate=${clientDate}`);
     return response.data;
   } catch (error) {
     console.error('Dashboard Service: Fetch lead conversion rates error:', error);

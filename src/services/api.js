@@ -79,28 +79,40 @@ api.interceptors.response.use(
 // Meeting Schedule API functions
 export const meetingAPI = {
   // Get all meetings
-  getAllMeetings: () => api.get('/meeting-schedule'),
+  getAllMeetings: () => {
+    const clientDate = new Date().toISOString();
+    return api.get(`/meetingschedule?clientDate=${clientDate}`);
+  },
 
   // Get my meetings
-  getMyMeetings: (userId) => api.get(`/meeting-schedule/my-meetings/${userId}`),
+  getMyMeetings: (userId) => {
+    const clientDate = new Date().toISOString();
+    return api.get(`/meetingschedule/my-meetings/${userId}?clientDate=${clientDate}`);
+  },
 
   // Get my today's meetings
-  getMyTodaysMeetings: (userId) => api.get(`/meeting-schedule/my-todays-meetings/${userId}`),
+  getMyTodaysMeetings: (userId) => {
+    const clientDate = new Date().toISOString();
+    return api.get(`/meetingschedule/my-todays-meetings/${userId}?clientDate=${clientDate}`);
+  },
 
   // Get my tomorrow's meetings
-  getMyTomorrowsMeetings: (userId) => api.get(`/meeting-schedule/my-tomorrows-meetings/${userId}`),
+  getMyTomorrowsMeetings: (userId) => {
+    const clientDate = new Date().toISOString();
+    return api.get(`/meetingschedule/my-tomorrows-meetings/${userId}?clientDate=${clientDate}`);
+  },
 
   // Get meeting by ID
-  getMeetingById: (meetingId) => api.get(`/meeting-schedule/${meetingId}`),
+  getMeetingById: (meetingId) => api.get(`/meetingschedule/${meetingId}`),
 
   // Create meeting
-  createMeeting: (meetingData) => api.post('/meeting-schedule/create', meetingData),
+  createMeeting: (meetingData) => api.post('/meetingschedule/create', meetingData),
 
   // Update meeting
-  updateMeeting: (meetingId, meetingData) => api.put(`/meeting-schedule/edit/${meetingId}`, meetingData),
+  updateMeeting: (meetingId, meetingData) => api.put(`/meetingschedule/edit/${meetingId}`, meetingData),
 
   // Delete meeting
-  deleteMeeting: (meetingId) => api.delete(`/meeting-schedule/delete/${meetingId}`)
+  deleteMeeting: (meetingId) => api.delete(`/meetingschedule/delete/${meetingId}`)
 };
 
 // Payment History API functions
