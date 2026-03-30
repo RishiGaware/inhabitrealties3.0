@@ -30,6 +30,7 @@ import SearchableSelect from '../../components/common/SearchableSelect';
 import SearchAndFilter from '../../components/common/SearchAndFilter';
 import DeleteConfirmationModal from '../../components/common/DeleteConfirmationModal';
 import { useUserContext } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 import { fetchRoles } from '../../services/rolemanagement/roleService';
 import { fetchUsersWithParams } from '../../services/usermanagement/userService';
 import Loader from '../../components/common/Loader';
@@ -75,16 +76,24 @@ const CustomerProfiles = () => {
 
 
   // Get user context
+  const { isExecutive } = useAuth();
   const userContext = useUserContext();
   const { users, getAllUsers, addUser, updateUser, removeUser } = userContext;
 
   // Convert roles to options for dropdown - display name but use _id as value
   const roleOptions = useMemo(() => {
-    return roles.map(role => ({
+    let filteredRoles = roles;
+    if (isExecutive()) {
+      filteredRoles = roles.filter(role => {
+        const roleName = role.name.toUpperCase();
+        return roleName === 'USER';
+      });
+    }
+    return filteredRoles.map(role => ({
       value: role._id,        // Use _id as value (this will be sent in payload)
       label: role.name        // Use name as label (this will be displayed)
     }));
-  }, [roles]);
+  }, [roles, isExecutive]);
 
   // Helper function to get role label from value (for table display)
   const getRoleLabel = (roleValue) => {
