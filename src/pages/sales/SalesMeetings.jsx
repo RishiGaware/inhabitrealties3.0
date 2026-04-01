@@ -595,7 +595,7 @@ const SalesMeetings = () => {
         duration: calculatedDuration
       };
       
-      const apiData = formatMeetingDataForAPI(formDataWithDuration);
+      const apiData = formatMeetingDataForAPI(formDataWithDuration, !!selectedMeeting);
       
       if (selectedMeeting) {
         // Update existing meeting

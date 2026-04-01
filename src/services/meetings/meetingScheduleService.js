@@ -107,21 +107,28 @@ export const markMeetingDoneByExecutive = async (id) => {
 };
 
 // Helper function to format meeting data for API
-export const formatMeetingDataForAPI = (formData) => {
+export const formatMeetingDataForAPI = (formData, isUpdate = false) => {
   // Handle both single customer ID (edit mode) and multiple customer IDs (add mode)
   let customerData;
   
-  if (Array.isArray(formData.customerIds)) {
-    // Add mode - multiple customers
-    customerData = { customerIds: formData.customerIds };
-  } else if (formData.customerIds) {
-    // Edit mode - single customer
-    customerData = { customerId: formData.customerIds };
-  } else if (formData.customerId) {
-    // Fallback for backward compatibility
-    customerData = { customerId: formData.customerId };
+  if (isUpdate) {
+    // Edit mode - always single customerId string for updating a specific record
+    // Extraction sequence: Array index 0 -> existing customerIds string -> existing customerId string
+    const id = Array.isArray(formData.customerIds) 
+      ? formData.customerIds[0] 
+      : (formData.customerIds || formData.customerId || '');
+    customerData = { customerId: id };
   } else {
-    customerData = { customerId: '' };
+    // Add mode - multiple customers array for creating meeting records
+    if (Array.isArray(formData.customerIds)) {
+      customerData = { customerIds: formData.customerIds };
+    } else if (formData.customerIds) {
+      customerData = { customerIds: [formData.customerIds] };
+    } else if (formData.customerId) {
+      customerData = { customerIds: [formData.customerId] };
+    } else {
+      customerData = { customerIds: [] };
+    }
   }
   
   return {
